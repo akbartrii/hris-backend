@@ -1,6 +1,8 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { ScheduleModule } from '@nestjs/schedule';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
@@ -14,6 +16,11 @@ import { RecruitmentModule } from './modules/recruitment/recruitment.module';
 import { EmployeeModule } from './modules/employee/employee.module';
 import { NotificationModule } from './modules/notification/notification.module';
 import { ReportModule } from './modules/report/report.module';
+import { HolidayCalendarModule } from './modules/holiday-calendar/holiday-calendar.module';
+import { LeaveTypeModule } from './modules/leave-type/leave-type.module';
+import { TimeOffTypeModule } from './modules/time-off-type/time-off-type.module';
+import { WorkScheduleModule } from './modules/work-schedule/work-schedule.module';
+import { OvertimeMealAllowanceModule } from './modules/overtime-meal-allowance/overtime-meal-allowance.module';
 import { KeepAliveService } from './common/services/keep-alive.service';
 
 @Module({
@@ -22,6 +29,12 @@ import { KeepAliveService } from './common/services/keep-alive.service';
       isGlobal: true,
     }),
     ScheduleModule.forRoot(),
+    ThrottlerModule.forRoot([
+      {
+        ttl: 60000,
+        limit: 10,
+      },
+    ]),
     PrismaModule,
     AuthModule,
     AttendanceModule,
@@ -33,8 +46,20 @@ import { KeepAliveService } from './common/services/keep-alive.service';
     EmployeeModule,
     NotificationModule,
     ReportModule,
+    HolidayCalendarModule,
+    LeaveTypeModule,
+    TimeOffTypeModule,
+    WorkScheduleModule,
+    OvertimeMealAllowanceModule,
   ],
   controllers: [AppController],
-  providers: [AppService, KeepAliveService],
+  providers: [
+    AppService,
+    KeepAliveService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

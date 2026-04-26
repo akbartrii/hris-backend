@@ -57,4 +57,12 @@ export class LeaveController {
   ) {
     return this.leaveService.approveLeave(userId, id, dto, role);
   }
+
+  @Patch(':id/cancel')
+  async cancelLeave(
+    @CurrentUser('userId') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.leaveService.cancelLeave(userId, id);
+  }
 }

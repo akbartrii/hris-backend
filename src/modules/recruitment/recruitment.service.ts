@@ -9,6 +9,7 @@ import { CreateJobDto } from './dto/create-job.dto';
 import { ApplyJobDto } from './dto/apply-job.dto';
 import { UpdateApplicationStatusDto } from './dto/update-application-status.dto';
 import { ListJobDto } from './dto/list-job.dto';
+import { UpdateJobDto } from './dto/update-job.dto';
 
 @Injectable()
 export class RecruitmentService {
@@ -53,7 +54,6 @@ export class RecruitmentService {
 
     const slug = dto.public_slug || this.generateSlug(dto.title);
 
-    // Check slug uniqueness
     const existing = await this.prisma.ms_job_postings.findUnique({
       where: { public_slug: slug },
     });
@@ -88,6 +88,70 @@ export class RecruitmentService {
     });
 
     return job;
+  }
+
+  async updateJob(userId: string, jobId: string, dto: UpdateJobDto) {
+    const user = await this.prisma.tr_users.findUnique({
+      where: { id: userId },
+      include: { ms_roles: true },
+    });
+
+    const roleName = user?.ms_roles?.name || 'karyawan';
+    if (!['admin', 'hrd', 'super_admin'].includes(roleName)) {
+      throw new ForbiddenException('Only HR/Admin can update job postings');
+    }
+
+    const job = await this.prisma.ms_job_postings.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!job) {
+      throw new NotFoundException('Job posting not found');
+    }
+
+    const data: any = {};
+    if (dto.title !== undefined) data.title = dto.title;
+    if (dto.description !== undefined) data.description = dto.description;
+    if (dto.requirements !== undefined) data.requirements = dto.requirements;
+    if (dto.employment_type !== undefined)
+      data.employment_type = dto.employment_type;
+    if (dto.status !== undefined) data.status = dto.status;
+    if (dto.closed_at !== undefined)
+      data.closed_at = dto.closed_at ? new Date(dto.closed_at) : null;
+
+    const updated = await this.prisma.ms_job_postings.update({
+      where: { id: jobId },
+      data,
+    });
+
+    return updated;
+  }
+
+  async deleteJob(userId: string, jobId: string) {
+    const user = await this.prisma.tr_users.findUnique({
+      where: { id: userId },
+      include: { ms_roles: true },
+    });
+
+    const roleName = user?.ms_roles?.name || 'karyawan';
+    if (!['admin', 'hrd', 'super_admin'].includes(roleName)) {
+      throw new ForbiddenException('Only HR/Admin can delete job postings');
+    }
+
+    const job = await this.prisma.ms_job_postings.findUnique({
+      where: { id: jobId },
+    });
+
+    if (!job) {
+      throw new NotFoundException('Job posting not found');
+    }
+
+    await this.prisma.ms_job_postings.update({
+      where: { id: jobId },
+      data: { status: 'closed' },
+    });
+
+    return { message: 'Job posting deleted successfully' };
   }
 
   async listJobs(query: ListJobDto) {
@@ -233,12 +297,31 @@ export class RecruitmentService {
       throw new NotFoundException('Application not found');
     }
 
+    const updateData: any = {
+      status: dto.status,
+      notes: dto.notes || application.notes,
+    };
+
+    if (dto.status === 'ditolak') {
+      updateData.rejection_email_sent = true;
+      updateData.rejection_email_sent_at = new Date();
+
+      await this.prisma.tr_notifications.create({
+        data: {
+          user_id: userId,
+          type: 'application_rejected',
+          title: 'Application Rejected',
+          message: `Application for ${application.full_name} has been rejected. A rejection email has been logged.`,
+          reference_type: 'job_application',
+          reference_id: applicationId,
+          is_read: false,
+        },
+      });
+    }
+
     const updated = await this.prisma.tr_job_applications.update({
       where: { id: applicationId },
-      data: {
-        status: dto.status,
-        notes: dto.notes || application.notes,
-      },
+      data: updateData,
     });
 
     return updated;

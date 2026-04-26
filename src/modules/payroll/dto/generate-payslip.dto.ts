@@ -1,11 +1,14 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import {
-  IsString,
   IsUUID,
   IsNotEmpty,
   IsOptional,
   IsInt,
   Min,
+  Max,
+  IsString,
+  IsDateString,
+  IsIn,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
@@ -15,13 +18,36 @@ export class GeneratePayslipDto {
   @IsNotEmpty()
   payroll_period_id: string;
 
-  @ApiPropertyOptional({
-    description:
-      'Specific employee UUID (admin only). Defaults to current user.',
-  })
+  @ApiProperty({ description: 'Employee UUID' })
   @IsUUID()
-  @IsOptional()
-  employee_id?: string;
+  @IsNotEmpty()
+  employee_id: string;
+}
+
+export class GenerateBatchPayslipDto {
+  @ApiProperty({ description: 'Payroll period UUID' })
+  @IsUUID()
+  @IsNotEmpty()
+  payroll_period_id: string;
+}
+
+export class GenerateTHRDto {
+  @ApiProperty({ description: 'Employee UUID' })
+  @IsUUID()
+  @IsNotEmpty()
+  employee_id: string;
+
+  @ApiProperty({ description: 'Period name (e.g. THR 2025)' })
+  @IsString()
+  @IsNotEmpty()
+  period_name: string;
+
+  @ApiProperty({ description: 'Year' })
+  @Type(() => Number)
+  @IsInt()
+  @IsNotEmpty()
+  @Min(2020)
+  year: number;
 }
 
 export class ListPayslipDto {
@@ -50,4 +76,122 @@ export class PublishPayslipDto {
   @IsUUID()
   @IsNotEmpty()
   payslip_id: string;
+}
+
+export class CreatePayrollPeriodDto {
+  @ApiProperty({ description: 'Company UUID' })
+  @IsUUID()
+  @IsNotEmpty()
+  company_id: string;
+
+  @ApiProperty({ description: 'Month (1-12)' })
+  @Type(() => Number)
+  @IsInt()
+  @IsNotEmpty()
+  @Min(1)
+  @Max(12)
+  month: number;
+
+  @ApiProperty({ description: 'Year' })
+  @Type(() => Number)
+  @IsInt()
+  @IsNotEmpty()
+  @Min(2020)
+  year: number;
+
+  @ApiProperty({ description: 'Period name' })
+  @IsString()
+  @IsNotEmpty()
+  period_name: string;
+
+  @ApiPropertyOptional({ description: 'Start date (ISO string)' })
+  @IsDateString()
+  @IsOptional()
+  start_date?: string;
+
+  @ApiPropertyOptional({ description: 'End date (ISO string)' })
+  @IsDateString()
+  @IsOptional()
+  end_date?: string;
+
+  @ApiPropertyOptional({
+    description: 'Attendance cutoff start date (ISO string)',
+  })
+  @IsDateString()
+  @IsOptional()
+  attendance_cutoff_start?: string;
+
+  @ApiPropertyOptional({
+    description: 'Attendance cutoff end date (ISO string)',
+  })
+  @IsDateString()
+  @IsOptional()
+  attendance_cutoff_end?: string;
+
+  @ApiPropertyOptional({ description: 'Payment date (ISO string)' })
+  @IsDateString()
+  @IsOptional()
+  payment_date?: string;
+}
+
+export class UpdatePayrollPeriodDto {
+  @ApiPropertyOptional({ description: 'Company UUID' })
+  @IsUUID()
+  @IsOptional()
+  company_id?: string;
+
+  @ApiPropertyOptional({ description: 'Month (1-12)' })
+  @Type(() => Number)
+  @IsInt()
+  @IsOptional()
+  @Min(1)
+  @Max(12)
+  month?: number;
+
+  @ApiPropertyOptional({ description: 'Year' })
+  @Type(() => Number)
+  @IsInt()
+  @IsOptional()
+  @Min(2020)
+  year?: number;
+
+  @ApiPropertyOptional({ description: 'Period name' })
+  @IsString()
+  @IsOptional()
+  period_name?: string;
+
+  @ApiPropertyOptional({ description: 'Status' })
+  @IsString()
+  @IsOptional()
+  @IsIn(['draft', 'processing', 'closed'])
+  status?: string;
+
+  @ApiPropertyOptional({ description: 'Start date (ISO string)' })
+  @IsDateString()
+  @IsOptional()
+  start_date?: string;
+
+  @ApiPropertyOptional({ description: 'End date (ISO string)' })
+  @IsDateString()
+  @IsOptional()
+  end_date?: string;
+
+  @ApiPropertyOptional({
+    description: 'Attendance cutoff start date (ISO string)',
+  })
+  @IsDateString()
+  @IsOptional()
+  attendance_cutoff_start?: string;
+
+  @ApiPropertyOptional({
+    description: 'Attendance cutoff end date (ISO string)',
+  })
+  @IsDateString()
+  @IsOptional()
+  attendance_cutoff_end?: string;
+
+  @ApiPropertyOptional({ description: 'Payment date (ISO string)' })
+  @IsDateString()
+  @IsOptional()
+  payment_date?: string;
 }

@@ -52,4 +52,12 @@ export class TimeOffController {
   ) {
     return this.timeOffService.approveTimeOff(userId, id, dto, role);
   }
+
+  @Patch(':id/cancel')
+  async cancelTimeOff(
+    @CurrentUser('userId') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.timeOffService.cancelTimeOff(userId, id);
+  }
 }

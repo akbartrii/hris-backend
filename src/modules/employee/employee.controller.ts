@@ -1,6 +1,7 @@
 import {
   Controller,
   Get,
+  Post,
   Patch,
   Body,
   Query,
@@ -11,6 +12,7 @@ import {
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { EmployeeService } from './employee.service';
 import { ListEmployeeDto } from './dto/list-employee.dto';
+import { CreateEmployeeDto } from './dto/create-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -23,6 +25,16 @@ import { CurrentUser } from '../../common/decorators/current-user.decorator';
 @Controller('employees')
 export class EmployeeController {
   constructor(private readonly employeeService: EmployeeService) {}
+
+  @Post()
+  @Roles('hrd', 'admin', 'super_admin')
+  async createEmployee(
+    @CurrentUser('userId') userId: string,
+    @CurrentUser('role') role: string,
+    @Body() dto: CreateEmployeeDto,
+  ) {
+    return this.employeeService.createEmployee(userId, role, dto);
+  }
 
   @Get()
   @Roles('hrd', 'admin', 'super_admin')

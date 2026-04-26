@@ -3,7 +3,9 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SupabaseStorageService } from '../../common/services/supabase-storage.service';
 import { ClockInDto } from './dto/clock-in.dto';
@@ -14,10 +16,13 @@ import { ListAttendanceDto } from './dto/list-attendance.dto';
 
 @Injectable()
 export class AttendanceService {
+  private readonly logger = new Logger(AttendanceService.name);
   private readonly LATE_TOLERANCE_MINUTES = 5;
   private readonly LATE_DEDUCTION_PER_HOUR = 5000;
+  private readonly EARLY_LEAVE_DEDUCTION_PER_HOUR = 5000;
   private readonly DEFAULT_RADIUS_METERS = 100;
   private readonly STORAGE_BUCKET = 'attendance-photos';
+  private readonly DEFAULT_ATTENDANCE_ALLOWANCE = 25000;
 
   constructor(
     private prisma: PrismaService,
@@ -71,18 +76,37 @@ export class AttendanceService {
     return schedule?.ms_work_schedules || null;
   }
 
+  private async isHoliday(date: Date): Promise<boolean> {
+    const dateOnly = new Date(date);
+    dateOnly.setHours(0, 0, 0, 0);
+    const nextDay = new Date(dateOnly);
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    const holiday = await this.prisma.ms_holiday_calendars.findFirst({
+      where: {
+        holiday_date: { gte: dateOnly, lt: nextDay },
+      },
+    });
+    return !!holiday;
+  }
+
   private async validateGPS(
     employeeId: string,
     lat: number,
     lng: number,
-  ): Promise<{ isValid: boolean; distance: number; locationId?: string }> {
+  ): Promise<{
+    isValid: boolean;
+    distance: number;
+    locationId?: string;
+    radius: number;
+  }> {
     const employee = await this.prisma.tr_employees.findUnique({
       where: { id: employeeId },
       include: { ms_locations: true },
     });
 
     if (!employee || !employee.ms_locations) {
-      return { isValid: true, distance: 0 };
+      return { isValid: true, distance: 0, radius: this.DEFAULT_RADIUS_METERS };
     }
 
     const location = employee.ms_locations;
@@ -99,6 +123,7 @@ export class AttendanceService {
       isValid: distance <= radius,
       distance: Math.round(distance),
       locationId: location.id,
+      radius,
     };
   }
 
@@ -107,12 +132,10 @@ export class AttendanceService {
     scheduleStartTime: Date | null,
   ): number {
     if (!scheduleStartTime) return 0;
-
     const scheduleMinutes =
       scheduleStartTime.getHours() * 60 + scheduleStartTime.getMinutes();
     const clockInMinutes = clockIn.getHours() * 60 + clockIn.getMinutes();
     const diff = clockInMinutes - scheduleMinutes;
-
     return diff > this.LATE_TOLERANCE_MINUTES ? diff : 0;
   }
 
@@ -121,13 +144,77 @@ export class AttendanceService {
     scheduleEndTime: Date | null,
   ): number {
     if (!scheduleEndTime) return 0;
-
     const scheduleMinutes =
       scheduleEndTime.getHours() * 60 + scheduleEndTime.getMinutes();
     const clockOutMinutes = clockOut.getHours() * 60 + clockOut.getMinutes();
     const diff = scheduleMinutes - clockOutMinutes;
-
     return diff > this.LATE_TOLERANCE_MINUTES ? diff : 0;
+  }
+
+  private async recalculateAttendance(attendanceId: string) {
+    const attendance = await this.prisma.tr_attendances.findUnique({
+      where: { id: attendanceId },
+    });
+    if (!attendance || !attendance.clock_in) return;
+
+    const schedule = await this.getEmployeeSchedule(
+      attendance.employee_id,
+      attendance.attendance_date,
+    );
+
+    let lateMinutes = 0;
+    let lateDeduction = 0;
+    let earlyLeaveMinutes = 0;
+    let earlyLeaveDeduction = 0;
+    let status = 'present';
+    let attendanceAllowance = 0;
+
+    if (attendance.clock_in && schedule?.start_time) {
+      lateMinutes = this.calculateLateMinutes(
+        attendance.clock_in,
+        schedule.start_time,
+      );
+      if (lateMinutes > 0) {
+        lateDeduction =
+          Math.ceil(lateMinutes / 60) * this.LATE_DEDUCTION_PER_HOUR;
+        status = 'late';
+      }
+    }
+
+    if (attendance.clock_out && schedule?.end_time) {
+      earlyLeaveMinutes = this.calculateEarlyLeaveMinutes(
+        attendance.clock_out,
+        schedule.end_time,
+      );
+      if (earlyLeaveMinutes > 0) {
+        earlyLeaveDeduction =
+          Math.ceil(earlyLeaveMinutes / 60) *
+          this.EARLY_LEAVE_DEDUCTION_PER_HOUR;
+        if (status === 'present') status = 'early_leave';
+      }
+    }
+
+    const isHoliday = await this.isHoliday(attendance.attendance_date);
+
+    if (attendance.clock_in && attendance.clock_out) {
+      attendanceAllowance = this.DEFAULT_ATTENDANCE_ALLOWANCE;
+    } else {
+      attendanceAllowance = 0;
+    }
+
+    if (isHoliday) status = 'holiday';
+
+    await this.prisma.tr_attendances.update({
+      where: { id: attendanceId },
+      data: {
+        late_minutes: lateMinutes,
+        late_deduction: lateDeduction,
+        early_leave_minutes: earlyLeaveMinutes,
+        attendance_allowance: attendanceAllowance,
+        is_holiday: isHoliday,
+        status,
+      },
+    });
   }
 
   async clockIn(userId: string, dto: ClockInDto, photo: Express.Multer.File) {
@@ -136,10 +223,7 @@ export class AttendanceService {
     today.setHours(0, 0, 0, 0);
 
     const existing = await this.prisma.tr_attendances.findFirst({
-      where: {
-        employee_id: employee.id,
-        attendance_date: today,
-      },
+      where: { employee_id: employee.id, attendance_date: today },
     });
 
     if (existing?.clock_in) {
@@ -150,12 +234,13 @@ export class AttendanceService {
 
     if (!gpsValidation.isValid) {
       throw new BadRequestException(
-        `You are ${gpsValidation.distance}m away from the assigned location. Maximum allowed is ${this.DEFAULT_RADIUS_METERS}m.`,
+        `You are ${gpsValidation.distance}m away from the assigned location. Maximum allowed is ${gpsValidation.radius}m.`,
       );
     }
 
+    const ext = photo.mimetype.split('/')[1] || 'jpg';
     const dateStr = today.toISOString().split('T')[0];
-    const photoPath = `${employee.id}/${dateStr}_clock_in.jpg`;
+    const photoPath = `${employee.id}/${dateStr}_clock_in.${ext}`;
     const photoUrl = await this.storageService.uploadFile(
       this.STORAGE_BUCKET,
       photoPath,
@@ -169,9 +254,13 @@ export class AttendanceService {
       now,
       schedule?.start_time || null,
     );
+    const lateDeduction =
+      Math.ceil(lateMinutes / 60) * this.LATE_DEDUCTION_PER_HOUR;
+    const isHoliday = await this.isHoliday(today);
 
-    const lateHours = Math.ceil(lateMinutes / 60);
-    const lateDeduction = lateHours * this.LATE_DEDUCTION_PER_HOUR;
+    let status = 'present';
+    if (lateMinutes > 0) status = 'late';
+    if (isHoliday) status = 'holiday';
 
     const attendance = await this.prisma.tr_attendances.upsert({
       where: {
@@ -187,9 +276,10 @@ export class AttendanceService {
         clock_in_photo_url: photoUrl,
         clock_in_distance: gpsValidation.distance,
         location_id: gpsValidation.locationId,
-        status: lateMinutes > 0 ? 'late' : 'present',
+        status,
         late_minutes: lateMinutes,
         late_deduction: lateDeduction,
+        is_holiday: isHoliday,
         notes: dto.notes,
       },
       create: {
@@ -201,9 +291,10 @@ export class AttendanceService {
         clock_in_photo_url: photoUrl,
         clock_in_distance: gpsValidation.distance,
         location_id: gpsValidation.locationId,
-        status: lateMinutes > 0 ? 'late' : 'present',
+        status,
         late_minutes: lateMinutes,
         late_deduction: lateDeduction,
+        is_holiday: isHoliday,
         notes: dto.notes,
       },
     });
@@ -217,10 +308,7 @@ export class AttendanceService {
     today.setHours(0, 0, 0, 0);
 
     const attendance = await this.prisma.tr_attendances.findFirst({
-      where: {
-        employee_id: employee.id,
-        attendance_date: today,
-      },
+      where: { employee_id: employee.id, attendance_date: today },
     });
 
     if (!attendance || !attendance.clock_in) {
@@ -235,12 +323,13 @@ export class AttendanceService {
 
     if (!gpsValidation.isValid) {
       throw new BadRequestException(
-        `You are ${gpsValidation.distance}m away from the assigned location. Maximum allowed is ${this.DEFAULT_RADIUS_METERS}m.`,
+        `You are ${gpsValidation.distance}m away from the assigned location. Maximum allowed is ${gpsValidation.radius}m.`,
       );
     }
 
+    const ext = photo.mimetype.split('/')[1] || 'jpg';
     const dateStr = today.toISOString().split('T')[0];
-    const photoPath = `${employee.id}/${dateStr}_clock_out.jpg`;
+    const photoPath = `${employee.id}/${dateStr}_clock_out.${ext}`;
     const photoUrl = await this.storageService.uploadFile(
       this.STORAGE_BUCKET,
       photoPath,
@@ -254,6 +343,17 @@ export class AttendanceService {
       now,
       schedule?.end_time || null,
     );
+    const earlyLeaveDeduction =
+      Math.ceil(earlyLeaveMinutes / 60) * this.EARLY_LEAVE_DEDUCTION_PER_HOUR;
+
+    let status = attendance.status;
+    if (earlyLeaveMinutes > 0 && status === 'present') {
+      status = 'early_leave';
+    } else if (earlyLeaveMinutes > 0 && status === 'late') {
+      status = 'late_and_early_leave';
+    }
+
+    const attendanceAllowance = this.DEFAULT_ATTENDANCE_ALLOWANCE;
 
     const updated = await this.prisma.tr_attendances.update({
       where: { id: attendance.id },
@@ -264,6 +364,10 @@ export class AttendanceService {
         clock_out_photo_url: photoUrl,
         clock_out_distance: gpsValidation.distance,
         early_leave_minutes: earlyLeaveMinutes,
+        late_deduction:
+          (Number(attendance.late_deduction) || 0) + earlyLeaveDeduction,
+        attendance_allowance: attendanceAllowance,
+        status,
         notes: dto.notes || attendance.notes,
       },
     });
@@ -305,24 +409,65 @@ export class AttendanceService {
       this.prisma.tr_attendances.count({ where }),
     ]);
 
-    return {
-      data,
-      meta: { page, limit, total },
-    };
+    return { data, meta: { page, limit, total } };
+  }
+
+  async listAllAttendance(query: any) {
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const where: any = {};
+
+    if (query.employee_id) where.employee_id = query.employee_id;
+    if (query.status) where.status = query.status;
+    if (query.month) {
+      const [year, month] = query.month.split('-').map(Number);
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0);
+      where.attendance_date = { gte: startDate, lte: endDate };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.tr_attendances.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { attendance_date: 'desc' },
+        include: {
+          ms_locations: true,
+          tr_employees: { select: { id: true, full_name: true, nik: true } },
+        },
+      }),
+      this.prisma.tr_attendances.count({ where }),
+    ]);
+
+    return { data, meta: { page, limit, total } };
   }
 
   async createCorrection(userId: string, dto: CreateCorrectionDto) {
     const employee = await this.getEmployeeFromUser(userId);
 
     const attendance = await this.prisma.tr_attendances.findFirst({
-      where: {
-        id: dto.attendance_id,
-        employee_id: employee.id,
-      },
+      where: { id: dto.attendance_id, employee_id: employee.id },
     });
 
     if (!attendance) {
       throw new NotFoundException('Attendance record not found');
+    }
+
+    const pendingCorrection =
+      await this.prisma.tr_attendance_corrections.findFirst({
+        where: {
+          attendance_id: dto.attendance_id,
+          status: { in: ['pending', 'supervisor_approved'] },
+        },
+      });
+
+    if (pendingCorrection) {
+      throw new BadRequestException(
+        'A pending correction already exists for this attendance',
+      );
     }
 
     const correction = await this.prisma.tr_attendance_corrections.create({
@@ -345,6 +490,35 @@ export class AttendanceService {
     return correction;
   }
 
+  async cancelCorrection(userId: string, correctionId: string) {
+    const employee = await this.getEmployeeFromUser(userId);
+
+    const correction = await this.prisma.tr_attendance_corrections.findUnique({
+      where: { id: correctionId },
+    });
+
+    if (!correction) {
+      throw new NotFoundException('Correction not found');
+    }
+
+    if (correction.employee_id !== employee.id) {
+      throw new ForbiddenException('You can only cancel your own corrections');
+    }
+
+    if (correction.status !== 'pending') {
+      throw new BadRequestException(
+        'Only pending corrections can be cancelled',
+      );
+    }
+
+    await this.prisma.tr_attendance_corrections.update({
+      where: { id: correctionId },
+      data: { status: 'cancelled' },
+    });
+
+    return { message: 'Correction cancelled' };
+  }
+
   async listCorrections(userId: string, query: any) {
     const user = await this.prisma.tr_users.findUnique({
       where: { id: userId },
@@ -365,9 +539,7 @@ export class AttendanceService {
       where.employee_id = user.tr_employees.id;
     }
 
-    if (query.status) {
-      where.status = query.status;
-    }
+    if (query.status) where.status = query.status;
 
     const [data, total] = await Promise.all([
       this.prisma.tr_attendance_corrections.findMany({
@@ -383,10 +555,7 @@ export class AttendanceService {
       this.prisma.tr_attendance_corrections.count({ where }),
     ]);
 
-    return {
-      data,
-      meta: { page, limit, total },
-    };
+    return { data, meta: { page, limit, total } };
   }
 
   async approveCorrection(
@@ -417,6 +586,15 @@ export class AttendanceService {
         throw new BadRequestException('Correction request already processed');
       }
 
+      const employee = await this.prisma.tr_employees.findUnique({
+        where: { id: correction.employee_id },
+      });
+      if (employee?.supervisor_id !== approver.id) {
+        throw new ForbiddenException(
+          'You can only approve corrections of your subordinates',
+        );
+      }
+
       if (dto.action === 'approve') {
         await this.prisma.tr_attendance_corrections.update({
           where: { id: correctionId },
@@ -439,11 +617,7 @@ export class AttendanceService {
       return { message: `Correction ${dto.action}d by supervisor` };
     }
 
-    if (
-      approverRole === 'manager_hrga' ||
-      approverRole === 'admin' ||
-      approverRole === 'super_admin'
-    ) {
+    if (['manager_hrga', 'admin', 'super_admin'].includes(approverRole)) {
       if (correction.status !== 'supervisor_approved') {
         throw new BadRequestException('Must be approved by supervisor first');
       }
@@ -468,6 +642,8 @@ export class AttendanceService {
           data: updateData,
         });
 
+        await this.recalculateAttendance(correction.attendance_id);
+
         await this.prisma.tr_attendance_corrections.update({
           where: { id: correctionId },
           data: {
@@ -490,6 +666,76 @@ export class AttendanceService {
     }
 
     throw new ForbiddenException('Insufficient permissions');
+  }
+
+  @Cron(CronExpression.EVERY_DAY_AT_11PM)
+  async markAbsentEmployees() {
+    this.logger.log('Running absent marking cron job...');
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const isTodayHoliday = await this.isHoliday(today);
+    const dayOfWeek = today.getDay();
+
+    const activeEmployees = await this.prisma.tr_employees.findMany({
+      where: { is_active: true },
+      include: {
+        tr_employee_schedules: { include: { ms_work_schedules: true } },
+      },
+    });
+
+    for (const employee of activeEmployees) {
+      const schedule = employee.tr_employee_schedules
+        ?.filter((s) => {
+          const eff = new Date(s.effective_date);
+          return eff <= today && (!s.end_date || new Date(s.end_date) >= today);
+        })
+        .sort(
+          (a, b) =>
+            new Date(b.effective_date).getTime() -
+            new Date(a.effective_date).getTime(),
+        )[0]?.ms_work_schedules;
+
+      if (!schedule) continue;
+
+      const workDays: number[] = schedule.work_days || [1, 2, 3, 4, 5];
+      const isWorkDay = workDays.includes(dayOfWeek);
+
+      if (isTodayHoliday && schedule.is_holiday_off) continue;
+      if (!isWorkDay) continue;
+
+      const existingAttendance = await this.prisma.tr_attendances.findFirst({
+        where: {
+          employee_id: employee.id,
+          attendance_date: { gte: today, lt: tomorrow },
+        },
+      });
+
+      if (!existingAttendance) {
+        await this.prisma.tr_attendances.create({
+          data: {
+            employee_id: employee.id,
+            attendance_date: today,
+            status: 'absent',
+            is_holiday: isTodayHoliday,
+            attendance_allowance: 0,
+            late_deduction: 0,
+            late_minutes: 0,
+            early_leave_minutes: 0,
+          },
+        });
+      } else if (!existingAttendance.clock_in) {
+        await this.prisma.tr_attendances.update({
+          where: { id: existingAttendance.id },
+          data: { status: 'absent', attendance_allowance: 0 },
+        });
+      }
+    }
+
+    this.logger.log('Absent marking completed');
   }
 
   private combineDateTime(date: Date, time: Date): Date {

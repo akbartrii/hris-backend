@@ -49,3 +49,23 @@ export class PayrollReportDto {
   @IsOptional()
   department_id?: string;
 }
+
+export class OvertimeReportDto {
+  @ApiPropertyOptional({
+    description: 'Filter by month (YYYY-MM)',
+    example: '2025-06',
+  })
+  @IsString()
+  @IsOptional()
+  month?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by department UUID' })
+  @IsString()
+  @IsOptional()
+  department_id?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by employee UUID' })
+  @IsString()
+  @IsOptional()
+  employee_id?: string;
+}

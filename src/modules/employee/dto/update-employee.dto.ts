@@ -2,10 +2,13 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 import {
   IsString,
   IsOptional,
-  IsDecimal,
   IsDateString,
   IsBoolean,
+  IsUUID,
+  IsIn,
+  IsNumber,
 } from 'class-validator';
+import { Type } from 'class-transformer';
 
 export class UpdateEmployeeDto {
   @ApiPropertyOptional({ description: 'Full name' })
@@ -24,14 +27,39 @@ export class UpdateEmployeeDto {
   address?: string;
 
   @ApiPropertyOptional({ description: 'Gender', enum: ['male', 'female'] })
-  @IsString()
   @IsOptional()
+  @IsIn(['male', 'female'])
   gender?: string;
 
   @ApiPropertyOptional({ description: 'Birth date (YYYY-MM-DD)' })
   @IsDateString()
   @IsOptional()
   birth_date?: string;
+
+  @ApiPropertyOptional({ description: 'Department ID' })
+  @IsUUID()
+  @IsOptional()
+  department_id?: string;
+
+  @ApiPropertyOptional({ description: 'Position ID' })
+  @IsUUID()
+  @IsOptional()
+  position_id?: string;
+
+  @ApiPropertyOptional({ description: 'Location ID' })
+  @IsUUID()
+  @IsOptional()
+  location_id?: string;
+
+  @ApiPropertyOptional({ description: 'Supervisor ID' })
+  @IsUUID()
+  @IsOptional()
+  supervisor_id?: string;
+
+  @ApiPropertyOptional({ description: 'Manager ID' })
+  @IsUUID()
+  @IsOptional()
+  manager_id?: string;
 
   @ApiPropertyOptional({
     description: 'Employment status',
@@ -52,24 +80,28 @@ export class UpdateEmployeeDto {
   contract_end_date?: string;
 
   @ApiPropertyOptional({ description: 'Base salary' })
-  @IsString()
+  @IsNumber()
+  @Type(() => Number)
   @IsOptional()
-  base_salary?: string;
+  base_salary?: number;
 
   @ApiPropertyOptional({ description: 'Fixed allowance' })
-  @IsString()
+  @IsNumber()
+  @Type(() => Number)
   @IsOptional()
-  fixed_allowance?: string;
+  fixed_allowance?: number;
 
   @ApiPropertyOptional({ description: 'Phone allowance' })
-  @IsString()
+  @IsNumber()
+  @Type(() => Number)
   @IsOptional()
-  phone_allowance?: string;
+  phone_allowance?: number;
 
   @ApiPropertyOptional({ description: 'Dinas allowance' })
-  @IsString()
+  @IsNumber()
+  @Type(() => Number)
   @IsOptional()
-  dinas_allowance?: string;
+  dinas_allowance?: number;
 
   @ApiPropertyOptional({
     description: 'Shift type',

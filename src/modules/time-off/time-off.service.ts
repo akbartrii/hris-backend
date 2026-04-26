@@ -2,6 +2,7 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateTimeOffDto } from './dto/create-time-off.dto';
@@ -122,6 +123,15 @@ export class TimeOffService {
         throw new BadRequestException('Time off request already processed');
       }
 
+      const requester = await this.prisma.tr_employees.findUnique({
+        where: { id: timeOff.employee_id },
+      });
+      if (!requester || requester.supervisor_id !== approver.id) {
+        throw new ForbiddenException(
+          'You can only approve time off requests for your direct subordinates',
+        );
+      }
+
       if (dto.action === 'approve') {
         await this.prisma.tr_time_off_requests.update({
           where: { id: timeOffId },
@@ -176,5 +186,39 @@ export class TimeOffService {
     }
 
     throw new BadRequestException('Insufficient permissions');
+  }
+
+  async cancelTimeOff(userId: string, timeOffId: string) {
+    const employee = await this.getEmployeeFromUser(userId);
+
+    const timeOff = await this.prisma.tr_time_off_requests.findUnique({
+      where: { id: timeOffId },
+    });
+
+    if (!timeOff) {
+      throw new NotFoundException('Time off request not found');
+    }
+
+    if (timeOff.employee_id !== employee.id) {
+      throw new ForbiddenException(
+        'You can only cancel your own time off requests',
+      );
+    }
+
+    if (
+      timeOff.status !== 'pending' &&
+      timeOff.status !== 'supervisor_approved'
+    ) {
+      throw new BadRequestException(
+        'Only pending or supervisor approved time off requests can be cancelled',
+      );
+    }
+
+    await this.prisma.tr_time_off_requests.update({
+      where: { id: timeOffId },
+      data: { status: 'cancelled' },
+    });
+
+    return { message: 'Time off request cancelled successfully' };
   }
 }

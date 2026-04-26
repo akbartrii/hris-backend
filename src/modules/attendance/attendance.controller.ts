@@ -23,6 +23,7 @@ import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { BadRequestException } from '@nestjs/common';
 
 @ApiTags('Attendance')
 @ApiBearerAuth()
@@ -34,17 +35,14 @@ export class AttendanceController {
   @Post('clock-in')
   @UseInterceptors(FileInterceptor('photo'))
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    description: 'Clock in with GPS and photo',
-    type: ClockInDto,
-  })
+  @ApiBody({ description: 'Clock in with GPS and photo', type: ClockInDto })
   async clockIn(
     @CurrentUser('userId') userId: string,
     @Body() dto: ClockInDto,
     @UploadedFile() photo: Express.Multer.File,
   ) {
     if (!photo) {
-      throw new Error('Photo is required');
+      throw new BadRequestException('Photo is required');
     }
     return this.attendanceService.clockIn(userId, dto, photo);
   }
@@ -52,17 +50,14 @@ export class AttendanceController {
   @Post('clock-out')
   @UseInterceptors(FileInterceptor('photo'))
   @ApiConsumes('multipart/form-data')
-  @ApiBody({
-    description: 'Clock out with GPS and photo',
-    type: ClockOutDto,
-  })
+  @ApiBody({ description: 'Clock out with GPS and photo', type: ClockOutDto })
   async clockOut(
     @CurrentUser('userId') userId: string,
     @Body() dto: ClockOutDto,
     @UploadedFile() photo: Express.Multer.File,
   ) {
     if (!photo) {
-      throw new Error('Photo is required');
+      throw new BadRequestException('Photo is required');
     }
     return this.attendanceService.clockOut(userId, dto, photo);
   }
@@ -75,12 +70,26 @@ export class AttendanceController {
     return this.attendanceService.listAttendance(userId, query);
   }
 
+  @Get('all')
+  @Roles('hrd', 'admin', 'manager_hrga', 'super_admin')
+  async listAllAttendance(@Query() query: any) {
+    return this.attendanceService.listAllAttendance(query);
+  }
+
   @Post('corrections')
   async createCorrection(
     @CurrentUser('userId') userId: string,
     @Body() dto: CreateCorrectionDto,
   ) {
     return this.attendanceService.createCorrection(userId, dto);
+  }
+
+  @Patch('corrections/:id/cancel')
+  async cancelCorrection(
+    @CurrentUser('userId') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.attendanceService.cancelCorrection(userId, id);
   }
 
   @Get('corrections')

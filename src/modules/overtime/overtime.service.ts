@@ -33,6 +33,68 @@ export class OvertimeService {
     return Math.ceil(totalMinutes / 30) / 2;
   }
 
+  private async determineDayType(
+    date: Date,
+    companyId: string,
+  ): Promise<string> {
+    const dateOnly = new Date(date);
+    dateOnly.setHours(0, 0, 0, 0);
+    const nextDay = new Date(dateOnly);
+    nextDay.setDate(nextDay.getDate() + 1);
+
+    const holiday = await this.prisma.ms_holiday_calendars.findFirst({
+      where: {
+        company_id: companyId,
+        holiday_date: { gte: dateOnly, lt: nextDay },
+      },
+    });
+
+    if (holiday) {
+      return 'holiday';
+    }
+
+    const dayOfWeek = dateOnly.getDay();
+    return dayOfWeek === 0 || dayOfWeek === 6 ? 'weekend' : 'weekday';
+  }
+
+  private calculateCrossMidnightMinutes(
+    startMinutes: number,
+    endMinutes: number,
+  ): number {
+    if (endMinutes > startMinutes) {
+      return endMinutes - startMinutes;
+    }
+    return 1440 - startMinutes + endMinutes;
+  }
+
+  private calculateOvertimePay(
+    rawMinutes: number,
+    dayType: string,
+    ratePerHour: number,
+  ): number {
+    const totalHours = rawMinutes / 60;
+
+    if (dayType === 'weekday') {
+      let pay = 0;
+      if (totalHours <= 1) {
+        pay = totalHours * 1.5;
+      } else {
+        pay = 1 * 1.5 + (totalHours - 1) * 2;
+      }
+      return Number((pay * ratePerHour).toFixed(2));
+    }
+
+    let pay = 0;
+    if (totalHours <= 8) {
+      pay = totalHours * 2;
+    } else if (totalHours <= 10) {
+      pay = 8 * 2 + (totalHours - 8) * 3;
+    } else {
+      pay = 8 * 2 + 2 * 3 + (totalHours - 10) * 4;
+    }
+    return Number((pay * ratePerHour).toFixed(2));
+  }
+
   private async calculateMealAllowance(
     dayType: string,
     startMinutes: number,
@@ -50,7 +112,6 @@ export class OvertimeService {
       const slotEnd =
         slot.time_end.getHours() * 60 + slot.time_end.getMinutes();
 
-      // Check overlap
       const overlapStart = Math.max(startMinutes, slotStart);
       const overlapEnd = Math.min(endMinutes, slotEnd);
 
@@ -87,7 +148,6 @@ export class OvertimeService {
       throw new NotFoundException('Target employee not found');
     }
 
-    // Optional: ensure requester is supervisor/manager of target (skip for admin/super_admin)
     if (!['admin', 'super_admin'].includes(requesterRole)) {
       if (
         targetEmployee.supervisor_id !== requester.id &&
@@ -99,37 +159,72 @@ export class OvertimeService {
       }
     }
 
+    const overtimeDate = new Date(dto.date);
+
+    const existingOvertime = await this.prisma.tr_overtime_requests.findFirst({
+      where: {
+        employee_id: dto.employee_id,
+        date: overtimeDate,
+        status: { notIn: ['rejected', 'cancelled'] },
+      },
+    });
+
+    if (existingOvertime) {
+      throw new BadRequestException(
+        'Employee already has an active overtime request for this date',
+      );
+    }
+
+    const user = await this.prisma.tr_users.findUnique({
+      where: { id: targetEmployee.user_id || undefined },
+    });
+    const companyId = user?.company_id;
+
+    const dayType = await this.determineDayType(overtimeDate, companyId || '');
+
     const startMinutes = this.timeToMinutes(dto.start_time);
     const endMinutes = this.timeToMinutes(dto.end_time);
 
-    if (endMinutes <= startMinutes) {
-      throw new BadRequestException('End time must be after start time');
+    if (startMinutes === endMinutes) {
+      throw new BadRequestException('End time must differ from start time');
     }
 
-    const rawMinutes = endMinutes - startMinutes;
+    const rawMinutes = this.calculateCrossMidnightMinutes(
+      startMinutes,
+      endMinutes,
+    );
     const totalHours = this.roundUpHours(rawMinutes);
 
     const baseSalary = Number(targetEmployee.base_salary || 0);
     const fixedAllowance = Number(targetEmployee.fixed_allowance || 0);
     const ratePerHour = (baseSalary + fixedAllowance) / 173;
-    const totalOvertimePay = Number((totalHours * ratePerHour).toFixed(2));
+
+    const totalOvertimePay = this.calculateOvertimePay(
+      rawMinutes,
+      dayType,
+      ratePerHour,
+    );
+
+    const mealStartMinutes = startMinutes;
+    const mealEndMinutes =
+      endMinutes > startMinutes ? endMinutes : endMinutes + 1440;
 
     const totalMealAllowance = await this.calculateMealAllowance(
-      dto.day_type,
-      startMinutes,
-      endMinutes,
+      dayType,
+      mealStartMinutes,
+      mealEndMinutes,
     );
 
     const overtime = await this.prisma.tr_overtime_requests.create({
       data: {
         employee_id: dto.employee_id,
         requested_by: requester.id,
-        date: new Date(dto.date),
+        date: overtimeDate,
         start_time: new Date(`1970-01-01T${dto.start_time}:00`),
         end_time: new Date(`1970-01-01T${dto.end_time}:00`),
         total_hours: totalHours,
         raw_minutes: rawMinutes,
-        day_type: dto.day_type,
+        day_type: dayType,
         description: dto.description,
         rate_per_hour: ratePerHour,
         total_overtime_pay: totalOvertimePay,
@@ -139,6 +234,73 @@ export class OvertimeService {
     });
 
     return overtime;
+  }
+
+  async cancelOvertime(userId: string, overtimeId: string) {
+    const employee = await this.getEmployeeFromUser(userId);
+
+    const overtime = await this.prisma.tr_overtime_requests.findUnique({
+      where: { id: overtimeId },
+    });
+
+    if (!overtime) {
+      throw new NotFoundException('Overtime request not found');
+    }
+
+    if (overtime.status !== 'pending') {
+      throw new BadRequestException(
+        'Only pending overtime requests can be cancelled',
+      );
+    }
+
+    if (
+      overtime.requested_by !== employee.id &&
+      overtime.employee_id !== employee.id
+    ) {
+      throw new ForbiddenException(
+        'You can only cancel your own overtime requests',
+      );
+    }
+
+    await this.prisma.tr_overtime_requests.update({
+      where: { id: overtimeId },
+      data: {
+        status: 'cancelled',
+        rejection_reason: 'Cancelled by requester',
+      },
+    });
+
+    return { message: 'Overtime request cancelled' };
+  }
+
+  async deleteOvertime(userId: string, overtimeId: string, userRole: string) {
+    if (!['admin', 'super_admin'].includes(userRole)) {
+      throw new ForbiddenException('Only admin can delete overtime requests');
+    }
+
+    const overtime = await this.prisma.tr_overtime_requests.findUnique({
+      where: { id: overtimeId },
+    });
+
+    if (!overtime) {
+      throw new NotFoundException('Overtime request not found');
+    }
+
+    if (
+      overtime.status !== 'pending' &&
+      overtime.status !== 'rejected' &&
+      overtime.status !== 'cancelled'
+    ) {
+      throw new BadRequestException(
+        'Can only delete pending, rejected, or cancelled overtime requests',
+      );
+    }
+
+    await this.prisma.tr_overtime_requests.delete({
+      where: { id: overtimeId },
+    });
+
+    return { message: 'Overtime request deleted' };
   }
 
   async listOvertimes(userId: string, query: ListOvertimeDto) {

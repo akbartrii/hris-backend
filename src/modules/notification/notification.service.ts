@@ -6,10 +6,14 @@ import {
 import { PrismaService } from '../../prisma/prisma.service';
 import { ListNotificationDto } from './dto/list-notification.dto';
 import { CreateNotificationDto } from './dto/create-notification.dto';
+import { FcmService } from '../../common/services/fcm.service';
 
 @Injectable()
 export class NotificationService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private fcmService: FcmService,
+  ) {}
 
   private isAdminOrHRD(role: string): boolean {
     return ['hrd', 'admin', 'super_admin'].includes(role);
@@ -89,6 +93,16 @@ export class NotificationService {
         is_read: false,
       },
     });
+
+    await this.fcmService.sendPushNotification(
+      dto.user_id,
+      dto.title,
+      dto.message,
+      {
+        reference_type: dto.reference_type || '',
+        reference_id: dto.reference_id || '',
+      },
+    );
 
     return notification;
   }

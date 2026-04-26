@@ -1,4 +1,5 @@
-import { IsOptional, IsString, IsUUID } from 'class-validator';
+import { IsOptional, IsString, IsInt, Min } from 'class-validator';
+import { Type } from 'class-transformer';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class ListAttendanceDto {
@@ -18,10 +19,16 @@ export class ListAttendanceDto {
   status?: string;
 
   @ApiPropertyOptional({ description: 'Page number', default: 1 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   @IsOptional()
-  page?: number;
+  page?: number = 1;
 
   @ApiPropertyOptional({ description: 'Items per page', default: 10 })
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
   @IsOptional()
-  limit?: number;
+  limit?: number = 10;
 }

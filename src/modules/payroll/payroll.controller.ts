@@ -15,6 +15,10 @@ import {
   GeneratePayslipDto,
   ListPayslipDto,
   PublishPayslipDto,
+  GenerateBatchPayslipDto,
+  GenerateTHRDto,
+  CreatePayrollPeriodDto,
+  UpdatePayrollPeriodDto,
 } from './dto/generate-payslip.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
@@ -56,6 +60,16 @@ export class PayrollController {
     return this.payrollService.generatePayslip(userId, dto, role);
   }
 
+  @Post('generate-batch')
+  @Roles('hrd', 'admin', 'super_admin')
+  async generateBatchPayslip(
+    @CurrentUser('userId') userId: string,
+    @CurrentUser('role') role: string,
+    @Body() dto: GenerateBatchPayslipDto,
+  ) {
+    return this.payrollService.generateBatchPayslip(userId, dto, role);
+  }
+
   @Post('publish')
   @Roles('hrd', 'admin', 'super_admin')
   async publishPayslip(
@@ -67,8 +81,27 @@ export class PayrollController {
   }
 
   @Get('periods')
-  async listPayrollPeriods() {
-    return this.payrollService.listPayrollPeriods();
+  async listPayrollPeriods(@CurrentUser('companyId') companyId?: string) {
+    return this.payrollService.listPayrollPeriods(companyId);
+  }
+
+  @Post('periods')
+  @Roles('hrd', 'admin', 'super_admin')
+  async createPayrollPeriod(
+    @CurrentUser('role') role: string,
+    @Body() dto: CreatePayrollPeriodDto,
+  ) {
+    return this.payrollService.createPeriod(dto, role);
+  }
+
+  @Patch('periods/:id')
+  @Roles('hrd', 'admin', 'super_admin')
+  async updatePayrollPeriod(
+    @CurrentUser('role') role: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: UpdatePayrollPeriodDto,
+  ) {
+    return this.payrollService.updatePeriod(id, dto, role);
   }
 
   @Get('thr')
@@ -77,5 +110,15 @@ export class PayrollController {
     @CurrentUser('role') role: string,
   ) {
     return this.payrollService.listTHR(userId, role);
+  }
+
+  @Post('thr/generate')
+  @Roles('hrd', 'admin', 'super_admin')
+  async generateTHR(
+    @CurrentUser('userId') userId: string,
+    @CurrentUser('role') role: string,
+    @Body() dto: GenerateTHRDto,
+  ) {
+    return this.payrollService.generateTHR(userId, dto, role);
   }
 }

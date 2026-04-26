@@ -2,7 +2,10 @@ import {
   Injectable,
   BadRequestException,
   NotFoundException,
+  ForbiddenException,
+  Logger,
 } from '@nestjs/common';
+import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
 import { CreateLeaveDto } from './dto/create-leave.dto';
 import { ApproveLeaveDto } from './dto/approve-leave.dto';
@@ -10,6 +13,8 @@ import { ListLeaveDto } from './dto/list-leave.dto';
 
 @Injectable()
 export class LeaveService {
+  private readonly logger = new Logger(LeaveService.name);
+
   constructor(private prisma: PrismaService) {}
 
   private async getEmployeeFromUser(userId: string) {
@@ -57,6 +62,17 @@ export class LeaveService {
     return balance;
   }
 
+  private calculateDaysBetween(start: Date, end: Date): number {
+    const msPerDay = 86400000;
+    const startDay = Date.UTC(
+      start.getFullYear(),
+      start.getMonth(),
+      start.getDate(),
+    );
+    const endDay = Date.UTC(end.getFullYear(), end.getMonth(), end.getDate());
+    return Math.floor((endDay - startDay) / msPerDay) + 1;
+  }
+
   async createLeave(userId: string, dto: CreateLeaveDto) {
     const employee = await this.getEmployeeFromUser(userId);
     const leaveType = await this.prisma.ms_leave_types.findUnique({
@@ -67,7 +83,6 @@ export class LeaveService {
       throw new NotFoundException('Leave type not found');
     }
 
-    // Check if annual leave and employee has worked for at least 1 year
     if (leaveType.is_annual) {
       if (!employee.join_date) {
         throw new BadRequestException('Join date not set');
@@ -81,47 +96,119 @@ export class LeaveService {
       }
     }
 
-    // Check leave balance
-    const year = new Date(dto.start_date).getFullYear();
-    const balance = await this.getOrCreateLeaveBalance(
-      employee.id,
-      dto.leave_type_id,
-      year,
-    );
+    const startDate = new Date(dto.start_date);
+    const endDate = new Date(dto.end_date);
 
-    if (balance.remaining_days < dto.total_days) {
+    if (startDate > endDate) {
       throw new BadRequestException(
-        `Insufficient leave balance. Available: ${balance.remaining_days}, Requested: ${dto.total_days}`,
+        'Start date must be before or equal to end date',
       );
     }
 
-    const leave = await this.prisma.tr_leave_requests.create({
-      data: {
+    const dateRangeDays = this.calculateDaysBetween(startDate, endDate);
+    if (dto.total_days > dateRangeDays) {
+      throw new BadRequestException(
+        `Total days (${dto.total_days}) exceeds the date range of ${dateRangeDays} calendar day(s)`,
+      );
+    }
+
+    if (
+      leaveType.max_days_per_request &&
+      dto.total_days > leaveType.max_days_per_request
+    ) {
+      throw new BadRequestException(
+        `Total days exceeds maximum of ${leaveType.max_days_per_request} day(s) for this leave type`,
+      );
+    }
+
+    if (leaveType.requires_attachment && !dto.attachment_url) {
+      throw new BadRequestException(
+        'Attachment is required for this leave type',
+      );
+    }
+
+    const overlappingLeave = await this.prisma.tr_leave_requests.findFirst({
+      where: {
         employee_id: employee.id,
-        leave_type_id: dto.leave_type_id,
-        start_date: new Date(dto.start_date),
-        end_date: new Date(dto.end_date),
-        total_days: dto.total_days,
-        reason: dto.reason,
-        attachment_url: dto.attachment_url,
-        status: 'pending',
+        status: { in: ['pending', 'supervisor_approved', 'approved'] },
+        start_date: { lte: endDate },
+        end_date: { gte: startDate },
       },
     });
 
-    return leave;
+    if (overlappingLeave) {
+      throw new BadRequestException(
+        'Leave dates overlap with an existing leave request',
+      );
+    }
+
+    const year = startDate.getFullYear();
+
+    return this.prisma.$transaction(async (tx) => {
+      let balance = await tx.tr_leave_balances.findUnique({
+        where: {
+          employee_id_leave_type_id_year: {
+            employee_id: employee.id,
+            leave_type_id: dto.leave_type_id,
+            year,
+          },
+        },
+      });
+
+      if (!balance) {
+        balance = await tx.tr_leave_balances.create({
+          data: {
+            employee_id: employee.id,
+            leave_type_id: dto.leave_type_id,
+            year,
+            total_days: leaveType?.default_days || 0,
+            used_days: 0,
+          },
+        });
+      }
+
+      if (balance.total_days - balance.used_days < dto.total_days) {
+        throw new BadRequestException(
+          `Insufficient leave balance. Available: ${balance.total_days - balance.used_days}, Requested: ${dto.total_days}`,
+        );
+      }
+
+      const leave = await tx.tr_leave_requests.create({
+        data: {
+          employee_id: employee.id,
+          leave_type_id: dto.leave_type_id,
+          start_date: startDate,
+          end_date: endDate,
+          total_days: dto.total_days,
+          reason: dto.reason,
+          attachment_url: dto.attachment_url,
+          status: 'pending',
+        },
+      });
+
+      return leave;
+    });
   }
 
   async getLeaveBalance(userId: string) {
     const employee = await this.getEmployeeFromUser(userId);
     const year = new Date().getFullYear();
 
-    const balances = await this.prisma.tr_leave_balances.findMany({
-      where: {
-        employee_id: employee.id,
-        year,
-      },
-      include: { ms_leave_types: true },
-    });
+    const leaveTypes = await this.prisma.ms_leave_types.findMany();
+
+    const balances = await Promise.all(
+      leaveTypes.map(async (lt) => {
+        const balance = await this.getOrCreateLeaveBalance(
+          employee.id,
+          lt.id,
+          year,
+        );
+        return {
+          ...balance,
+          remaining_days: balance.total_days - balance.used_days,
+        };
+      }),
+    );
 
     return balances;
   }
@@ -191,15 +278,36 @@ export class LeaveService {
         throw new BadRequestException('Leave request already processed');
       }
 
+      const requester = await this.prisma.tr_employees.findUnique({
+        where: { id: leave.employee_id },
+      });
+      if (!requester || requester.supervisor_id !== approver.id) {
+        throw new ForbiddenException(
+          'You can only approve leave requests for your direct subordinates',
+        );
+      }
+
       if (dto.action === 'approve') {
-        await this.prisma.tr_leave_requests.update({
-          where: { id: leaveId },
-          data: {
-            supervisor_approved_at: new Date(),
-            supervisor_id: approver.id,
-            status: 'supervisor_approved',
-          },
-        });
+        await this.prisma.$transaction([
+          this.prisma.tr_leave_balances.updateMany({
+            where: {
+              employee_id: leave.employee_id,
+              leave_type_id: leave.leave_type_id,
+              year: new Date(leave.start_date).getFullYear(),
+            },
+            data: {
+              used_days: { increment: leave.total_days },
+            },
+          }),
+          this.prisma.tr_leave_requests.update({
+            where: { id: leaveId },
+            data: {
+              supervisor_approved_at: new Date(),
+              supervisor_id: approver.id,
+              status: 'supervisor_approved',
+            },
+          }),
+        ]);
       } else {
         await this.prisma.tr_leave_requests.update({
           where: { id: leaveId },
@@ -223,19 +331,6 @@ export class LeaveService {
       }
 
       if (dto.action === 'approve') {
-        // Deduct leave balance
-        const year = new Date(leave.start_date).getFullYear();
-        await this.prisma.tr_leave_balances.updateMany({
-          where: {
-            employee_id: leave.employee_id,
-            leave_type_id: leave.leave_type_id,
-            year,
-          },
-          data: {
-            used_days: { increment: leave.total_days },
-          },
-        });
-
         await this.prisma.tr_leave_requests.update({
           where: { id: leaveId },
           data: {
@@ -245,18 +340,124 @@ export class LeaveService {
           },
         });
       } else {
-        await this.prisma.tr_leave_requests.update({
-          where: { id: leaveId },
-          data: {
-            hrga_manager_id: approver.id,
-            status: 'rejected',
-            rejection_reason: dto.rejection_reason || 'Rejected by HRGA',
-          },
-        });
+        await this.prisma.$transaction([
+          this.prisma.tr_leave_balances.updateMany({
+            where: {
+              employee_id: leave.employee_id,
+              leave_type_id: leave.leave_type_id,
+              year: new Date(leave.start_date).getFullYear(),
+            },
+            data: {
+              used_days: { decrement: leave.total_days },
+            },
+          }),
+          this.prisma.tr_leave_requests.update({
+            where: { id: leaveId },
+            data: {
+              hrga_manager_id: approver.id,
+              status: 'rejected',
+              rejection_reason: dto.rejection_reason || 'Rejected by HRGA',
+            },
+          }),
+        ]);
       }
       return { message: `Leave request ${dto.action}d by HRGA` };
     }
 
     throw new BadRequestException('Insufficient permissions');
+  }
+
+  async cancelLeave(userId: string, leaveId: string) {
+    const employee = await this.getEmployeeFromUser(userId);
+    const leave = await this.prisma.tr_leave_requests.findUnique({
+      where: { id: leaveId },
+    });
+
+    if (!leave) {
+      throw new NotFoundException('Leave request not found');
+    }
+
+    if (leave.employee_id !== employee.id) {
+      throw new BadRequestException(
+        'You can only cancel your own leave requests',
+      );
+    }
+
+    if (
+      !['pending', 'supervisor_approved', 'approved'].includes(leave.status)
+    ) {
+      throw new BadRequestException(
+        'Only pending, supervisor-approved, or approved leave requests can be cancelled',
+      );
+    }
+
+    if (leave.status === 'supervisor_approved' || leave.status === 'approved') {
+      await this.prisma.$transaction([
+        this.prisma.tr_leave_balances.updateMany({
+          where: {
+            employee_id: leave.employee_id,
+            leave_type_id: leave.leave_type_id,
+            year: new Date(leave.start_date).getFullYear(),
+          },
+          data: {
+            used_days: { decrement: leave.total_days },
+          },
+        }),
+        this.prisma.tr_leave_requests.update({
+          where: { id: leaveId },
+          data: { status: 'cancelled' },
+        }),
+      ]);
+    } else {
+      await this.prisma.tr_leave_requests.update({
+        where: { id: leaveId },
+        data: { status: 'cancelled' },
+      });
+    }
+
+    return { message: 'Leave request cancelled' };
+  }
+
+  @Cron('0 0 1 1 *')
+  async resetAnnualLeaveBalances() {
+    this.logger.log('Running annual leave balance reset cron job...');
+
+    const year = new Date().getFullYear();
+    const activeEmployees = await this.prisma.tr_employees.findMany({
+      where: { is_active: true },
+    });
+
+    const annualLeaveTypes = await this.prisma.ms_leave_types.findMany({
+      where: { is_annual: true },
+    });
+
+    for (const employee of activeEmployees) {
+      for (const leaveType of annualLeaveTypes) {
+        await this.prisma.tr_leave_balances.upsert({
+          where: {
+            employee_id_leave_type_id_year: {
+              employee_id: employee.id,
+              leave_type_id: leaveType.id,
+              year,
+            },
+          },
+          update: {
+            total_days: 12,
+            used_days: 0,
+          },
+          create: {
+            employee_id: employee.id,
+            leave_type_id: leaveType.id,
+            year,
+            total_days: 12,
+            used_days: 0,
+          },
+        });
+      }
+    }
+
+    this.logger.log(
+      `Annual leave balances reset for ${activeEmployees.length} employees`,
+    );
   }
 }
