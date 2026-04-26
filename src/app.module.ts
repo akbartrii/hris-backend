@@ -21,6 +21,8 @@ import { LeaveTypeModule } from './modules/leave-type/leave-type.module';
 import { TimeOffTypeModule } from './modules/time-off-type/time-off-type.module';
 import { WorkScheduleModule } from './modules/work-schedule/work-schedule.module';
 import { OvertimeMealAllowanceModule } from './modules/overtime-meal-allowance/overtime-meal-allowance.module';
+import { LocationModule } from './modules/location/location.module';
+import { FaceRegistrationModule } from './modules/face-registration/face-registration.module';
 import { KeepAliveService } from './common/services/keep-alive.service';
 
 @Module({
@@ -51,6 +53,8 @@ import { KeepAliveService } from './common/services/keep-alive.service';
     TimeOffTypeModule,
     WorkScheduleModule,
     OvertimeMealAllowanceModule,
+    LocationModule,
+    FaceRegistrationModule,
   ],
   controllers: [AppController],
   providers: [

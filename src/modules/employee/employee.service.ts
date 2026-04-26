@@ -291,4 +291,49 @@ export class EmployeeService {
 
     return schedules;
   }
+
+  async assignLocation(
+    userId: string,
+    userRole: string,
+    employeeId: string,
+    locationId: string,
+  ) {
+    const employee = await this.prisma.tr_employees.findUnique({
+      where: { id: employeeId },
+    });
+
+    if (!employee) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    if (!this.isAdminOrHRD(userRole)) {
+      const requester = await this.prisma.tr_employees.findUnique({
+        where: { user_id: userId },
+      });
+      if (!requester || requester.id !== employee.supervisor_id) {
+        throw new ForbiddenException(
+          'You can only assign location to your direct subordinates',
+        );
+      }
+    }
+
+    if (locationId) {
+      const location = await this.prisma.ms_locations.findUnique({
+        where: { id: locationId },
+      });
+      if (!location) {
+        throw new NotFoundException('Location not found');
+      }
+      if (!location.is_active) {
+        throw new ForbiddenException('Cannot assign inactive location');
+      }
+    }
+
+    const updated = await this.prisma.tr_employees.update({
+      where: { id: employeeId },
+      data: { location_id: locationId || null },
+    });
+
+    return updated;
+  }
 }

@@ -99,14 +99,47 @@ export class AttendanceService {
     distance: number;
     locationId?: string;
     radius: number;
+    error?: string;
   }> {
     const employee = await this.prisma.tr_employees.findUnique({
       where: { id: employeeId },
       include: { ms_locations: true },
     });
 
-    if (!employee || !employee.ms_locations) {
-      return { isValid: true, distance: 0, radius: this.DEFAULT_RADIUS_METERS };
+    if (!employee) {
+      return {
+        isValid: false,
+        distance: 0,
+        radius: 0,
+        error: 'Employee not found',
+      };
+    }
+
+    if (!employee.location_id) {
+      return {
+        isValid: false,
+        distance: 0,
+        radius: 0,
+        error: 'Work location not assigned. Please contact your supervisor.',
+      };
+    }
+
+    if (!employee.ms_locations) {
+      return {
+        isValid: false,
+        distance: 0,
+        radius: 0,
+        error: 'Assigned location not found.',
+      };
+    }
+
+    if (!employee.ms_locations.is_active) {
+      return {
+        isValid: false,
+        distance: 0,
+        radius: 0,
+        error: 'Assigned location is inactive. Please contact your supervisor.',
+      };
     }
 
     const location = employee.ms_locations;
@@ -217,10 +250,25 @@ export class AttendanceService {
     });
   }
 
+  private async checkFaceRegistration(employeeId: string) {
+    const employee = await this.prisma.tr_employees.findUnique({
+      where: { id: employeeId },
+      select: { face_registration_status: true },
+    });
+
+    if (!employee || employee.face_registration_status !== 'registered') {
+      throw new BadRequestException(
+        'Face registration required. Please complete face registration before clocking in/out.',
+      );
+    }
+  }
+
   async clockIn(userId: string, dto: ClockInDto, photo: Express.Multer.File) {
     const employee = await this.getEmployeeFromUser(userId);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
+
+    await this.checkFaceRegistration(employee.id);
 
     const existing = await this.prisma.tr_attendances.findFirst({
       where: { employee_id: employee.id, attendance_date: today },
@@ -234,7 +282,8 @@ export class AttendanceService {
 
     if (!gpsValidation.isValid) {
       throw new BadRequestException(
-        `You are ${gpsValidation.distance}m away from the assigned location. Maximum allowed is ${gpsValidation.radius}m.`,
+        gpsValidation.error ||
+          `You are ${gpsValidation.distance}m away from the assigned location. Maximum allowed is ${gpsValidation.radius}m.`,
       );
     }
 
@@ -307,6 +356,8 @@ export class AttendanceService {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
+    await this.checkFaceRegistration(employee.id);
+
     const attendance = await this.prisma.tr_attendances.findFirst({
       where: { employee_id: employee.id, attendance_date: today },
     });
@@ -323,7 +374,8 @@ export class AttendanceService {
 
     if (!gpsValidation.isValid) {
       throw new BadRequestException(
-        `You are ${gpsValidation.distance}m away from the assigned location. Maximum allowed is ${gpsValidation.radius}m.`,
+        gpsValidation.error ||
+          `You are ${gpsValidation.distance}m away from the assigned location. Maximum allowed is ${gpsValidation.radius}m.`,
       );
     }
 

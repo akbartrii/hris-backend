@@ -74,4 +74,19 @@ export class EmployeeController {
   ) {
     return this.employeeService.getEmployeeSchedules(userId, role, id);
   }
+
+  @Patch(':id/location')
+  async assignLocation(
+    @CurrentUser('userId') userId: string,
+    @CurrentUser('role') role: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: { location_id: string },
+  ) {
+    return this.employeeService.assignLocation(
+      userId,
+      role,
+      id,
+      dto.location_id,
+    );
+  }
 }
