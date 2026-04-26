@@ -1,0 +1,77 @@
+import {
+  Controller,
+  Post,
+  Get,
+  Patch,
+  Body,
+  Query,
+  Param,
+  UseGuards,
+  ParseUUIDPipe,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { OvertimeService } from './overtime.service';
+import { CreateOvertimeDto } from './dto/create-overtime.dto';
+import { ApproveOvertimeDto } from './dto/approve-overtime.dto';
+import { ListOvertimeDto } from './dto/list-overtime.dto';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
+import { CurrentUser } from '../../common/decorators/current-user.decorator';
+
+@ApiTags('Overtime')
+@ApiBearerAuth()
+@UseGuards(JwtAuthGuard, RolesGuard)
+@Controller('overtime')
+export class OvertimeController {
+  constructor(private readonly overtimeService: OvertimeService) {}
+
+  @Post()
+  @Roles('atasan', 'manager_hrga', 'admin', 'super_admin')
+  async createOvertime(
+    @CurrentUser('userId') userId: string,
+    @CurrentUser('role') role: string,
+    @Body() dto: CreateOvertimeDto,
+  ) {
+    return this.overtimeService.createOvertime(userId, dto, role);
+  }
+
+  @Get()
+  async listOvertimes(
+    @CurrentUser('userId') userId: string,
+    @Query() query: ListOvertimeDto,
+  ) {
+    return this.overtimeService.listOvertimes(userId, query);
+  }
+
+  @Get('summary')
+  @Roles('manager_hrga', 'hrd', 'admin', 'super_admin')
+  async getSummary(
+    @CurrentUser('userId') userId: string,
+    @Query('month') month?: string,
+  ) {
+    return this.overtimeService.getOvertimeSummary(userId, month);
+  }
+
+  @Patch(':id/approve')
+  @Roles('manager_hrga', 'admin', 'super_admin')
+  async approveOvertime(
+    @CurrentUser('userId') userId: string,
+    @CurrentUser('role') role: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ApproveOvertimeDto,
+  ) {
+    return this.overtimeService.approveOvertime(userId, id, dto, role);
+  }
+
+  @Patch(':id/process')
+  @Roles('hrd', 'admin', 'super_admin')
+  async processOvertime(
+    @CurrentUser('userId') userId: string,
+    @CurrentUser('role') role: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() dto: ApproveOvertimeDto,
+  ) {
+    return this.overtimeService.processOvertime(userId, id, dto, role);
+  }
+}
