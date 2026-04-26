@@ -44,6 +44,7 @@ export class AttendanceController {
     if (!photo) {
       throw new BadRequestException('Photo is required');
     }
+    // redeploy
     return this.attendanceService.clockIn(userId, dto, photo);
   }
 
