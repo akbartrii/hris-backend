@@ -1,0 +1,2227 @@
+{
+  "info": {
+    "_postman_id": "hris-samugara-collection",
+    "name": "HRIS Samugara API",
+    "description": "Postman collection for HRIS Samugara Backend API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "App",
+      "item": [
+        {
+          "name": "Health Check",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/health",
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Root",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/",
+              "host": ["{{baseUrl}}"],
+              "path": [""]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"user@example.com\",\n  \"password\": \"password123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Profile",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/profile",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "profile"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Verify Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/verify",
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Employee",
+      "item": [
+        {
+          "name": "List Employees",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/employees",
+              "host": ["{{baseUrl}}"],
+              "path": ["employees"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Employee",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"employee@example.com\",\n  \"full_name\": \"John Doe\",\n  \"phone\": \"08123456789\",\n  \"role\": \"karyawan\",\n  \"department_id\": \"uuid-dept\",\n  \"work_schedule_id\": \"uuid-schedule\",\n  \"location_id\": \"uuid-location\",\n  \"nik\": \"1234567890\",\n  \"join_date\": \"2024-01-01\",\n  \"basic_salary\": 5000000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/employees",
+              "host": ["{{baseUrl}}"],
+              "path": ["employees"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Employee Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/employees/{{employeeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["employees", "{{employeeId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Employee",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"full_name\": \"John Doe Updated\",\n  \"phone\": \"08123456789\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/employees/{{employeeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["employees", "{{employeeId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Employee Schedules",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/employees/{{employeeId}}/schedules",
+              "host": ["{{baseUrl}}"],
+              "path": ["employees", "{{employeeId}}", "schedules"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Location",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"location_id\": \"uuid-location\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/employees/{{employeeId}}/location",
+              "host": ["{{baseUrl}}"],
+              "path": ["employees", "{{employeeId}}", "location"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Attendance",
+      "item": [
+        {
+          "name": "Clock In",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": "/path/to/photo.jpg"
+                },
+                {
+                  "key": "latitude",
+                  "type": "text",
+                  "value": "-6.2088"
+                },
+                {
+                  "key": "longitude",
+                  "type": "text",
+                  "value": "106.8456"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/attendance/clock-in",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "clock-in"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Clock Out",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "photo",
+                  "type": "file",
+                  "src": "/path/to/photo.jpg"
+                },
+                {
+                  "key": "latitude",
+                  "type": "text",
+                  "value": "-6.2088"
+                },
+                {
+                  "key": "longitude",
+                  "type": "text",
+                  "value": "106.8456"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/attendance/clock-out",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "clock-out"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Attendance History",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/history",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "history"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List All Attendance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/all",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "all"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Correction",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"attendance_id\": \"uuid-attendance\",\n  \"correction_type\": \"clock_in\",\n  \"corrected_time\": \"08:00\",\n  \"reason\": \"Forgot to clock in\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/attendance/corrections",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "corrections"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Corrections",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/corrections",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "corrections"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Correction",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/corrections/{{correctionId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "attendance",
+                "corrections",
+                "{{correctionId}}",
+                "cancel"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Correction",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Approved by manager\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/attendance/corrections/{{correctionId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "attendance",
+                "corrections",
+                "{{correctionId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Face Registration",
+      "item": [
+        {
+          "name": "Get Status",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/face-registration/status",
+              "host": ["{{baseUrl}}"],
+              "path": ["face-registration", "status"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Register Face",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "front_photo",
+                  "type": "file",
+                  "src": "/path/to/front.jpg"
+                },
+                {
+                  "key": "smile_photo",
+                  "type": "file",
+                  "src": "/path/to/smile.jpg"
+                },
+                {
+                  "key": "right_photo",
+                  "type": "file",
+                  "src": "/path/to/right.jpg"
+                },
+                {
+                  "key": "left_photo",
+                  "type": "file",
+                  "src": "/path/to/left.jpg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/face-registration",
+              "host": ["{{baseUrl}}"],
+              "path": ["face-registration"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Locations",
+      "item": [
+        {
+          "name": "List Locations",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/locations",
+              "host": ["{{baseUrl}}"],
+              "path": ["locations"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Location",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Head Office\",\n  \"address\": \"Jl. Sudirman No.1\",\n  \"latitude\": -6.2088,\n  \"longitude\": 106.8456,\n  \"radius\": 100\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/locations",
+              "host": ["{{baseUrl}}"],
+              "path": ["locations"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Location",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Branch Office\",\n  \"radius\": 150\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/locations/{{locationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["locations", "{{locationId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Location",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/locations/{{locationId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["locations", "{{locationId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Work Schedules",
+      "item": [
+        {
+          "name": "List Work Schedules",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/work-schedules",
+              "host": ["{{baseUrl}}"],
+              "path": ["work-schedules"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Work Schedule",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Shift Pagi\",\n  \"clock_in_time\": \"08:00\",\n  \"clock_out_time\": \"17:00\",\n  \"work_days\": [1,2,3,4,5],\n  \"is_flexible\": false\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-schedules",
+              "host": ["{{baseUrl}}"],
+              "path": ["work-schedules"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Work Schedule",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Shift Malam\",\n  \"clock_in_time\": \"20:00\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/work-schedules/{{scheduleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["work-schedules", "{{scheduleId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Work Schedule",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/work-schedules/{{scheduleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["work-schedules", "{{scheduleId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Time Off Types",
+      "item": [
+        {
+          "name": "List Time Off Types",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/time-off-types",
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off-types"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Time Off Type",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Izin Sakit\",\n  \"is_paid\": true,\n  \"requires_document\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/time-off-types",
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off-types"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Time Off Type",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Izin Sakit Dengan Surat\",\n  \"is_paid\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/time-off-types/{{timeOffTypeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off-types", "{{timeOffTypeId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Time Off Type",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/time-off-types/{{timeOffTypeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off-types", "{{timeOffTypeId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Leave Types",
+      "item": [
+        {
+          "name": "List Leave Types",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leave-types",
+              "host": ["{{baseUrl}}"],
+              "path": ["leave-types"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Leave Type",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cuti Tahunan\",\n  \"max_days_per_year\": 12,\n  \"is_paid\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/leave-types",
+              "host": ["{{baseUrl}}"],
+              "path": ["leave-types"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Leave Type",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Cuti Besar\",\n  \"max_days_per_year\": 30\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/leave-types/{{leaveTypeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["leave-types", "{{leaveTypeId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Leave Type",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leave-types/{{leaveTypeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["leave-types", "{{leaveTypeId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Recruitment",
+      "item": [
+        {
+          "name": "List Jobs (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/recruitment/jobs",
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "jobs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Job by Slug (Public)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/recruitment/jobs/{{jobSlug}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "jobs", "{{jobSlug}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Apply Job (Public)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"job_id\": \"uuid-job\",\n  \"full_name\": \"Applicant Name\",\n  \"email\": \"applicant@example.com\",\n  \"phone\": \"08123456789\",\n  \"resume_url\": \"https://example.com/resume.pdf\",\n  \"cover_letter\": \"I am interested...\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/recruitment/apply",
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "apply"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Job",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Software Engineer\",\n  \"slug\": \"software-engineer\",\n  \"department\": \"Engineering\",\n  \"description\": \"Job description here...\",\n  \"requirements\": [\"Bachelor degree\", \"3 years exp\"],\n  \"location\": \"Jakarta\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/recruitment/jobs",
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "jobs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Job",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Senior Software Engineer\",\n  \"is_active\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/recruitment/jobs/{{jobId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "jobs", "{{jobId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Job",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recruitment/jobs/{{jobId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "jobs", "{{jobId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Applications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/recruitment/applications",
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "applications"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Application Status",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"interview\",\n  \"notes\": \"Candidate passed screening\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/recruitment/applications/{{applicationId}}/status",
+              "host": ["{{baseUrl}}"],
+              "path": [
+                "recruitment",
+                "applications",
+                "{{applicationId}}",
+                "status"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "item": [
+        {
+          "name": "Attendance Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/attendance?start_date=2024-01-01&end_date=2024-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "attendance"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2024-01-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Leave Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/leave?start_date=2024-01-01&end_date=2024-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "leave"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2024-01-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Payroll Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/payroll?month=2024-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "payroll"],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "2024-01"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Overtime Report",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/overtime?month=2024-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "overtime"],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "2024-01"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Attendance Excel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/attendance/export?start_date=2024-01-01&end_date=2024-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "attendance", "export"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2024-01-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Leave Excel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/leave/export?start_date=2024-01-01&end_date=2024-01-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "leave", "export"],
+              "query": [
+                {
+                  "key": "start_date",
+                  "value": "2024-01-01"
+                },
+                {
+                  "key": "end_date",
+                  "value": "2024-01-31"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Payroll Excel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/payroll/export?month=2024-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "payroll", "export"],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "2024-01"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Export Overtime Excel",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reports/overtime/export?month=2024-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "overtime", "export"],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "2024-01"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Holiday Calendar",
+      "item": [
+        {
+          "name": "List Holidays",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/holiday-calendar",
+              "host": ["{{baseUrl}}"],
+              "path": ["holiday-calendar"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Holiday",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hari Kemerdekaan\",\n  \"date\": \"2024-08-17\",\n  \"type\": \"national\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/holiday-calendar",
+              "host": ["{{baseUrl}}"],
+              "path": ["holiday-calendar"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Holiday",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hari Kemerdekaan RI\",\n  \"date\": \"2024-08-17\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/holiday-calendar/{{holidayId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["holiday-calendar", "{{holidayId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Holiday",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/holiday-calendar/{{holidayId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["holiday-calendar", "{{holidayId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Payroll",
+      "item": [
+        {
+          "name": "List Payslips",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payroll/payslips",
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "payslips"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Payslip Detail",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payroll/payslips/{{payslipId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "payslips", "{{payslipId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Payslip",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": \"uuid-employee\",\n  \"period_id\": \"uuid-period\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payroll/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "generate"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate Batch Payslip",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"period_id\": \"uuid-period\",\n  \"department_id\": \"uuid-dept\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payroll/generate-batch",
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "generate-batch"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Publish Payslip",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"payslip_id\": \"uuid-payslip\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payroll/publish",
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "publish"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Payroll Periods",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payroll/periods",
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "periods"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Payroll Period",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"January 2024\",\n  \"start_date\": \"2024-01-01\",\n  \"end_date\": \"2024-01-31\",\n  \"payment_date\": \"2024-02-05\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payroll/periods",
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "periods"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Payroll Period",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"January 2024 Updated\",\n  \"payment_date\": \"2024-02-10\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payroll/periods/{{periodId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "periods", "{{periodId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List THR",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/payroll/thr",
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "thr"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Generate THR",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"period_id\": \"uuid-period\",\n  \"employee_ids\": [\"uuid-1\", \"uuid-2\"]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payroll/thr/generate",
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "thr", "generate"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Time Off",
+      "item": [
+        {
+          "name": "Create Time Off",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"time_off_type_id\": \"uuid-type\",\n  \"start_date\": \"2024-02-01\",\n  \"end_date\": \"2024-02-02\",\n  \"reason\": \"Sick leave\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/time-off",
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Time Offs",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/time-off",
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Time Off",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Approved by manager\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/time-off/{{timeOffId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off", "{{timeOffId}}", "approve"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Time Off",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/time-off/{{timeOffId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off", "{{timeOffId}}", "cancel"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Leave",
+      "item": [
+        {
+          "name": "Create Leave",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"leave_type_id\": \"uuid-type\",\n  \"start_date\": \"2024-03-01\",\n  \"end_date\": \"2024-03-05\",\n  \"reason\": \"Annual leave\",\n  \"delegate_to\": \"uuid-delegate\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/leave",
+              "host": ["{{baseUrl}}"],
+              "path": ["leave"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Leave Balance",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leave/balance",
+              "host": ["{{baseUrl}}"],
+              "path": ["leave", "balance"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Leaves",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leave",
+              "host": ["{{baseUrl}}"],
+              "path": ["leave"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Leave",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Approved by manager\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/leave/{{leaveId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["leave", "{{leaveId}}", "approve"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Leave",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leave/{{leaveId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["leave", "{{leaveId}}", "cancel"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Notification",
+      "item": [
+        {
+          "name": "List Notifications",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Unread Count",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/unread-count",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "unread-count"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "{{notificationId}}", "read"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark All as Read",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/notifications/read-all",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "read-all"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Notification",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"user_id\": \"uuid-user\",\n  \"title\": \"Notification Title\",\n  \"message\": \"Notification message body\",\n  \"type\": \"info\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/notifications",
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Overtime",
+      "item": [
+        {
+          "name": "Create Overtime",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"employee_id\": \"uuid-employee\",\n  \"date\": \"2024-01-15\",\n  \"start_time\": \"18:00\",\n  \"end_time\": \"21:00\",\n  \"reason\": \"Project deadline\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/overtime",
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Overtimes",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/overtime",
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Overtime Summary",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/overtime/summary?month=2024-01",
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime", "summary"],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "2024-01"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Overtime",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Approved by manager\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/overtime/{{overtimeId}}/approve",
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime", "{{overtimeId}}", "approve"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Process Overtime",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"processed\",\n  \"notes\": \"Processed by HR\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/overtime/{{overtimeId}}/process",
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime", "{{overtimeId}}", "process"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Overtime Meal Allowances",
+      "item": [
+        {
+          "name": "List Overtime Meal Allowances",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/overtime-meal-allowances",
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime-meal-allowances"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Overtime Meal Allowance",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"min_overtime_hours\": 2,\n  \"amount\": 50000,\n  \"description\": \"Meal allowance for overtime > 2 hours\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/overtime-meal-allowances",
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime-meal-allowances"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Overtime Meal Allowance",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"min_overtime_hours\": 3,\n  \"amount\": 75000\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/overtime-meal-allowances/{{allowanceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime-meal-allowances", "{{allowanceId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Overtime Meal Allowance",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/overtime-meal-allowances/{{allowanceId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime-meal-allowances", "{{allowanceId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3000/api",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "your-jwt-token-here",
+      "type": "string"
+    },
+    {
+      "key": "employeeId",
+      "value": "uuid-employee",
+      "type": "string"
+    },
+    {
+      "key": "locationId",
+      "value": "uuid-location",
+      "type": "string"
+    },
+    {
+      "key": "scheduleId",
+      "value": "uuid-schedule",
+      "type": "string"
+    },
+    {
+      "key": "timeOffTypeId",
+      "value": "uuid-time-off-type",
+      "type": "string"
+    },
+    {
+      "key": "leaveTypeId",
+      "value": "uuid-leave-type",
+      "type": "string"
+    },
+    {
+      "key": "jobId",
+      "value": "uuid-job",
+      "type": "string"
+    },
+    {
+      "key": "jobSlug",
+      "value": "software-engineer",
+      "type": "string"
+    },
+    {
+      "key": "applicationId",
+      "value": "uuid-application",
+      "type": "string"
+    },
+    {
+      "key": "holidayId",
+      "value": "uuid-holiday",
+      "type": "string"
+    },
+    {
+      "key": "payslipId",
+      "value": "uuid-payslip",
+      "type": "string"
+    },
+    {
+      "key": "periodId",
+      "value": "uuid-period",
+      "type": "string"
+    },
+    {
+      "key": "timeOffId",
+      "value": "uuid-time-off",
+      "type": "string"
+    },
+    {
+      "key": "leaveId",
+      "value": "uuid-leave",
+      "type": "string"
+    },
+    {
+      "key": "notificationId",
+      "value": "uuid-notification",
+      "type": "string"
+    },
+    {
+      "key": "overtimeId",
+      "value": "uuid-overtime",
+      "type": "string"
+    },
+    {
+      "key": "allowanceId",
+      "value": "uuid-allowance",
+      "type": "string"
+    },
+    {
+      "key": "correctionId",
+      "value": "uuid-correction",
+      "type": "string"
+    }
+  ]
+}

@@ -5,13 +5,17 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ParameterService } from '../parameter/parameter.service';
 import { CreateOvertimeDto } from './dto/create-overtime.dto';
 import { ApproveOvertimeDto } from './dto/approve-overtime.dto';
 import { ListOvertimeDto } from './dto/list-overtime.dto';
 
 @Injectable()
 export class OvertimeService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private parameterService: ParameterService,
+  ) {}
 
   private async getEmployeeFromUser(userId: string) {
     const user = await this.prisma.tr_users.findUnique({
@@ -29,8 +33,12 @@ export class OvertimeService {
     return hours * 60 + minutes;
   }
 
-  private roundUpHours(totalMinutes: number): number {
-    return Math.ceil(totalMinutes / 30) / 2;
+  private async roundUpHours(totalMinutes: number): Promise<number> {
+    const roundingMinutes = await this.parameterService.getNumber(
+      'overtime_rounding_minutes',
+      30,
+    );
+    return Math.ceil(totalMinutes / roundingMinutes) * (roundingMinutes / 60);
   }
 
   private async determineDayType(
@@ -67,30 +75,51 @@ export class OvertimeService {
     return 1440 - startMinutes + endMinutes;
   }
 
-  private calculateOvertimePay(
+  private async calculateOvertimePay(
     rawMinutes: number,
     dayType: string,
     ratePerHour: number,
-  ): number {
+  ): Promise<number> {
     const totalHours = rawMinutes / 60;
 
     if (dayType === 'weekday') {
       let pay = 0;
+      const firstMultiplier = await this.parameterService.getNumber(
+        'overtime_weekday_first_hour_multiplier',
+        1.5,
+      );
+      const subsequentMultiplier = await this.parameterService.getNumber(
+        'overtime_weekday_subsequent_multiplier',
+        2,
+      );
       if (totalHours <= 1) {
-        pay = totalHours * 1.5;
+        pay = totalHours * firstMultiplier;
       } else {
-        pay = 1 * 1.5 + (totalHours - 1) * 2;
+        pay = 1 * firstMultiplier + (totalHours - 1) * subsequentMultiplier;
       }
       return Number((pay * ratePerHour).toFixed(2));
     }
 
     let pay = 0;
+    const weekend8h = await this.parameterService.getNumber(
+      'overtime_weekend_first_8h_multiplier',
+      2,
+    );
+    const weekend9_10h = await this.parameterService.getNumber(
+      'overtime_weekend_9_10h_multiplier',
+      3,
+    );
+    const weekendBeyond10h = await this.parameterService.getNumber(
+      'overtime_weekend_beyond_10h_multiplier',
+      4,
+    );
     if (totalHours <= 8) {
-      pay = totalHours * 2;
+      pay = totalHours * weekend8h;
     } else if (totalHours <= 10) {
-      pay = 8 * 2 + (totalHours - 8) * 3;
+      pay = 8 * weekend8h + (totalHours - 8) * weekend9_10h;
     } else {
-      pay = 8 * 2 + 2 * 3 + (totalHours - 10) * 4;
+      pay =
+        8 * weekend8h + 2 * weekend9_10h + (totalHours - 10) * weekendBeyond10h;
     }
     return Number((pay * ratePerHour).toFixed(2));
   }
@@ -193,13 +222,17 @@ export class OvertimeService {
       startMinutes,
       endMinutes,
     );
-    const totalHours = this.roundUpHours(rawMinutes);
+    const totalHours = await this.roundUpHours(rawMinutes);
 
     const baseSalary = Number(targetEmployee.base_salary || 0);
     const fixedAllowance = Number(targetEmployee.fixed_allowance || 0);
-    const ratePerHour = (baseSalary + fixedAllowance) / 173;
+    const divisor = await this.parameterService.getNumber(
+      'overtime_divisor',
+      173,
+    );
+    const ratePerHour = (baseSalary + fixedAllowance) / divisor;
 
-    const totalOvertimePay = this.calculateOvertimePay(
+    const totalOvertimePay = await this.calculateOvertimePay(
       rawMinutes,
       dayType,
       ratePerHour,
@@ -224,6 +257,7 @@ export class OvertimeService {
         end_time: new Date(`1970-01-01T${dto.end_time}:00`),
         total_hours: totalHours,
         raw_minutes: rawMinutes,
+        type: dto.type,
         day_type: dayType,
         description: dto.description,
         rate_per_hour: ratePerHour,

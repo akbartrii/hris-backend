@@ -8,6 +8,7 @@ import {
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SupabaseStorageService } from '../../common/services/supabase-storage.service';
+import { ParameterService } from '../parameter/parameter.service';
 import { ClockInDto } from './dto/clock-in.dto';
 import { ClockOutDto } from './dto/clock-out.dto';
 import { CreateCorrectionDto } from './dto/create-correction.dto';
@@ -17,16 +18,11 @@ import { ListAttendanceDto } from './dto/list-attendance.dto';
 @Injectable()
 export class AttendanceService {
   private readonly logger = new Logger(AttendanceService.name);
-  private readonly LATE_TOLERANCE_MINUTES = 5;
-  private readonly LATE_DEDUCTION_PER_HOUR = 5000;
-  private readonly EARLY_LEAVE_DEDUCTION_PER_HOUR = 5000;
-  private readonly DEFAULT_RADIUS_METERS = 100;
-  private readonly STORAGE_BUCKET = 'attendance-photos';
-  private readonly DEFAULT_ATTENDANCE_ALLOWANCE = 25000;
 
   constructor(
     private prisma: PrismaService,
     private storageService: SupabaseStorageService,
+    private parameterService: ParameterService,
   ) {}
 
   private toRadians(degrees: number): number {
@@ -115,6 +111,45 @@ export class AttendanceService {
       };
     }
 
+    // Check for active remote work via current_remote_work_id
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    if (employee.current_remote_work_id) {
+      const wfhRequest = await this.prisma.tr_remote_work_requests.findUnique({
+        where: { id: employee.current_remote_work_id },
+      });
+
+      if (
+        wfhRequest &&
+        wfhRequest.status === 'approved' &&
+        wfhRequest.start_date <= today &&
+        wfhRequest.end_date >= today
+      ) {
+        const radius = wfhRequest.radius_meters || 50;
+        const distance = this.calculateDistance(
+          Number(wfhRequest.latitude),
+          Number(wfhRequest.longitude),
+          lat,
+          lng,
+        );
+
+        return {
+          isValid: distance <= radius,
+          distance: Math.round(distance),
+          locationId: wfhRequest.id,
+          radius,
+        };
+      }
+
+      // Expired or invalid, clear current_remote_work_id
+      await this.prisma.tr_employees.update({
+        where: { id: employeeId },
+        data: { current_remote_work_id: null },
+      });
+    }
+
+    // Fallback to office location
     if (!employee.location_id) {
       return {
         isValid: false,
@@ -143,7 +178,11 @@ export class AttendanceService {
     }
 
     const location = employee.ms_locations;
-    const radius = location.radius_meters || this.DEFAULT_RADIUS_METERS;
+    const defaultRadius = await this.parameterService.getNumber(
+      'gps_default_radius_meters',
+      100,
+    );
+    const radius = location.radius_meters || defaultRadius;
 
     const distance = this.calculateDistance(
       Number(location.latitude),
@@ -160,28 +199,36 @@ export class AttendanceService {
     };
   }
 
-  private calculateLateMinutes(
+  private async calculateLateMinutes(
     clockIn: Date,
     scheduleStartTime: Date | null,
-  ): number {
+  ): Promise<number> {
     if (!scheduleStartTime) return 0;
     const scheduleMinutes =
       scheduleStartTime.getHours() * 60 + scheduleStartTime.getMinutes();
     const clockInMinutes = clockIn.getHours() * 60 + clockIn.getMinutes();
     const diff = clockInMinutes - scheduleMinutes;
-    return diff > this.LATE_TOLERANCE_MINUTES ? diff : 0;
+    const tolerance = await this.parameterService.getNumber(
+      'late_tolerance_minutes',
+      5,
+    );
+    return diff > tolerance ? diff : 0;
   }
 
-  private calculateEarlyLeaveMinutes(
+  private async calculateEarlyLeaveMinutes(
     clockOut: Date,
     scheduleEndTime: Date | null,
-  ): number {
+  ): Promise<number> {
     if (!scheduleEndTime) return 0;
     const scheduleMinutes =
       scheduleEndTime.getHours() * 60 + scheduleEndTime.getMinutes();
     const clockOutMinutes = clockOut.getHours() * 60 + clockOut.getMinutes();
     const diff = scheduleMinutes - clockOutMinutes;
-    return diff > this.LATE_TOLERANCE_MINUTES ? diff : 0;
+    const tolerance = await this.parameterService.getNumber(
+      'late_tolerance_minutes',
+      5,
+    );
+    return diff > tolerance ? diff : 0;
   }
 
   private async recalculateAttendance(attendanceId: string) {
@@ -203,26 +250,31 @@ export class AttendanceService {
     let attendanceAllowance = 0;
 
     if (attendance.clock_in && schedule?.start_time) {
-      lateMinutes = this.calculateLateMinutes(
+      lateMinutes = await this.calculateLateMinutes(
         attendance.clock_in,
         schedule.start_time,
       );
       if (lateMinutes > 0) {
-        lateDeduction =
-          Math.ceil(lateMinutes / 60) * this.LATE_DEDUCTION_PER_HOUR;
+        const lateRate = await this.parameterService.getNumber(
+          'late_deduction_rate_per_hour',
+          5000,
+        );
+        lateDeduction = Math.ceil(lateMinutes / 60) * lateRate;
         status = 'late';
       }
     }
 
     if (attendance.clock_out && schedule?.end_time) {
-      earlyLeaveMinutes = this.calculateEarlyLeaveMinutes(
+      earlyLeaveMinutes = await this.calculateEarlyLeaveMinutes(
         attendance.clock_out,
         schedule.end_time,
       );
       if (earlyLeaveMinutes > 0) {
-        earlyLeaveDeduction =
-          Math.ceil(earlyLeaveMinutes / 60) *
-          this.EARLY_LEAVE_DEDUCTION_PER_HOUR;
+        const earlyRate = await this.parameterService.getNumber(
+          'early_leave_deduction_rate_per_hour',
+          5000,
+        );
+        earlyLeaveDeduction = Math.ceil(earlyLeaveMinutes / 60) * earlyRate;
         if (status === 'present') status = 'early_leave';
       }
     }
@@ -230,7 +282,10 @@ export class AttendanceService {
     const isHoliday = await this.isHoliday(attendance.attendance_date);
 
     if (attendance.clock_in && attendance.clock_out) {
-      attendanceAllowance = this.DEFAULT_ATTENDANCE_ALLOWANCE;
+      attendanceAllowance = await this.parameterService.getNumber(
+        'attendance_allowance_daily',
+        25000,
+      );
     } else {
       attendanceAllowance = 0;
     }
@@ -290,8 +345,11 @@ export class AttendanceService {
     const ext = photo.mimetype.split('/')[1] || 'jpg';
     const dateStr = today.toISOString().split('T')[0];
     const photoPath = `${employee.id}/${dateStr}_clock_in.${ext}`;
+    const bucket =
+      (await this.parameterService.getValue('attendance_photo_bucket')) ||
+      'attendance-photos';
     const photoUrl = await this.storageService.uploadFile(
-      this.STORAGE_BUCKET,
+      bucket,
       photoPath,
       photo.buffer,
       photo.mimetype,
@@ -299,12 +357,15 @@ export class AttendanceService {
 
     const schedule = await this.getEmployeeSchedule(employee.id, today);
     const now = new Date();
-    const lateMinutes = this.calculateLateMinutes(
+    const lateMinutes = await this.calculateLateMinutes(
       now,
       schedule?.start_time || null,
     );
-    const lateDeduction =
-      Math.ceil(lateMinutes / 60) * this.LATE_DEDUCTION_PER_HOUR;
+    const lateRate = await this.parameterService.getNumber(
+      'late_deduction_rate_per_hour',
+      5000,
+    );
+    const lateDeduction = Math.ceil(lateMinutes / 60) * lateRate;
     const isHoliday = await this.isHoliday(today);
 
     let status = 'present';
@@ -382,8 +443,11 @@ export class AttendanceService {
     const ext = photo.mimetype.split('/')[1] || 'jpg';
     const dateStr = today.toISOString().split('T')[0];
     const photoPath = `${employee.id}/${dateStr}_clock_out.${ext}`;
+    const bucket =
+      (await this.parameterService.getValue('attendance_photo_bucket')) ||
+      'attendance-photos';
     const photoUrl = await this.storageService.uploadFile(
-      this.STORAGE_BUCKET,
+      bucket,
       photoPath,
       photo.buffer,
       photo.mimetype,
@@ -391,12 +455,15 @@ export class AttendanceService {
 
     const schedule = await this.getEmployeeSchedule(employee.id, today);
     const now = new Date();
-    const earlyLeaveMinutes = this.calculateEarlyLeaveMinutes(
+    const earlyLeaveMinutes = await this.calculateEarlyLeaveMinutes(
       now,
       schedule?.end_time || null,
     );
-    const earlyLeaveDeduction =
-      Math.ceil(earlyLeaveMinutes / 60) * this.EARLY_LEAVE_DEDUCTION_PER_HOUR;
+    const earlyRate = await this.parameterService.getNumber(
+      'early_leave_deduction_rate_per_hour',
+      5000,
+    );
+    const earlyLeaveDeduction = Math.ceil(earlyLeaveMinutes / 60) * earlyRate;
 
     let status = attendance.status;
     if (earlyLeaveMinutes > 0 && status === 'present') {
@@ -405,7 +472,10 @@ export class AttendanceService {
       status = 'late_and_early_leave';
     }
 
-    const attendanceAllowance = this.DEFAULT_ATTENDANCE_ALLOWANCE;
+    const attendanceAllowance = await this.parameterService.getNumber(
+      'attendance_allowance_daily',
+      25000,
+    );
 
     const updated = await this.prisma.tr_attendances.update({
       where: { id: attendance.id },

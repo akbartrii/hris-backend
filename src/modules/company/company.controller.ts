@@ -11,51 +11,48 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { LocationService } from './location.service';
-import { CreateLocationDto } from './dto/create-location.dto';
-import { UpdateLocationDto } from './dto/update-location.dto';
-import { ListLocationDto } from './dto/list-location.dto';
+import { CompanyService } from './company.service';
+import { CreateCompanyDto } from './dto/create-company.dto';
+import { UpdateCompanyDto } from './dto/update-company.dto';
+import { ListCompanyDto } from './dto/list-company.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
-@ApiTags('Locations')
+@ApiTags('Companies')
 @ApiBearerAuth()
 @UseGuards(JwtAuthGuard, RolesGuard)
-@Controller('locations')
-export class LocationController {
-  constructor(private readonly service: LocationService) {}
+@Controller('companies')
+export class CompanyController {
+  constructor(private readonly service: CompanyService) {}
 
   @Get()
-  async list(
-    @CurrentUser('userId') userId: string,
-    @Query() query: ListLocationDto,
-  ) {
-    return this.service.list(userId, query);
+  async list(@Query() query: ListCompanyDto) {
+    return this.service.list(query);
   }
 
   @Post()
-  @Roles('hrd', 'admin', 'super_admin')
+  @Roles('super_admin')
   async create(
     @CurrentUser('role') role: string,
-    @Body() dto: CreateLocationDto,
+    @Body() dto: CreateCompanyDto,
   ) {
     return this.service.create(role, dto);
   }
 
   @Patch(':id')
-  @Roles('hrd', 'admin', 'super_admin')
+  @Roles('super_admin')
   async update(
     @CurrentUser('role') role: string,
     @Param('id', ParseUUIDPipe) id: string,
-    @Body() dto: UpdateLocationDto,
+    @Body() dto: UpdateCompanyDto,
   ) {
     return this.service.update(role, id, dto);
   }
 
   @Delete(':id')
-  @Roles('hrd', 'admin', 'super_admin')
+  @Roles('super_admin')
   async delete(
     @CurrentUser('role') role: string,
     @Param('id', ParseUUIDPipe) id: string,

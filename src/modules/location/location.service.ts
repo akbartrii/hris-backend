@@ -16,7 +16,7 @@ export class LocationService {
     return ['hrd', 'admin', 'super_admin'].includes(role);
   }
 
-  async list(query: ListLocationDto) {
+  async list(userId: string, query: ListLocationDto) {
     const where: any = {};
     if (query.company_id) {
       where.company_id = query.company_id;
@@ -25,10 +25,51 @@ export class LocationService {
       where.is_active = query.is_active;
     }
 
-    return this.prisma.ms_locations.findMany({
+    const locations = await this.prisma.ms_locations.findMany({
       where,
       orderBy: { name: 'asc' },
     });
+
+    const user = await this.prisma.tr_users.findUnique({
+      where: { id: userId },
+      include: { tr_employees: true },
+    });
+
+    if (user?.tr_employees) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      // Check current active remote work
+      if (user.tr_employees.current_remote_work_id) {
+        const wfh = await this.prisma.tr_remote_work_requests.findUnique({
+          where: { id: user.tr_employees.current_remote_work_id },
+        });
+
+        if (
+          wfh &&
+          wfh.status === 'approved' &&
+          wfh.start_date <= today &&
+          wfh.end_date >= today
+        ) {
+          const wfhLocation = {
+            id: wfh.id,
+            name: `WFH - ${wfh.address || 'Rumah'}`,
+            type: 'wfh',
+            latitude: wfh.latitude,
+            longitude: wfh.longitude,
+            radius_meters: wfh.radius_meters || 50,
+            address: wfh.address,
+            is_active: true,
+            is_wfh: true,
+            start_date: wfh.start_date,
+            end_date: wfh.end_date,
+          };
+          return [...locations, wfhLocation];
+        }
+      }
+    }
+
+    return locations;
   }
 
   async create(userRole: string, dto: CreateLocationDto) {

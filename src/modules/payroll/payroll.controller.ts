@@ -8,6 +8,7 @@ import {
   Param,
   UseGuards,
   ParseUUIDPipe,
+  Res,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PayrollService } from './payroll.service';
@@ -19,11 +20,13 @@ import {
   GenerateTHRDto,
   CreatePayrollPeriodDto,
   UpdatePayrollPeriodDto,
+  ExportPayrollDto,
 } from './dto/generate-payslip.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
+import { Response } from 'express';
 
 @ApiTags('Payroll')
 @ApiBearerAuth()
@@ -120,5 +123,27 @@ export class PayrollController {
     @Body() dto: GenerateTHRDto,
   ) {
     return this.payrollService.generateTHR(userId, dto, role);
+  }
+
+  @Post('export')
+  @Roles('hrd', 'admin', 'super_admin')
+  async exportPayroll(
+    @CurrentUser('role') role: string,
+    @Body() dto: ExportPayrollDto,
+    @Res() res: Response,
+  ) {
+    const buffer = await this.payrollService.exportPayroll(
+      dto.payroll_period_id,
+      role,
+    );
+    res.setHeader(
+      'Content-Type',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    );
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename=payroll-${dto.payroll_period_id}.xlsx`,
+    );
+    res.send(buffer);
   }
 }

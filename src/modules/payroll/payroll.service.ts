@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { PdfService } from '../../common/services/pdf.service';
+import { ParameterService } from '../parameter/parameter.service';
 import {
   GeneratePayslipDto,
   ListPayslipDto,
@@ -15,83 +16,96 @@ import {
   GenerateTHRDto,
 } from './dto/generate-payslip.dto';
 
-const BPJS_KESEHATAN_SALARY_CAP = 9159300;
-
-const PTKP_MAP: Record<string, number> = {
-  'TK/0': 54000000,
-  'TK/1': 58500000,
-  'TK/2': 63000000,
-  'TK/3': 67500000,
-  'K/0': 58500000,
-  'K/1': 63000000,
-  'K/2': 67500000,
-  'K/3': 72000000,
-  'K/I/0': 112500000,
-  'K/I/1': 117000000,
-  'K/I/2': 121500000,
-  'K/I/3': 126000000,
-};
-
-const PPH21_BRACKETS = [
-  { limit: 50000000, rate: 0.05 },
-  { limit: 250000000, rate: 0.15 },
-  { limit: 500000000, rate: 0.25 },
-  { limit: Infinity, rate: 0.3 },
-];
-
 @Injectable()
 export class PayrollService {
   constructor(
     private prisma: PrismaService,
     private pdfService: PdfService,
+    private parameterService: ParameterService,
   ) {}
 
   private isAdminOrHRD(role: string): boolean {
     return ['hrd', 'admin', 'super_admin'].includes(role);
   }
 
-  private calculatePPh21(
+  private async calculatePPh21(
     monthlyGrossIncome: number,
-    ptkpStatus: string = 'TK/0',
-  ): number {
-    const annualIncome = monthlyGrossIncome * 12;
-    const ptkp = PTKP_MAP[ptkpStatus] ?? PTKP_MAP['TK/0'];
-    const pkp = Math.max(0, annualIncome - ptkp);
-
-    let tax = 0;
-    let prevLimit = 0;
-    for (const bracket of PPH21_BRACKETS) {
-      if (pkp <= prevLimit) break;
-      const taxableInBracket = Math.min(pkp, bracket.limit) - prevLimit;
-      tax += taxableInBracket * bracket.rate;
-      prevLimit = bracket.limit;
+    ptkpStatus: string,
+  ): Promise<number> {
+    const ter = await this.prisma.ms_ter.findFirst({
+      where: { ptkp_name: ptkpStatus },
+    });
+    if (!ter) {
+      return 0;
     }
 
-    return Number((tax / 12).toFixed(2));
+    const fee = await this.prisma.ms_ter_fee.findFirst({
+      where: {
+        ter_type: ter.ter_type,
+        fee_from: { lte: monthlyGrossIncome },
+        fee_until: { gte: monthlyGrossIncome },
+      },
+    });
+
+    if (!fee) {
+      return 0;
+    }
+
+    return Number(
+      (monthlyGrossIncome * (Number(fee.amount_in_percent) / 100)).toFixed(2),
+    );
   }
 
-  private calculateBPJS(
+  private async calculateBPJS(
     baseSalary: number,
     bpjsPaymentType: string | null,
-  ): { kesehatan: number; ketenagakerjaan: number } {
+  ): Promise<{ kesehatan: number; ketenagakerjaan: number; jp: number }> {
     if (bpjsPaymentType === 'company') {
-      return { kesehatan: 0, ketenagakerjaan: 0 };
+      return { kesehatan: 0, ketenagakerjaan: 0, jp: 0 };
     }
-    const kesehatanCap = Math.min(baseSalary, BPJS_KESEHATAN_SALARY_CAP);
-    const kesehatan = Number((kesehatanCap * 0.01).toFixed(2));
-    const jht = Number((baseSalary * 0.02).toFixed(2));
-    const jkm = Number((baseSalary * 0.003).toFixed(2));
-    const jkk = Number((baseSalary * 0.0024).toFixed(2));
+    const kesehatanCap = Math.min(
+      baseSalary,
+      await this.parameterService.getNumber('bpjs_kesehatan_cap', 12000000),
+    );
+    const kesehatanRate = await this.parameterService.getNumber(
+      'bpjs_kesehatan_rate',
+      0.01,
+    );
+    const kesehatan = Number((kesehatanCap * kesehatanRate).toFixed(2));
+    const jhtRate = await this.parameterService.getNumber(
+      'bpjs_jht_rate',
+      0.02,
+    );
+    const jht = Number((baseSalary * jhtRate).toFixed(2));
+    const jkmRate = await this.parameterService.getNumber(
+      'bpjs_jkm_rate',
+      0.003,
+    );
+    const jkm = Number((baseSalary * jkmRate).toFixed(2));
+    const jkkRate = await this.parameterService.getNumber(
+      'bpjs_jkk_rate',
+      0.0024,
+    );
+    const jkk = Number((baseSalary * jkkRate).toFixed(2));
     const ketenagakerjaan = Number((jht + jkm + jkk).toFixed(2));
-    return { kesehatan, ketenagakerjaan };
+    const jpCap = Math.min(
+      baseSalary,
+      await this.parameterService.getNumber('bpjs_jp_cap', 9559600),
+    );
+    const jpRate = await this.parameterService.getNumber('bpjs_jp_rate', 0.01);
+    const jp = Number((jpCap * jpRate).toFixed(2));
+    return { kesehatan, ketenagakerjaan, jp };
   }
 
-  private calculateProrate(
+  private async calculateProrate(
     baseSalary: number,
     fixedAllowance: number,
     workedDays: number,
-    effectiveDays: number = 21,
-  ): { prorateAmount: number; isProrated: boolean } {
+  ): Promise<{ prorateAmount: number; isProrated: boolean }> {
+    const effectiveDays = await this.parameterService.getNumber(
+      'prorate_effective_days',
+      21,
+    );
     if (workedDays >= effectiveDays) {
       return { prorateAmount: 0, isProrated: false };
     }
@@ -100,14 +114,25 @@ export class PayrollService {
     return { prorateAmount: prorate, isProrated: true };
   }
 
-  private computeMonthsWorked(joinDate: Date, referenceDate: Date): number {
+  private async computeMonthsWorked(
+    joinDate: Date,
+    referenceDate: Date,
+  ): Promise<number> {
     let months =
       (referenceDate.getFullYear() - joinDate.getFullYear()) * 12 +
       (referenceDate.getMonth() - joinDate.getMonth());
     if (referenceDate.getDate() < joinDate.getDate()) {
       months -= 1;
     }
-    return Math.max(1, Math.min(12, months));
+    const minMonths = await this.parameterService.getNumber(
+      'thr_min_months',
+      1,
+    );
+    const maxMonths = await this.parameterService.getNumber(
+      'thr_max_months',
+      12,
+    );
+    return Math.max(minMonths, Math.min(maxMonths, months));
   }
 
   private async buildPayslipData(
@@ -139,7 +164,13 @@ export class PayrollService {
       period.end_date ??
       new Date(period.year, period.month, 0);
 
-    const [attendances, overtimeRequests, loanDeductions] = await Promise.all([
+    const [
+      attendances,
+      overtimeRequests,
+      loanDeductions,
+      leaveRequests,
+      reimbursements,
+    ] = await Promise.all([
       this.prisma.tr_attendances.findMany({
         where: {
           employee_id: employeeId,
@@ -157,6 +188,22 @@ export class PayrollService {
         where: {
           employee_id: employeeId,
           status: 'active',
+        },
+      }),
+      this.prisma.tr_leave_requests.findMany({
+        where: {
+          employee_id: employeeId,
+          status: 'approved',
+          start_date: { lte: cutoffEnd },
+          end_date: { gte: cutoffStart },
+        },
+        include: { ms_leave_types: true },
+      }),
+      this.prisma.tr_reimbursements.findMany({
+        where: {
+          employee_id: employeeId,
+          status: 'approved',
+          date: { gte: cutoffStart, lte: cutoffEnd },
         },
       }),
     ]);
@@ -186,7 +233,7 @@ export class PayrollService {
     const workedDays = attendances.filter(
       (a) => a.clock_in && a.clock_out,
     ).length;
-    const prorate = this.calculateProrate(
+    const prorate = await this.calculateProrate(
       baseSalary,
       fixedAllowance,
       workedDays,
@@ -202,6 +249,24 @@ export class PayrollService {
       effectiveFixedAllowance = fixedAllowance;
     }
 
+    const reimbursementAmount = reimbursements.reduce(
+      (sum, r) => sum + Number(r.amount || 0),
+      0,
+    );
+
+    const unpaidLeaveDeduction = leaveRequests.reduce((sum, l) => {
+      if (l.ms_leave_types?.is_paid) return sum;
+      const overlapStart =
+        l.start_date < cutoffStart ? cutoffStart : l.start_date;
+      const overlapEnd = l.end_date > cutoffEnd ? cutoffEnd : l.end_date;
+      const msPerDay = 86400000;
+      const days =
+        Math.floor((overlapEnd.getTime() - overlapStart.getTime()) / msPerDay) +
+        1;
+      const dailyRate = (baseSalary + fixedAllowance) / 21;
+      return sum + Number((dailyRate * days).toFixed(2));
+    }, 0);
+
     const grossIncome =
       effectiveBaseSalary +
       effectiveFixedAllowance +
@@ -209,9 +274,10 @@ export class PayrollService {
       dinasAllowance +
       attendanceAllowance +
       overtimePay +
-      overtimeMealAllowance;
+      overtimeMealAllowance +
+      reimbursementAmount;
 
-    const bpjs = this.calculateBPJS(
+    const bpjs = await this.calculateBPJS(
       baseSalary,
       employee.bpjs_payment_type || 'company',
     );
@@ -226,9 +292,11 @@ export class PayrollService {
       lateDeduction +
       loanDeductionAmount +
       bpjs.kesehatan +
-      bpjs.ketenagakerjaan;
+      bpjs.ketenagakerjaan +
+      bpjs.jp +
+      unpaidLeaveDeduction;
 
-    const pph21 = this.calculatePPh21(grossIncome, ptkpStatus);
+    const pph21 = await this.calculatePPh21(grossIncome, ptkpStatus);
     const netIncome = Number(
       (grossIncome - totalDeductions - pph21).toFixed(2),
     );
@@ -243,6 +311,8 @@ export class PayrollService {
       attendanceAllowance,
       overtimePay,
       overtimeMealAllowance,
+      reimbursementAmount,
+      unpaidLeaveDeduction,
       lateDeduction,
       loanDeductionAmount,
       bpjs,
@@ -345,7 +415,11 @@ export class PayrollService {
       );
     }
 
-    const ptkpStatus = (dto as any).ptkp_status || 'TK/0';
+    const employee = await this.prisma.tr_employees.findUnique({
+      where: { id: dto.employee_id },
+      select: { ptkp_status: true },
+    });
+    const ptkpStatus = employee?.ptkp_status || 'TK/0';
     const data = await this.buildPayslipData(
       dto.employee_id,
       period,
@@ -364,10 +438,13 @@ export class PayrollService {
           attendance_allowance: data.attendanceAllowance,
           overtime_pay: data.overtimePay,
           overtime_meal_allowance: data.overtimeMealAllowance,
+          reimbursement_amount: data.reimbursementAmount,
           late_deduction: data.lateDeduction,
           loan_deduction: data.loanDeductionAmount,
           bpjs_kesehatan: data.bpjs.kesehatan,
           bpjs_ketenagakerjaan: data.bpjs.ketenagakerjaan,
+          bpjs_jp: data.bpjs.jp,
+          unpaid_leave_deduction: data.unpaidLeaveDeduction,
           pph21: data.pph21,
           other_deductions: 0,
           prorate_days_worked: data.workedDays,
@@ -441,7 +518,7 @@ export class PayrollService {
         is_active: true,
         department_id: { in: departmentIds },
       },
-      select: { id: true },
+      select: { id: true, ptkp_status: true },
     });
 
     const existingPayslips = await this.prisma.tr_payslips.findMany({
@@ -469,7 +546,11 @@ export class PayrollService {
       }
 
       try {
-        const data = await this.buildPayslipData(emp.id, period, 'TK/0');
+        const data = await this.buildPayslipData(
+          emp.id,
+          period,
+          emp.ptkp_status || 'TK/0',
+        );
 
         await this.prisma.$transaction([
           this.prisma.tr_payslips.create({
@@ -483,10 +564,13 @@ export class PayrollService {
               attendance_allowance: data.attendanceAllowance,
               overtime_pay: data.overtimePay,
               overtime_meal_allowance: data.overtimeMealAllowance,
+              reimbursement_amount: data.reimbursementAmount,
               late_deduction: data.lateDeduction,
               loan_deduction: data.loanDeductionAmount,
               bpjs_kesehatan: data.bpjs.kesehatan,
               bpjs_ketenagakerjaan: data.bpjs.ketenagakerjaan,
+              bpjs_jp: data.bpjs.jp,
+              unpaid_leave_deduction: data.unpaidLeaveDeduction,
               pph21: data.pph21,
               other_deductions: 0,
               prorate_days_worked: data.workedDays,
@@ -719,11 +803,17 @@ export class PayrollService {
     }
 
     const baseSalary = Number(employee.base_salary || 0);
-    const monthsWorked = this.computeMonthsWorked(
+    const monthsWorked = await this.computeMonthsWorked(
       new Date(employee.join_date),
       new Date(),
     );
-    const thrAmount = Number(((baseSalary / 12) * monthsWorked).toFixed(2));
+    const thrDivisor = await this.parameterService.getNumber(
+      'thr_divisor_months',
+      12,
+    );
+    const thrAmount = Number(
+      ((baseSalary / thrDivisor) * monthsWorked).toFixed(2),
+    );
 
     return this.prisma.tr_thr_records.create({
       data: {
@@ -736,5 +826,94 @@ export class PayrollService {
         status: 'draft',
       },
     });
+  }
+
+  async exportPayroll(payrollPeriodId: string, userRole: string) {
+    if (!this.isAdminOrHRD(userRole)) {
+      throw new ForbiddenException('Only HRD or admin can export payroll');
+    }
+
+    const period = await this.prisma.tr_payroll_periods.findUnique({
+      where: { id: payrollPeriodId },
+    });
+    if (!period) {
+      throw new NotFoundException('Payroll period not found');
+    }
+
+    const payslips = await this.prisma.tr_payslips.findMany({
+      where: { payroll_period_id: payrollPeriodId },
+      include: {
+        tr_employees: {
+          select: {
+            full_name: true,
+            nik: true,
+            bank_name: true,
+            bank_account_number: true,
+          },
+        },
+      },
+      orderBy: { created_at: 'asc' },
+    });
+
+    const ExcelJS = require('exceljs');
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet('Payroll');
+
+    worksheet.columns = [
+      { header: 'No', key: 'no', width: 5 },
+      { header: 'NIK', key: 'nik', width: 15 },
+      { header: 'Nama Karyawan', key: 'name', width: 25 },
+      { header: 'Bank', key: 'bank', width: 15 },
+      { header: 'No Rekening', key: 'account', width: 20 },
+      { header: 'Gaji Pokok', key: 'base', width: 15 },
+      { header: 'Tunjangan Tetap', key: 'fixed', width: 15 },
+      { header: 'Tunjangan Pulsa', key: 'phone', width: 15 },
+      { header: 'Tunjangan Dinas', key: 'dinas', width: 15 },
+      { header: 'Uang Kehadiran', key: 'attendance', width: 15 },
+      { header: 'Lembur', key: 'overtime', width: 15 },
+      { header: 'Uang Makan Lembur', key: 'meal', width: 15 },
+      { header: 'Reimbursement', key: 'reimbursement', width: 15 },
+      { header: 'Gross Income', key: 'gross', width: 15 },
+      { header: 'Potongan Terlambat', key: 'late', width: 15 },
+      { header: 'Potongan Pinjaman', key: 'loan', width: 15 },
+      { header: 'BPJS Kesehatan', key: 'bpjs_kes', width: 15 },
+      { header: 'BPJS TK', key: 'bpjs_tk', width: 15 },
+      { header: 'BPJS JP', key: 'bpjs_jp', width: 15 },
+      { header: 'Potongan Cuti', key: 'unpaid_leave', width: 15 },
+      { header: 'PPh21', key: 'pph21', width: 15 },
+      { header: 'Total Potongan', key: 'total_deductions', width: 15 },
+      { header: 'Net Income', key: 'net', width: 15 },
+    ];
+
+    payslips.forEach((p, index) => {
+      worksheet.addRow({
+        no: index + 1,
+        nik: p.tr_employees?.nik || '-',
+        name: p.tr_employees?.full_name || '-',
+        bank: p.tr_employees?.bank_name || '-',
+        account: p.tr_employees?.bank_account_number || '-',
+        base: Number(p.base_salary),
+        fixed: Number(p.fixed_allowance),
+        phone: Number(p.phone_allowance),
+        dinas: Number(p.dinas_allowance),
+        attendance: Number(p.attendance_allowance),
+        overtime: Number(p.overtime_pay),
+        meal: Number(p.overtime_meal_allowance),
+        reimbursement: Number(p.reimbursement_amount),
+        gross: Number(p.gross_income),
+        late: Number(p.late_deduction),
+        loan: Number(p.loan_deduction),
+        bpjs_kes: Number(p.bpjs_kesehatan),
+        bpjs_tk: Number(p.bpjs_ketenagakerjaan),
+        bpjs_jp: Number(p.bpjs_jp),
+        unpaid_leave: Number(p.unpaid_leave_deduction),
+        pph21: Number(p.pph21),
+        total_deductions: Number(p.total_deductions),
+        net: Number(p.net_income),
+      });
+    });
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    return buffer;
   }
 }

@@ -13,9 +13,13 @@ export class CreateTimeOffDto {
   @IsUUID()
   time_off_type_id: string;
 
-  @ApiProperty({ description: 'Date (YYYY-MM-DD)' })
+  @ApiProperty({ description: 'Start date (YYYY-MM-DD)' })
   @IsDateString()
-  date: string;
+  start_date: string;
+
+  @ApiProperty({ description: 'End date (YYYY-MM-DD)' })
+  @IsDateString()
+  end_date: string;
 
   @ApiPropertyOptional({ description: 'Start time (HH:mm)' })
   @IsOptional()
@@ -33,6 +37,11 @@ export class CreateTimeOffDto {
   @IsString()
   @MaxLength(1000)
   reason: string;
+
+  @ApiPropertyOptional({ description: 'Work handover to employee ID' })
+  @IsOptional()
+  @IsUUID()
+  work_handover_to?: string;
 
   @ApiPropertyOptional({ description: 'Attachment URL (optional)' })
   @IsOptional()

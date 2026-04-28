@@ -33,6 +33,14 @@ export class CreateOvertimeDto {
   @Matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
   end_time: string;
 
+  @ApiProperty({
+    description: 'Overtime type: weekday or weekend',
+    example: 'weekday',
+  })
+  @IsString()
+  @IsNotEmpty()
+  type: string;
+
   @ApiProperty({ description: 'Description / reason for overtime' })
   @IsString()
   @IsNotEmpty()

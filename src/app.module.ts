@@ -22,6 +22,11 @@ import { TimeOffTypeModule } from './modules/time-off-type/time-off-type.module'
 import { WorkScheduleModule } from './modules/work-schedule/work-schedule.module';
 import { OvertimeMealAllowanceModule } from './modules/overtime-meal-allowance/overtime-meal-allowance.module';
 import { LocationModule } from './modules/location/location.module';
+import { CompanyModule } from './modules/company/company.module';
+import { RemoteWorkModule } from './modules/remote-work/remote-work.module';
+import { OvernightModule } from './modules/overnight/overnight.module';
+import { ReimbursementModule } from './modules/reimbursement/reimbursement.module';
+import { ParameterModule } from './modules/parameter/parameter.module';
 import { FaceRegistrationModule } from './modules/face-registration/face-registration.module';
 import { KeepAliveService } from './common/services/keep-alive.service';
 
@@ -54,6 +59,11 @@ import { KeepAliveService } from './common/services/keep-alive.service';
     WorkScheduleModule,
     OvertimeMealAllowanceModule,
     LocationModule,
+    CompanyModule,
+    RemoteWorkModule,
+    OvernightModule,
+    ReimbursementModule,
+    ParameterModule,
     FaceRegistrationModule,
   ],
   controllers: [AppController],

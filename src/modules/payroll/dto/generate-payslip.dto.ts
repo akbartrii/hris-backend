@@ -50,6 +50,13 @@ export class GenerateTHRDto {
   year: number;
 }
 
+export class ExportPayrollDto {
+  @ApiProperty({ description: 'Payroll period UUID' })
+  @IsUUID()
+  @IsNotEmpty()
+  payroll_period_id: string;
+}
+
 export class ListPayslipDto {
   @ApiPropertyOptional({ description: 'Filter by payroll period UUID' })
   @IsUUID()

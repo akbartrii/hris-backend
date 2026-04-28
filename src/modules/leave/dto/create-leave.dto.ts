@@ -32,6 +32,11 @@ export class CreateLeaveDto {
   @MaxLength(1000)
   reason: string;
 
+  @ApiPropertyOptional({ description: 'Work handover to employee ID' })
+  @IsOptional()
+  @IsUUID()
+  work_handover_to?: string;
+
   @ApiPropertyOptional({ description: 'Attachment URL (optional)' })
   @IsOptional()
   @IsString()

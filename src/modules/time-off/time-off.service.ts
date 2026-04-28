@@ -35,11 +35,21 @@ export class TimeOffService {
       throw new NotFoundException('Time off type not found');
     }
 
+    const startDate = new Date(dto.start_date);
+    const endDate = new Date(dto.end_date);
+
+    if (startDate > endDate) {
+      throw new BadRequestException(
+        'Start date must be before or equal to end date',
+      );
+    }
+
     const timeOff = await this.prisma.tr_time_off_requests.create({
       data: {
         employee_id: employee.id,
         time_off_type_id: dto.time_off_type_id,
-        date: new Date(dto.date),
+        start_date: startDate,
+        end_date: endDate,
         start_time: dto.start_time
           ? new Date(`1970-01-01T${dto.start_time}:00`)
           : null,
@@ -47,6 +57,7 @@ export class TimeOffService {
           ? new Date(`1970-01-01T${dto.end_time}:00`)
           : null,
         reason: dto.reason,
+        work_handover_to: dto.work_handover_to || null,
         attachment_url: dto.attachment_url,
         status: 'pending',
       },

@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ParameterService } from '../parameter/parameter.service';
 import { CreateLeaveDto } from './dto/create-leave.dto';
 import { ApproveLeaveDto } from './dto/approve-leave.dto';
 import { ListLeaveDto } from './dto/list-leave.dto';
@@ -15,7 +16,10 @@ import { ListLeaveDto } from './dto/list-leave.dto';
 export class LeaveService {
   private readonly logger = new Logger(LeaveService.name);
 
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private parameterService: ParameterService,
+  ) {}
 
   private async getEmployeeFromUser(userId: string) {
     const user = await this.prisma.tr_users.findUnique({
@@ -181,6 +185,7 @@ export class LeaveService {
           end_date: endDate,
           total_days: dto.total_days,
           reason: dto.reason,
+          work_handover_to: dto.work_handover_to || null,
           attachment_url: dto.attachment_url,
           status: 'pending',
         },
@@ -423,6 +428,10 @@ export class LeaveService {
     this.logger.log('Running annual leave balance reset cron job...');
 
     const year = new Date().getFullYear();
+    const defaultDays = await this.parameterService.getNumber(
+      'annual_leave_default_days',
+      12,
+    );
     const activeEmployees = await this.prisma.tr_employees.findMany({
       where: { is_active: true },
     });
@@ -442,14 +451,14 @@ export class LeaveService {
             },
           },
           update: {
-            total_days: 12,
+            total_days: defaultDays,
             used_days: 0,
           },
           create: {
             employee_id: employee.id,
             leave_type_id: leaveType.id,
             year,
-            total_days: 12,
+            total_days: defaultDays,
             used_days: 0,
           },
         });
