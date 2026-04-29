@@ -2,7 +2,7 @@
   "info": {
     "_postman_id": "8b9c3393-dfed-4859-9fbf-4175868e9e9e",
     "name": "HRIS Samugara API",
-    "description": "Postman collection for HRIS Samugara Backend API",
+    "description": "# HRIS Samugara API Collection\n\n## Overview\nHRIS Samugara adalah sistem informasi sumber daya manusia yang dibangun dengan **NestJS** dan **Supabase** (PostgreSQL + Prisma). Sistem ini mendukung manajemen karyawan, absensi berbasis GPS & pengenalan wajah, pengajuan cuti/izin/lembur, payroll dengan perhitungan PPh21 TER, rekrutmen, laporan, serta konfigurasi perusahaan.\n\n## Environment Variables\n- `baseUrl` → URL production/staging (default: `http://localhost:3000/api`)\n- `baseUrlDev` → URL development lokal\n- `samuraga_token` → JWT token hasil login (auto-set oleh script di endpoint Login)\n- `token` → Token manual alternatif\n\n## Role Hierarchy (terendah → tertinggi)\n| Role | Level |\n|------|-------|\n| `karyawan` | 0 |\n| `atasan` | 1 |\n| `manager_hrga` | 2 |\n| `hrd` | 3 |\n| `admin` | 4 |\n| `super_admin` | 5 |\n\n## Legend Endpoint\n- **(Public)** → Tanpa autentikasi\n- **(Employee)** → Semua user terautentikasi\n- **(Supervisor+)** → Minimal `atasan`\n- **(Manager HRGA+)** → Minimal `manager_hrga`\n- **(HRD+)** → Minimal `hrd`\n- **(Admin+)** → Minimal `admin`\n- **(Super Admin)** → Hanya `super_admin`",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
     "_exporter_id": "1196364",
     "_collection_link": "https://go.postman.co/collection/1196364-8b9c3393-dfed-4859-9fbf-4175868e9e9e?source=collection_link"
@@ -12,7 +12,7 @@
       "name": "App",
       "item": [
         {
-          "name": "Health Check",
+          "name": "Health Check (Public)",
           "request": {
             "method": "GET",
             "header": [],
@@ -29,7 +29,7 @@
           "response": []
         },
         {
-          "name": "Root",
+          "name": "Root (Public)",
           "request": {
             "method": "GET",
             "header": [],
@@ -51,18 +51,14 @@
       "name": "Auth",
       "item": [
         {
-          "name": "Login",
+          "name": "Login (Public)",
           "event": [
             {
               "listen": "test",
               "script": {
                 "exec": [
-                  "let response = pm.response.json();\r",
-                  "\r",
-                  "// ambil token dari response\r",
-                  "let token = response.data.access_token;\r",
-                  "\r",
-                  "// simpan ke environment variable\r",
+                  "let response = pm.response.json();",
+                  "let token = response.data.access_token;",
                   "pm.environment.set(\"samuraga_token\", token);"
                 ],
                 "type": "text/javascript",
@@ -97,7 +93,7 @@
           "response": []
         },
         {
-          "name": "Get Profile",
+          "name": "Get Profile (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -120,7 +116,7 @@
           "response": []
         },
         {
-          "name": "Verify Token",
+          "name": "Verify Token (Employee)",
           "request": {
             "method": "POST",
             "header": [
@@ -145,10 +141,121 @@
       ]
     },
     {
+      "name": "Company",
+      "item": [
+        {
+          "name": "List Companies (Employee)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{samuraga_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/companies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "companies"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Company (Super Admin)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{samuraga_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"PT Samugara Sejahtera\",\n  \"address\": \"Jl. Sudirman No. 1, Jakarta\",\n  \"phone\": \"021-12345678\",\n  \"email\": \"info@samugara.co.id\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/companies",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "companies"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Company (Super Admin)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{samuraga_token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"PT Samugara Sejahtera Updated\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/companies/{{companyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "companies",
+                "{{companyId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Company (Super Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{samuraga_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/companies/{{companyId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "companies",
+                "{{companyId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Employee",
       "item": [
         {
-          "name": "List Employees",
+          "name": "List Employees (HRD+)",
           "request": {
             "method": "GET",
             "header": [
@@ -170,7 +277,7 @@
           "response": []
         },
         {
-          "name": "Create Employee",
+          "name": "Create Employee (HRD+)",
           "request": {
             "method": "POST",
             "header": [
@@ -185,7 +292,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"employee@example.com\",\n  \"full_name\": \"John Doe\",\n  \"phone\": \"08123456789\",\n  \"role\": \"karyawan\",\n  \"department_id\": \"uuid-dept\",\n  \"work_schedule_id\": \"uuid-schedule\",\n  \"location_id\": \"uuid-location\",\n  \"nik\": \"1234567890\",\n  \"join_date\": \"2024-01-01\",\n  \"basic_salary\": 5000000\n}"
+              "raw": "{\n  \"email\": \"employee@example.com\",\n  \"full_name\": \"John Doe\",\n  \"phone\": \"08123456789\",\n  \"role\": \"karyawan\",\n  \"department_id\": \"uuid-dept\",\n  \"work_schedule_id\": \"uuid-schedule\",\n  \"location_id\": \"uuid-location\",\n  \"nik\": \"1234567890\",\n  \"join_date\": \"2024-01-01\",\n  \"basic_salary\": 5000000,\n  \"ptkp_status\": \"TK/0\",\n  \"npwp\": \"09.123.456.7-123.000\",\n  \"bank_name\": \"BCA\",\n  \"bank_account_number\": \"1234567890\",\n  \"bank_account_holder\": \"John Doe\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/employees",
@@ -200,7 +307,7 @@
           "response": []
         },
         {
-          "name": "Get Employee Detail",
+          "name": "Get Employee Detail (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -223,7 +330,7 @@
           "response": []
         },
         {
-          "name": "Update Employee",
+          "name": "Update Employee (HRD+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -254,7 +361,7 @@
           "response": []
         },
         {
-          "name": "Get Employee Schedules",
+          "name": "Get Employee Schedules (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -278,7 +385,7 @@
           "response": []
         },
         {
-          "name": "Assign Location",
+          "name": "Assign Location (Employee)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -315,7 +422,7 @@
       "name": "Attendance",
       "item": [
         {
-          "name": "Clock In",
+          "name": "Clock In (Employee)",
           "request": {
             "method": "POST",
             "header": [
@@ -358,7 +465,7 @@
           "response": []
         },
         {
-          "name": "Clock Out",
+          "name": "Clock Out (Employee)",
           "request": {
             "method": "POST",
             "header": [
@@ -401,7 +508,7 @@
           "response": []
         },
         {
-          "name": "List Attendance History",
+          "name": "List Attendance History (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -424,7 +531,7 @@
           "response": []
         },
         {
-          "name": "List All Attendance",
+          "name": "List All Attendance (Manager HRGA+)",
           "request": {
             "method": "GET",
             "header": [
@@ -447,7 +554,7 @@
           "response": []
         },
         {
-          "name": "Create Correction",
+          "name": "Create Correction (Employee)",
           "request": {
             "method": "POST",
             "header": [
@@ -478,7 +585,7 @@
           "response": []
         },
         {
-          "name": "List Corrections",
+          "name": "List Corrections (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -501,7 +608,7 @@
           "response": []
         },
         {
-          "name": "Cancel Correction",
+          "name": "Cancel Correction (Employee)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -526,7 +633,7 @@
           "response": []
         },
         {
-          "name": "Approve Correction",
+          "name": "Approve Correction (Supervisor+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -564,7 +671,7 @@
       "name": "Face Registration",
       "item": [
         {
-          "name": "Get Status",
+          "name": "Get Status (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -587,7 +694,7 @@
           "response": []
         },
         {
-          "name": "Register Face",
+          "name": "Register Face (Employee)",
           "request": {
             "method": "POST",
             "header": [
@@ -639,7 +746,7 @@
       "name": "Locations",
       "item": [
         {
-          "name": "List Locations",
+          "name": "List Locations (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -661,7 +768,7 @@
           "response": []
         },
         {
-          "name": "Create Location",
+          "name": "Create Location (HRD+)",
           "request": {
             "method": "POST",
             "header": [
@@ -691,7 +798,7 @@
           "response": []
         },
         {
-          "name": "Update Location",
+          "name": "Update Location (HRD+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -722,7 +829,7 @@
           "response": []
         },
         {
-          "name": "Delete Location",
+          "name": "Delete Location (HRD+)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -750,7 +857,7 @@
       "name": "Work Schedules",
       "item": [
         {
-          "name": "List Work Schedules",
+          "name": "List Work Schedules (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -772,7 +879,7 @@
           "response": []
         },
         {
-          "name": "Create Work Schedule",
+          "name": "Create Work Schedule (HRD+)",
           "request": {
             "method": "POST",
             "header": [
@@ -802,7 +909,7 @@
           "response": []
         },
         {
-          "name": "Update Work Schedule",
+          "name": "Update Work Schedule (HRD+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -833,7 +940,7 @@
           "response": []
         },
         {
-          "name": "Delete Work Schedule",
+          "name": "Delete Work Schedule (HRD+)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -861,7 +968,7 @@
       "name": "Time Off Types",
       "item": [
         {
-          "name": "List Time Off Types",
+          "name": "List Time Off Types (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -883,7 +990,7 @@
           "response": []
         },
         {
-          "name": "Create Time Off Type",
+          "name": "Create Time Off Type (HRD+)",
           "request": {
             "method": "POST",
             "header": [
@@ -913,7 +1020,7 @@
           "response": []
         },
         {
-          "name": "Update Time Off Type",
+          "name": "Update Time Off Type (HRD+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -944,7 +1051,7 @@
           "response": []
         },
         {
-          "name": "Delete Time Off Type",
+          "name": "Delete Time Off Type (HRD+)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -972,7 +1079,7 @@
       "name": "Leave Types",
       "item": [
         {
-          "name": "List Leave Types",
+          "name": "List Leave Types (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -994,7 +1101,7 @@
           "response": []
         },
         {
-          "name": "Create Leave Type",
+          "name": "Create Leave Type (HRD+)",
           "request": {
             "method": "POST",
             "header": [
@@ -1024,7 +1131,7 @@
           "response": []
         },
         {
-          "name": "Update Leave Type",
+          "name": "Update Leave Type (HRD+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1055,7 +1162,7 @@
           "response": []
         },
         {
-          "name": "Delete Leave Type",
+          "name": "Delete Leave Type (HRD+)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1147,7 +1254,7 @@
           "response": []
         },
         {
-          "name": "Create Job",
+          "name": "Create Job (HRD+)",
           "request": {
             "method": "POST",
             "header": [
@@ -1178,7 +1285,7 @@
           "response": []
         },
         {
-          "name": "Update Job",
+          "name": "Update Job (HRD+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1210,7 +1317,7 @@
           "response": []
         },
         {
-          "name": "Delete Job",
+          "name": "Delete Job (HRD+)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1234,7 +1341,7 @@
           "response": []
         },
         {
-          "name": "List Applications",
+          "name": "List Applications (HRD+)",
           "request": {
             "method": "GET",
             "header": [
@@ -1257,7 +1364,7 @@
           "response": []
         },
         {
-          "name": "Update Application Status",
+          "name": "Update Application Status (HRD+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1295,7 +1402,7 @@
       "name": "Reports",
       "item": [
         {
-          "name": "Attendance Report",
+          "name": "Attendance Report (HRD+)",
           "request": {
             "method": "GET",
             "header": [
@@ -1328,7 +1435,7 @@
           "response": []
         },
         {
-          "name": "Leave Report",
+          "name": "Leave Report (HRD+)",
           "request": {
             "method": "GET",
             "header": [
@@ -1361,7 +1468,7 @@
           "response": []
         },
         {
-          "name": "Payroll Report",
+          "name": "Payroll Report (HRD+)",
           "request": {
             "method": "GET",
             "header": [
@@ -1390,7 +1497,7 @@
           "response": []
         },
         {
-          "name": "Overtime Report",
+          "name": "Overtime Report (HRD+)",
           "request": {
             "method": "GET",
             "header": [
@@ -1419,7 +1526,7 @@
           "response": []
         },
         {
-          "name": "Export Attendance Excel",
+          "name": "Export Attendance Excel (HRD+)",
           "request": {
             "method": "GET",
             "header": [
@@ -1453,7 +1560,7 @@
           "response": []
         },
         {
-          "name": "Export Leave Excel",
+          "name": "Export Leave Excel (HRD+)",
           "request": {
             "method": "GET",
             "header": [
@@ -1487,7 +1594,7 @@
           "response": []
         },
         {
-          "name": "Export Payroll Excel",
+          "name": "Export Payroll Excel (HRD+)",
           "request": {
             "method": "GET",
             "header": [
@@ -1517,7 +1624,7 @@
           "response": []
         },
         {
-          "name": "Export Overtime Excel",
+          "name": "Export Overtime Excel (HRD+)",
           "request": {
             "method": "GET",
             "header": [
@@ -1552,7 +1659,7 @@
       "name": "Holiday Calendar",
       "item": [
         {
-          "name": "List Holidays",
+          "name": "List Holidays (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -1574,7 +1681,7 @@
           "response": []
         },
         {
-          "name": "Create Holiday",
+          "name": "Create Holiday (HRD+)",
           "request": {
             "method": "POST",
             "header": [
@@ -1604,7 +1711,7 @@
           "response": []
         },
         {
-          "name": "Update Holiday",
+          "name": "Update Holiday (HRD+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1635,7 +1742,7 @@
           "response": []
         },
         {
-          "name": "Delete Holiday",
+          "name": "Delete Holiday (HRD+)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -1663,7 +1770,7 @@
       "name": "Payroll",
       "item": [
         {
-          "name": "List Payslips",
+          "name": "List Payslips (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -1686,7 +1793,7 @@
           "response": []
         },
         {
-          "name": "Get Payslip Detail",
+          "name": "Get Payslip Detail (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -1710,7 +1817,7 @@
           "response": []
         },
         {
-          "name": "Generate Payslip",
+          "name": "Generate Payslip (HRD+)",
           "request": {
             "method": "POST",
             "header": [
@@ -1741,7 +1848,7 @@
           "response": []
         },
         {
-          "name": "Generate Batch Payslip",
+          "name": "Generate Batch Payslip (HRD+)",
           "request": {
             "method": "POST",
             "header": [
@@ -1772,7 +1879,7 @@
           "response": []
         },
         {
-          "name": "Publish Payslip",
+          "name": "Publish Payslip (HRD+)",
           "request": {
             "method": "POST",
             "header": [
@@ -1803,7 +1910,38 @@
           "response": []
         },
         {
-          "name": "List Payroll Periods",
+          "name": "Export Payroll (HRD+)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"period_id\": \"uuid-period\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/payroll/export",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "payroll",
+                "export"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Payroll Periods (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -1826,7 +1964,7 @@
           "response": []
         },
         {
-          "name": "Create Payroll Period",
+          "name": "Create Payroll Period (HRD+)",
           "request": {
             "method": "POST",
             "header": [
@@ -1857,7 +1995,7 @@
           "response": []
         },
         {
-          "name": "Update Payroll Period",
+          "name": "Update Payroll Period (HRD+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -1889,7 +2027,7 @@
           "response": []
         },
         {
-          "name": "List THR",
+          "name": "List THR (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -1912,7 +2050,7 @@
           "response": []
         },
         {
-          "name": "Generate THR",
+          "name": "Generate THR (HRD+)",
           "request": {
             "method": "POST",
             "header": [
@@ -1949,7 +2087,7 @@
       "name": "Time Off",
       "item": [
         {
-          "name": "Create Time Off",
+          "name": "Create Time Off (Employee)",
           "request": {
             "method": "POST",
             "header": [
@@ -1979,7 +2117,7 @@
           "response": []
         },
         {
-          "name": "List Time Offs",
+          "name": "List Time Offs (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -2001,7 +2139,7 @@
           "response": []
         },
         {
-          "name": "Approve Time Off",
+          "name": "Approve Time Off (Supervisor+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -2033,7 +2171,7 @@
           "response": []
         },
         {
-          "name": "Cancel Time Off",
+          "name": "Cancel Time Off (Employee)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -2062,7 +2200,7 @@
       "name": "Leave",
       "item": [
         {
-          "name": "Create Leave",
+          "name": "Create Leave (Employee)",
           "request": {
             "method": "POST",
             "header": [
@@ -2092,7 +2230,7 @@
           "response": []
         },
         {
-          "name": "Get Leave Balance",
+          "name": "Get Leave Balance (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -2115,7 +2253,7 @@
           "response": []
         },
         {
-          "name": "List Leaves",
+          "name": "List Leaves (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -2137,7 +2275,7 @@
           "response": []
         },
         {
-          "name": "Approve Leave",
+          "name": "Approve Leave (Supervisor+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -2169,7 +2307,7 @@
           "response": []
         },
         {
-          "name": "Cancel Leave",
+          "name": "Cancel Leave (Employee)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -2198,7 +2336,7 @@
       "name": "Notification",
       "item": [
         {
-          "name": "List Notifications",
+          "name": "List Notifications (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -2220,7 +2358,7 @@
           "response": []
         },
         {
-          "name": "Get Unread Count",
+          "name": "Get Unread Count (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -2243,7 +2381,7 @@
           "response": []
         },
         {
-          "name": "Mark as Read",
+          "name": "Mark as Read (Employee)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -2267,7 +2405,7 @@
           "response": []
         },
         {
-          "name": "Mark All as Read",
+          "name": "Mark All as Read (Employee)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -2290,7 +2428,7 @@
           "response": []
         },
         {
-          "name": "Create Notification",
+          "name": "Create Notification (Employee)",
           "request": {
             "method": "POST",
             "header": [
@@ -2325,7 +2463,7 @@
       "name": "Overtime",
       "item": [
         {
-          "name": "Create Overtime",
+          "name": "Create Overtime (Supervisor+)",
           "request": {
             "method": "POST",
             "header": [
@@ -2340,7 +2478,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"employee_id\": \"uuid-employee\",\n  \"date\": \"2024-01-15\",\n  \"start_time\": \"18:00\",\n  \"end_time\": \"21:00\",\n  \"reason\": \"Project deadline\"\n}"
+              "raw": "{\n  \"employee_id\": \"uuid-employee\",\n  \"date\": \"2024-01-15\",\n  \"start_time\": \"18:00\",\n  \"end_time\": \"21:00\",\n  \"reason\": \"Project deadline\",\n  \"type\": \"weekday\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/overtime",
@@ -2355,7 +2493,7 @@
           "response": []
         },
         {
-          "name": "List Overtimes",
+          "name": "List Overtimes (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -2377,7 +2515,7 @@
           "response": []
         },
         {
-          "name": "Get Overtime Summary",
+          "name": "Get Overtime Summary (Manager HRGA+)",
           "request": {
             "method": "GET",
             "header": [
@@ -2406,7 +2544,7 @@
           "response": []
         },
         {
-          "name": "Approve Overtime",
+          "name": "Approve Overtime (Manager HRGA+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -2438,7 +2576,7 @@
           "response": []
         },
         {
-          "name": "Process Overtime",
+          "name": "Process Overtime (HRD+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -2475,7 +2613,7 @@
       "name": "Overtime Meal Allowances",
       "item": [
         {
-          "name": "List Overtime Meal Allowances",
+          "name": "List Overtime Meal Allowances (Employee)",
           "request": {
             "method": "GET",
             "header": [
@@ -2497,7 +2635,7 @@
           "response": []
         },
         {
-          "name": "Create Overtime Meal Allowance",
+          "name": "Create Overtime Meal Allowance (HRD+)",
           "request": {
             "method": "POST",
             "header": [
@@ -2527,7 +2665,7 @@
           "response": []
         },
         {
-          "name": "Update Overtime Meal Allowance",
+          "name": "Update Overtime Meal Allowance (HRD+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -2558,7 +2696,7 @@
           "response": []
         },
         {
-          "name": "Delete Overtime Meal Allowance",
+          "name": "Delete Overtime Meal Allowance (HRD+)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -2575,6 +2713,407 @@
               "path": [
                 "overtime-meal-allowances",
                 "{{allowanceId}}"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Remote Work",
+      "item": [
+        {
+          "name": "List Remote Work Requests (Employee)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/remote-work",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "remote-work"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request Remote Work (Employee)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"start_date\": \"2024-02-01\",\n  \"end_date\": \"2024-02-05\",\n  \"latitude\": -6.2088,\n  \"longitude\": 106.8456,\n  \"address\": \"Jl. Thamrin No. 10, Jakarta\",\n  \"radius_meters\": 50,\n  \"reason\": \"WFH due to renovation\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/remote-work",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "remote-work"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Remote Work (Employee)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Approved\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/remote-work/{{remoteWorkId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "remote-work",
+                "{{remoteWorkId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Overnight",
+      "item": [
+        {
+          "name": "List Overnight Requests (Employee)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/overnight",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "overnight"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Request Overnight (Employee)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2024-01-15\",\n  \"shift_type\": \"night\",\n  \"remarks\": \"Project deadline overnight\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/overnight",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "overnight"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Overnight (Employee)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Approved\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/overnight/{{overnightId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "overnight",
+                "{{overnightId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reimbursement",
+      "item": [
+        {
+          "name": "List Reimbursements (Employee)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reimbursements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reimbursements"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Submit Reimbursement (Employee)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"date\": \"2024-01-10\",\n  \"category\": \"transport\",\n  \"amount\": 50000,\n  \"description\": \"Taxi to client meeting\",\n  \"proof_image_url\": \"https://example.com/receipt.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reimbursements",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reimbursements"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approve Reimbursement (Employee)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"supervisor_approved\",\n  \"notes\": \"Approved by supervisor\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/reimbursements/{{reimbursementId}}/approve",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "reimbursements",
+                "{{reimbursementId}}",
+                "approve"
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Parameter",
+      "item": [
+        {
+          "name": "List Parameters (Employee)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parameters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parameters"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Parameter by Key (Employee)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parameters/{{parameterKey}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parameters",
+                "{{parameterKey}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Parameter (Admin+)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"key\": \"custom_param\",\n  \"value\": \"100\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/parameters",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parameters"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Parameter (Admin+)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"value\": \"200\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/parameters/{{parameterKey}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parameters",
+                "{{parameterKey}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Parameter (Admin+)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/parameters/{{parameterKey}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "parameters",
+                "{{parameterKey}}"
               ]
             }
           },
@@ -2615,6 +3154,10 @@
     {
       "key": "token",
       "value": "your-jwt-token-here"
+    },
+    {
+      "key": "samuraga_token",
+      "value": ""
     },
     {
       "key": "employeeId",
@@ -2683,6 +3226,26 @@
     {
       "key": "correctionId",
       "value": "uuid-correction"
+    },
+    {
+      "key": "companyId",
+      "value": "uuid-company"
+    },
+    {
+      "key": "remoteWorkId",
+      "value": "uuid-remote-work"
+    },
+    {
+      "key": "overnightId",
+      "value": "uuid-overnight"
+    },
+    {
+      "key": "reimbursementId",
+      "value": "uuid-reimbursement"
+    },
+    {
+      "key": "parameterKey",
+      "value": "bpjs_kesehatan_cap"
     },
     {
       "key": "emailEmployee",

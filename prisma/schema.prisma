@@ -720,7 +720,7 @@ model tr_reimbursements {
   supervisor_id                                                 String?      @db.Uuid
   supervisor_approved_at                                        DateTime?    @db.Timestamptz(6)
   hr_approved_by                                                String?      @db.Uuid
-  hr_approved_at                                                DateTime?    @db.Timestamptz(6)
+  approved_at                                                   DateTime?    @db.Timestamptz(6)
   rejection_reason                                              String?
   created_at                                                    DateTime?    @default(now()) @db.Timestamptz(6)
   updated_at                                                    DateTime?    @default(now()) @db.Timestamptz(6)

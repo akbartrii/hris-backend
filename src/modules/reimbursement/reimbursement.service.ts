@@ -122,7 +122,7 @@ export class ReimbursementService {
         data: {
           status: 'approved',
           hr_approved_by: approver.tr_employees.id,
-          hr_approved_at: new Date(),
+          approved_at: new Date(),
         },
       });
     }
