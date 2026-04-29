@@ -3,6 +3,7 @@ import {
   BadRequestException,
   NotFoundException,
   ForbiddenException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ParameterService } from '../parameter/parameter.service';
@@ -12,6 +13,8 @@ import { ListOvertimeDto } from './dto/list-overtime.dto';
 
 @Injectable()
 export class OvertimeService {
+  private readonly logger = new Logger(OvertimeService.name);
+
   constructor(
     private prisma: PrismaService,
     private parameterService: ParameterService,
@@ -338,57 +341,62 @@ export class OvertimeService {
   }
 
   async listOvertimes(userId: string, query: ListOvertimeDto) {
-    const user = await this.prisma.tr_users.findUnique({
-      where: { id: userId },
-      include: { tr_employees: true, ms_roles: true },
-    });
+    try {
+      const user = await this.prisma.tr_users.findUnique({
+        where: { id: userId },
+        include: { tr_employees: true, ms_roles: true },
+      });
 
-    if (!user || !user.tr_employees) {
-      throw new NotFoundException('Employee not found');
-    }
+      if (!user || !user.tr_employees) {
+        throw new NotFoundException('Employee not found');
+      }
 
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 10;
-    const skip = (page - 1) * limit;
+      const page = Number(query.page) || 1;
+      const limit = Number(query.limit) || 10;
+      const skip = (page - 1) * limit;
 
-    const where: any = {};
-    const userRole = user.ms_roles?.name || 'karyawan';
+      const where: any = {};
+      const userRole = user.ms_roles?.name || 'karyawan';
 
-    if (!['admin', 'hrd', 'manager_hrga', 'super_admin'].includes(userRole)) {
-      where.employee_id = user.tr_employees.id;
-    }
+      if (!['admin', 'hrd', 'manager_hrga', 'super_admin'].includes(userRole)) {
+        where.employee_id = user.tr_employees.id;
+      }
 
-    if (query.status) {
-      where.status = query.status;
-    }
+      if (query.status) {
+        where.status = query.status;
+      }
 
-    if (query.employee_id) {
-      where.employee_id = query.employee_id;
-    }
+      if (query.employee_id) {
+        where.employee_id = query.employee_id;
+      }
 
-    if (query.month) {
-      const [year, month] = query.month.split('-').map(Number);
-      const startDate = new Date(year, month - 1, 1);
-      const endDate = new Date(year, month, 0);
-      where.date = { gte: startDate, lte: endDate };
-    }
+      if (query.month) {
+        const [year, month] = query.month.split('-').map(Number);
+        const startDate = new Date(year, month - 1, 1);
+        const endDate = new Date(year, month, 0);
+        where.date = { gte: startDate, lte: endDate };
+      }
 
-    const [data, total] = await Promise.all([
-      this.prisma.tr_overtime_requests.findMany({
-        where,
-        skip,
-        take: limit,
-        orderBy: { created_at: 'desc' },
-        include: {
-          tr_employees_tr_overtime_requests_employee_idTotr_employees: {
-            select: { id: true, full_name: true, nik: true },
+      const [data, total] = await Promise.all([
+        this.prisma.tr_overtime_requests.findMany({
+          where,
+          skip,
+          take: limit,
+          orderBy: { created_at: 'desc' },
+          include: {
+            tr_employees_tr_overtime_requests_employee_idTotr_employees: {
+              select: { id: true, full_name: true, nik: true },
+            },
           },
-        },
-      }),
-      this.prisma.tr_overtime_requests.count({ where }),
-    ]);
+        }),
+        this.prisma.tr_overtime_requests.count({ where }),
+      ]);
 
-    return { data, meta: { page, limit, total } };
+      return { data, meta: { page, limit, total } };
+    } catch (error) {
+      this.logger.error(`Error in listOvertimes for user ${userId}:`, error);
+      throw error;
+    }
   }
 
   async getOvertimeSummary(userId: string, month?: string) {

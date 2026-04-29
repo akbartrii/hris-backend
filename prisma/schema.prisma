@@ -4,8 +4,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model ms_companies {
@@ -530,7 +531,7 @@ model tr_overtime_requests {
   end_time                                                     DateTime      @db.Time(6)
   total_hours                                                  Decimal       @db.Decimal(4, 2)
   raw_minutes                                                  Int?
-  type                                                         String        @db.VarChar(50)
+  type                                                         String?       @db.VarChar(50)
   day_type                                                     String        @db.VarChar(50)
   description                                                  String
   rate_per_hour                                                Decimal       @db.Decimal(15, 2)

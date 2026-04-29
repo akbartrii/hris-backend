@@ -1,4 +1,9 @@
-import { Injectable, UnauthorizedException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  InternalServerErrorException,
+  Logger,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
@@ -7,55 +12,70 @@ import * as jwt from 'jsonwebtoken';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private configService: ConfigService,
     private prisma: PrismaService,
   ) {}
 
   async login(loginDto: LoginDto) {
-    const { email, password } = loginDto;
+    try {
+      const { email, password } = loginDto;
 
-    const user = await this.prisma.tr_users.findUnique({
-      where: { email },
-      include: { ms_roles: true },
-    });
+      const user = await this.prisma.tr_users.findUnique({
+        where: { email },
+        include: { ms_roles: true },
+      });
 
-    if (!user) {
-      throw new UnauthorizedException('Invalid email or password');
+      if (!user) {
+        throw new UnauthorizedException('Invalid email or password');
+      }
+
+      const isPasswordValid = await bcrypt.compare(
+        password,
+        user.password_hash,
+      );
+
+      if (!isPasswordValid) {
+        throw new UnauthorizedException('Invalid email or password');
+      }
+
+      const jwtSecret = this.configService.get<string>('JWT_SECRET');
+      const token = jwt.sign(
+        {
+          sub: user.id,
+          email: user.email,
+          role: user.ms_roles?.name || 'karyawan',
+        },
+        jwtSecret,
+        { expiresIn: '7d' },
+      );
+
+      // Update last login
+      await this.prisma.tr_users.update({
+        where: { id: user.id },
+        data: { last_login_at: new Date() },
+      });
+
+      return {
+        access_token: token,
+        user: {
+          id: user.id,
+          email: user.email,
+          full_name: user.full_name,
+          role: user.ms_roles?.name || 'karyawan',
+        },
+      };
+    } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      this.logger.error(`Login failed for ${loginDto.email}:`, error);
+      throw new InternalServerErrorException(
+        'Authentication service temporarily unavailable',
+      );
     }
-
-    const isPasswordValid = await bcrypt.compare(password, user.password_hash);
-
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid email or password');
-    }
-
-    const jwtSecret = this.configService.get<string>('JWT_SECRET');
-    const token = jwt.sign(
-      {
-        sub: user.id,
-        email: user.email,
-        role: user.ms_roles?.name || 'karyawan',
-      },
-      jwtSecret,
-      { expiresIn: '7d' },
-    );
-
-    // Update last login
-    await this.prisma.tr_users.update({
-      where: { id: user.id },
-      data: { last_login_at: new Date() },
-    });
-
-    return {
-      access_token: token,
-      user: {
-        id: user.id,
-        email: user.email,
-        full_name: user.full_name,
-        role: user.ms_roles?.name || 'karyawan',
-      },
-    };
   }
 
   async getProfile(userId: string) {

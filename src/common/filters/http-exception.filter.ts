@@ -1,4 +1,10 @@
-import { ExceptionFilter, Catch, ArgumentsHost, HttpException, HttpStatus } from '@nestjs/common';
+import {
+  ExceptionFilter,
+  Catch,
+  ArgumentsHost,
+  HttpException,
+  HttpStatus,
+} from '@nestjs/common';
 import { Response } from 'express';
 
 @Catch()
@@ -13,17 +19,24 @@ export class HttpExceptionFilter implements ExceptionFilter {
     let code = 'INTERNAL_ERROR';
     let details = null;
 
+    // Log error detail untuk debugging di Vercel
+    console.error(`[HTTP ERROR] ${request.method} ${request.url}`, {
+      error: exception instanceof Error ? exception.message : String(exception),
+      stack: exception instanceof Error ? exception.stack : undefined,
+      body: request.body,
+    });
+
     if (exception instanceof HttpException) {
       status = exception.getStatus();
       const exceptionResponse = exception.getResponse() as any;
-      
+
       if (typeof exceptionResponse === 'string') {
         message = exceptionResponse;
       } else if (typeof exceptionResponse === 'object') {
         message = exceptionResponse.message || message;
         code = exceptionResponse.error || this.getErrorCode(status);
         details = exceptionResponse.details || null;
-        
+
         // Handle validation errors
         if (Array.isArray(message)) {
           details = message.map((msg: string) => ({
