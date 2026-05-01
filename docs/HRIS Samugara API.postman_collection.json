@@ -2156,7 +2156,7 @@
           "response": []
         },
         {
-          "name": "List Overtimes (Employee)",
+          "name": "List Overtimes (Admin+)",
           "request": {
             "method": "GET",
             "header": [
@@ -2169,6 +2169,30 @@
               "raw": "{{baseUrl}}/overtime",
               "host": ["{{baseUrl}}"],
               "path": ["overtime"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Subordinate Overtimes (Supervisor+)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/overtime/subordinates?status=pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime", "subordinates"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
             }
           },
           "response": []
@@ -2198,7 +2222,7 @@
           "response": []
         },
         {
-          "name": "Approve Overtime (Manager HRGA+)",
+          "name": "Approve Overtime (Supervisor+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -2459,7 +2483,7 @@
       "name": "Overnight",
       "item": [
         {
-          "name": "List Overnight Requests (Employee)",
+          "name": "List Overnight Requests (Admin+)",
           "request": {
             "method": "GET",
             "header": [
@@ -2472,6 +2496,30 @@
               "raw": "{{baseUrl}}/overnight",
               "host": ["{{baseUrl}}"],
               "path": ["overnight"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Subordinate Overnight (Supervisor+)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/overnight/subordinates?status=pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["overnight", "subordinates"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
             }
           },
           "response": []
@@ -2503,7 +2551,7 @@
           "response": []
         },
         {
-          "name": "Approve Overnight (Employee)",
+          "name": "Approve Overnight (Supervisor+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -2534,7 +2582,7 @@
       "name": "Reimbursement",
       "item": [
         {
-          "name": "List Reimbursements (Employee)",
+          "name": "List Reimbursements (Admin+)",
           "request": {
             "method": "GET",
             "header": [
@@ -2547,6 +2595,30 @@
               "raw": "{{baseUrl}}/reimbursements",
               "host": ["{{baseUrl}}"],
               "path": ["reimbursements"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Subordinate Reimbursements (Supervisor+)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/reimbursements/subordinates?status=pending",
+              "host": ["{{baseUrl}}"],
+              "path": ["reimbursements", "subordinates"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
             }
           },
           "response": []
@@ -2578,7 +2650,7 @@
           "response": []
         },
         {
-          "name": "Approve Reimbursement (Employee)",
+          "name": "Approve Reimbursement (Supervisor+)",
           "request": {
             "method": "PATCH",
             "header": [

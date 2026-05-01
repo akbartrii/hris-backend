@@ -372,7 +372,7 @@ export class OvertimeService {
         where.status = query.status;
       }
 
-      if (['admin', 'hrd', 'manager_hrga', 'super_admin'].includes(userRole)) {
+      if (['admin', 'super_admin'].includes(userRole)) {
         if (query.employee_id) {
           where.employee_id = query.employee_id;
         }
@@ -407,6 +407,67 @@ export class OvertimeService {
       this.logger.error(`Error in listOvertimes for user ${userId}:`, error);
       throw error;
     }
+  }
+
+  async listSubordinateOvertimes(userId: string, query: ListOvertimeDto) {
+    const user = await this.prisma.tr_users.findUnique({
+      where: { id: userId },
+      include: { tr_employees: true },
+    });
+    if (!user || !user.tr_employees) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const subordinates = await this.prisma.tr_employees.findMany({
+      where: {
+        OR: [
+          { supervisor_id: user.tr_employees.id },
+          { manager_id: user.tr_employees.id },
+        ],
+      },
+      select: { id: true },
+    });
+
+    const subordinateIds = subordinates.map((e) => e.id);
+    if (subordinateIds.length === 0) {
+      return { data: [], meta: { page, limit, total: 0 } };
+    }
+
+    const where: any = {
+      employee_id: { in: subordinateIds },
+    };
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    if (query.month) {
+      const [year, month] = query.month.split('-').map(Number);
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0);
+      where.date = { gte: startDate, lte: endDate };
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.tr_overtime_requests.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+        include: {
+          tr_employees_tr_overtime_requests_employee_idTotr_employees: {
+            select: { id: true, full_name: true, nik: true },
+          },
+        },
+      }),
+      this.prisma.tr_overtime_requests.count({ where }),
+    ]);
+
+    return { data, meta: { page, limit, total } };
   }
 
   async getOvertimeSummary(userId: string, month?: string) {
@@ -479,12 +540,6 @@ export class OvertimeService {
     dto: ApproveOvertimeDto,
     approverRole: string,
   ) {
-    if (!['manager_hrga', 'admin', 'super_admin'].includes(approverRole)) {
-      throw new ForbiddenException(
-        'Only manager or above can approve overtime',
-      );
-    }
-
     const approver = await this.getEmployeeFromUser(userId);
 
     const overtime = await this.prisma.tr_overtime_requests.findUnique({
@@ -495,11 +550,50 @@ export class OvertimeService {
       throw new NotFoundException('Overtime request not found');
     }
 
-    if (overtime.status !== 'pending') {
-      throw new BadRequestException('Overtime request already processed');
+    if (dto.action === 'reject') {
+      await this.prisma.tr_overtime_requests.update({
+        where: { id: overtimeId },
+        data: {
+          status: 'rejected',
+          rejection_reason: dto.rejection_reason || 'Rejected',
+        },
+      });
+      return { message: 'Overtime request rejected' };
     }
 
-    if (dto.action === 'approve') {
+    if (dto.action !== 'approve') {
+      throw new BadRequestException('Invalid action');
+    }
+
+    // Step 1: Supervisor approval
+    if (approverRole === 'atasan' && overtime.status === 'pending') {
+      const targetEmployee = await this.prisma.tr_employees.findUnique({
+        where: { id: overtime.employee_id },
+      });
+      if (
+        !targetEmployee ||
+        (targetEmployee.supervisor_id !== approver.id &&
+          targetEmployee.manager_id !== approver.id)
+      ) {
+        throw new ForbiddenException(
+          'You can only approve overtime for your subordinates',
+        );
+      }
+
+      await this.prisma.tr_overtime_requests.update({
+        where: { id: overtimeId },
+        data: {
+          status: 'supervisor_approved',
+        },
+      });
+      return { message: 'Overtime request approved by supervisor' };
+    }
+
+    // Step 2: Manager/HR approval
+    if (
+      ['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(approverRole) &&
+      overtime.status === 'supervisor_approved'
+    ) {
       await this.prisma.tr_overtime_requests.update({
         where: { id: overtimeId },
         data: {
@@ -508,18 +602,12 @@ export class OvertimeService {
           status: 'approved',
         },
       });
-    } else {
-      await this.prisma.tr_overtime_requests.update({
-        where: { id: overtimeId },
-        data: {
-          manager_id: approver.id,
-          status: 'rejected',
-          rejection_reason: dto.rejection_reason || 'Rejected by manager',
-        },
-      });
+      return { message: 'Overtime request approved by manager' };
     }
 
-    return { message: `Overtime request ${dto.action}d by manager` };
+    throw new ForbiddenException(
+      'You are not authorized to approve this overtime request at this stage',
+    );
   }
 
   async processOvertime(

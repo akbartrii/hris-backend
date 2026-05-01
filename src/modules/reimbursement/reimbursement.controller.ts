@@ -16,6 +16,7 @@ import { ListReimbursementDto } from './dto/list-reimbursement.dto';
 import { ApproveReimbursementDto } from './dto/approve-reimbursement.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Reimbursements')
@@ -34,6 +35,15 @@ export class ReimbursementController {
     return this.service.list(userId, role, query);
   }
 
+  @Get('subordinates')
+  @Roles('atasan', 'manager_hrga', 'admin', 'super_admin')
+  async listSubordinates(
+    @CurrentUser('userId') userId: string,
+    @Query() query: ListReimbursementDto,
+  ) {
+    return this.service.listSubordinateReimbursements(userId, query);
+  }
+
   @Post()
   async create(
     @CurrentUser('userId') userId: string,
@@ -43,6 +53,7 @@ export class ReimbursementController {
   }
 
   @Patch(':id/approve')
+  @Roles('atasan', 'manager_hrga', 'admin', 'super_admin')
   async approve(
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,

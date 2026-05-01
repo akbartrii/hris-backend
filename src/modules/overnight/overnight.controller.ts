@@ -16,6 +16,7 @@ import { ListOvernightDto } from './dto/list-overnight.dto';
 import { ApproveOvernightDto } from './dto/approve-overnight.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Overnight')
@@ -34,6 +35,15 @@ export class OvernightController {
     return this.service.list(userId, role, query);
   }
 
+  @Get('subordinates')
+  @Roles('atasan', 'manager_hrga', 'admin', 'super_admin')
+  async listSubordinates(
+    @CurrentUser('userId') userId: string,
+    @Query() query: ListOvernightDto,
+  ) {
+    return this.service.listSubordinateOvernights(userId, query);
+  }
+
   @Post()
   async create(
     @CurrentUser('userId') userId: string,
@@ -43,6 +53,7 @@ export class OvernightController {
   }
 
   @Patch(':id/approve')
+  @Roles('atasan', 'manager_hrga', 'admin', 'super_admin')
   async approve(
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,

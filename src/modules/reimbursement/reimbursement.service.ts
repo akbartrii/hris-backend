@@ -23,11 +23,55 @@ export class ReimbursementService {
     }
 
     const where: any = {};
-    const isAdmin = ['hrd', 'admin', 'super_admin'].includes(userRole);
+    const isAdmin = ['admin', 'super_admin'].includes(userRole);
 
     if (!isAdmin) {
       where.employee_id = user.tr_employees.id;
     }
+
+    if (query.status) {
+      where.status = query.status;
+    }
+    if (query.category) {
+      where.category = query.category;
+    }
+
+    return this.prisma.tr_reimbursements.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  async listSubordinateReimbursements(
+    userId: string,
+    query: ListReimbursementDto,
+  ) {
+    const user = await this.prisma.tr_users.findUnique({
+      where: { id: userId },
+      include: { tr_employees: true },
+    });
+    if (!user || !user.tr_employees) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    const subordinates = await this.prisma.tr_employees.findMany({
+      where: {
+        OR: [
+          { supervisor_id: user.tr_employees.id },
+          { manager_id: user.tr_employees.id },
+        ],
+      },
+      select: { id: true },
+    });
+
+    const subordinateIds = subordinates.map((e) => e.id);
+    if (subordinateIds.length === 0) {
+      return [];
+    }
+
+    const where: any = {
+      employee_id: { in: subordinateIds },
+    };
 
     if (query.status) {
       where.status = query.status;

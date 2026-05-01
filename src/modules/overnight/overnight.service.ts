@@ -23,11 +23,49 @@ export class OvernightService {
     }
 
     const where: any = {};
-    const isAdmin = ['hrd', 'admin', 'super_admin'].includes(userRole);
+    const isAdmin = ['admin', 'super_admin'].includes(userRole);
 
     if (!isAdmin) {
       where.employee_id = user.tr_employees.id;
     }
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    return this.prisma.tr_overnight_requests.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  async listSubordinateOvernights(userId: string, query: ListOvernightDto) {
+    const user = await this.prisma.tr_users.findUnique({
+      where: { id: userId },
+      include: { tr_employees: true },
+    });
+    if (!user || !user.tr_employees) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    const subordinates = await this.prisma.tr_employees.findMany({
+      where: {
+        OR: [
+          { supervisor_id: user.tr_employees.id },
+          { manager_id: user.tr_employees.id },
+        ],
+      },
+      select: { id: true },
+    });
+
+    const subordinateIds = subordinates.map((e) => e.id);
+    if (subordinateIds.length === 0) {
+      return [];
+    }
+
+    const where: any = {
+      employee_id: { in: subordinateIds },
+    };
 
     if (query.status) {
       where.status = query.status;
@@ -81,35 +119,49 @@ export class OvernightService {
       throw new NotFoundException('Overnight request not found');
     }
 
-    if (request.status !== 'pending') {
-      throw new BadRequestException('Request already processed');
-    }
-
-    const isSuperAdmin = userRole === 'super_admin';
-    const isSupervisor = request.supervisor_id === approver.tr_employees.id;
-
-    if (!isSuperAdmin && !isSupervisor) {
-      throw new ForbiddenException(
-        'Only supervisor or super admin can approve',
-      );
-    }
-
-    if (dto.action === 'approve') {
-      return this.prisma.tr_overnight_requests.update({
-        where: { id: requestId },
-        data: {
-          status: 'approved',
-          supervisor_approved_at: new Date(),
-        },
-      });
-    } else {
+    if (dto.action === 'reject') {
       return this.prisma.tr_overnight_requests.update({
         where: { id: requestId },
         data: {
           status: 'rejected',
-          rejection_reason: dto.rejection_reason || 'Rejected by supervisor',
+          rejection_reason: dto.rejection_reason || 'Rejected',
         },
       });
     }
+
+    if (dto.action !== 'approve') {
+      throw new BadRequestException('Invalid action');
+    }
+
+    // Step 1: Supervisor approval
+    if (
+      request.status === 'pending' &&
+      request.supervisor_id === approver.tr_employees.id
+    ) {
+      return this.prisma.tr_overnight_requests.update({
+        where: { id: requestId },
+        data: {
+          status: 'supervisor_approved',
+          supervisor_approved_at: new Date(),
+        },
+      });
+    }
+
+    // Step 2: HR final approval
+    const isHR = ['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(
+      userRole,
+    );
+    if (request.status === 'supervisor_approved' && isHR) {
+      return this.prisma.tr_overnight_requests.update({
+        where: { id: requestId },
+        data: {
+          status: 'approved',
+        },
+      });
+    }
+
+    throw new ForbiddenException(
+      'You are not authorized to approve this overnight request at this stage',
+    );
   }
 }

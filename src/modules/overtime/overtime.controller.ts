@@ -53,6 +53,15 @@ export class OvertimeController {
     return this.overtimeService.listOvertimes(userId, query);
   }
 
+  @Get('subordinates')
+  @Roles('atasan', 'manager_hrga', 'admin', 'super_admin')
+  async listSubordinateOvertimes(
+    @CurrentUser('userId') userId: string,
+    @Query() query: ListOvertimeDto,
+  ) {
+    return this.overtimeService.listSubordinateOvertimes(userId, query);
+  }
+
   @Get('summary')
   @Roles('manager_hrga', 'hrd', 'admin', 'super_admin')
   async getSummary(
@@ -63,7 +72,7 @@ export class OvertimeController {
   }
 
   @Patch(':id/approve')
-  @Roles('manager_hrga', 'admin', 'super_admin')
+  @Roles('atasan', 'manager_hrga', 'admin', 'super_admin')
   async approveOvertime(
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,
