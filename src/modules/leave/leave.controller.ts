@@ -47,6 +47,15 @@ export class LeaveController {
     return this.leaveService.listLeaves(userId, query);
   }
 
+  @Get('subordinates')
+  @Roles('atasan', 'manager_hrga', 'admin', 'super_admin')
+  async listSubordinateLeaves(
+    @CurrentUser('userId') userId: string,
+    @Query() query: ListLeaveDto,
+  ) {
+    return this.leaveService.listSubordinateLeaves(userId, query);
+  }
+
   @Patch(':id/approve')
   @Roles('atasan', 'manager_hrga', 'admin', 'super_admin')
   async approveLeave(

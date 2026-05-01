@@ -12,8 +12,8 @@ import { ListLocationDto } from './dto/list-location.dto';
 export class LocationService {
   constructor(private prisma: PrismaService) {}
 
-  private isAdminOrHRD(role: string): boolean {
-    return ['hrd', 'admin', 'super_admin'].includes(role);
+  private canManageLocations(role: string): boolean {
+    return ['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(role);
   }
 
   async list(userId: string, query: ListLocationDto) {
@@ -73,8 +73,10 @@ export class LocationService {
   }
 
   async create(userRole: string, dto: CreateLocationDto) {
-    if (!this.isAdminOrHRD(userRole)) {
-      throw new ForbiddenException('Only HRD or admin can manage locations');
+    if (!this.canManageLocations(userRole)) {
+      throw new ForbiddenException(
+        'Only manager HRGA, HRD, or admin can manage locations',
+      );
     }
     return this.prisma.ms_locations.create({
       data: {
@@ -91,8 +93,10 @@ export class LocationService {
   }
 
   async update(userRole: string, id: string, dto: UpdateLocationDto) {
-    if (!this.isAdminOrHRD(userRole)) {
-      throw new ForbiddenException('Only HRD or admin can manage locations');
+    if (!this.canManageLocations(userRole)) {
+      throw new ForbiddenException(
+        'Only manager HRGA, HRD, or admin can manage locations',
+      );
     }
     const exists = await this.prisma.ms_locations.findUnique({ where: { id } });
     if (!exists) {
@@ -113,8 +117,10 @@ export class LocationService {
   }
 
   async delete(userRole: string, id: string) {
-    if (!this.isAdminOrHRD(userRole)) {
-      throw new ForbiddenException('Only HRD or admin can manage locations');
+    if (!this.canManageLocations(userRole)) {
+      throw new ForbiddenException(
+        'Only manager HRGA, HRD, or admin can manage locations',
+      );
     }
     const exists = await this.prisma.ms_locations.findUnique({ where: { id } });
     if (!exists) {

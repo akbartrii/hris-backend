@@ -259,6 +259,59 @@ export class LeaveService {
     return { data, meta: { page, limit, total } };
   }
 
+  async listSubordinateLeaves(userId: string, query: ListLeaveDto) {
+    const user = await this.prisma.tr_users.findUnique({
+      where: { id: userId },
+      include: { tr_employees: true },
+    });
+    if (!user || !user.tr_employees) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const subordinates = await this.prisma.tr_employees.findMany({
+      where: {
+        OR: [
+          { supervisor_id: user.tr_employees.id },
+          { manager_id: user.tr_employees.id },
+        ],
+      },
+      select: { id: true },
+    });
+
+    const subordinateIds = subordinates.map((e) => e.id);
+    if (subordinateIds.length === 0) {
+      return { data: [], meta: { page, limit, total: 0 } };
+    }
+
+    const where: any = {
+      employee_id: { in: subordinateIds },
+    };
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.tr_leave_requests.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+        include: {
+          ms_leave_types: true,
+          tr_employees_tr_leave_requests_employee_idTotr_employees: true,
+        },
+      }),
+      this.prisma.tr_leave_requests.count({ where }),
+    ]);
+
+    return { data, meta: { page, limit, total } };
+  }
+
   async approveLeave(
     userId: string,
     leaveId: string,

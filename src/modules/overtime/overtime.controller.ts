@@ -3,6 +3,7 @@ import {
   Post,
   Get,
   Patch,
+  Delete,
   Body,
   Query,
   Param,
@@ -27,13 +28,21 @@ export class OvertimeController {
   constructor(private readonly overtimeService: OvertimeService) {}
 
   @Post()
-  @Roles('atasan', 'manager_hrga', 'admin', 'super_admin')
+  @Roles('karyawan', 'atasan', 'manager_hrga', 'admin', 'super_admin')
   async createOvertime(
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,
     @Body() dto: CreateOvertimeDto,
   ) {
     return this.overtimeService.createOvertime(userId, dto, role);
+  }
+
+  @Patch(':id/cancel')
+  async cancelOvertime(
+    @CurrentUser('userId') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.overtimeService.cancelOvertime(userId, id);
   }
 
   @Get()
@@ -73,5 +82,15 @@ export class OvertimeController {
     @Body() dto: ApproveOvertimeDto,
   ) {
     return this.overtimeService.processOvertime(userId, id, dto, role);
+  }
+
+  @Delete(':id')
+  @Roles('admin', 'super_admin')
+  async deleteOvertime(
+    @CurrentUser('userId') userId: string,
+    @CurrentUser('role') role: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.overtimeService.deleteOvertime(userId, id, role);
   }
 }

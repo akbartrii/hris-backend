@@ -18,12 +18,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/health",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "health"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["health"]
             }
           },
           "response": []
@@ -35,12 +31,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                ""
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": [""]
             }
           },
           "response": []
@@ -81,13 +73,8 @@
             },
             "url": {
               "raw": "{{baseUrlDev}}/auth/login",
-              "host": [
-                "{{baseUrlDev}}"
-              ],
-              "path": [
-                "auth",
-                "login"
-              ]
+              "host": ["{{baseUrlDev}}"],
+              "path": ["auth", "login"]
             }
           },
           "response": []
@@ -104,13 +91,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/profile",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "profile"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "profile"]
             }
           },
           "response": []
@@ -127,13 +109,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/auth/verify",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "auth",
-                "verify"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["auth", "verify"]
             }
           },
           "response": []
@@ -155,12 +132,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/companies",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "companies"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["companies"]
             }
           },
           "response": []
@@ -181,16 +154,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"PT Samugara Sejahtera\",\n  \"address\": \"Jl. Sudirman No. 1, Jakarta\",\n  \"phone\": \"021-12345678\",\n  \"email\": \"info@samugara.co.id\"\n}"
+              "raw": "{\n  \"name\": \"PT Samugara Sejahtera\",\n  \"code\": \"SAM\",\n  \"address\": \"Jl. Sudirman No. 1, Jakarta\",\n  \"phone\": \"021-12345678\",\n  \"email\": \"info@samugara.co.id\",\n  \"npwp\": \"09.123.456.7-123.000\",\n  \"is_active\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/companies",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "companies"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["companies"]
             }
           },
           "response": []
@@ -211,17 +180,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"PT Samugara Sejahtera Updated\"\n}"
+              "raw": "{\n  \"name\": \"PT Samugara Sejahtera Updated\",\n  \"code\": \"SAM\",\n  \"address\": \"Jl. Sudirman No. 1, Jakarta\",\n  \"phone\": \"021-12345678\",\n  \"email\": \"info@samugara.co.id\",\n  \"npwp\": \"09.123.456.7-123.000\",\n  \"is_active\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/companies/{{companyId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "companies",
-                "{{companyId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "{{companyId}}"]
             }
           },
           "response": []
@@ -238,13 +202,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/companies/{{companyId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "companies",
-                "{{companyId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["companies", "{{companyId}}"]
             }
           },
           "response": []
@@ -266,12 +225,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/employees",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "employees"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["employees"]
             }
           },
           "response": []
@@ -292,16 +247,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"employee@example.com\",\n  \"full_name\": \"John Doe\",\n  \"phone\": \"08123456789\",\n  \"role\": \"karyawan\",\n  \"department_id\": \"uuid-dept\",\n  \"work_schedule_id\": \"uuid-schedule\",\n  \"location_id\": \"uuid-location\",\n  \"nik\": \"1234567890\",\n  \"join_date\": \"2024-01-01\",\n  \"basic_salary\": 5000000,\n  \"ptkp_status\": \"TK/0\",\n  \"npwp\": \"09.123.456.7-123.000\",\n  \"bank_name\": \"BCA\",\n  \"bank_account_number\": \"1234567890\",\n  \"bank_account_holder\": \"John Doe\"\n}"
+              "raw": "{\n  \"full_name\": \"John Doe\",\n  \"nik\": \"1234567890\",\n  \"email\": \"employee@example.com\",\n  \"password\": \"password123\",\n  \"gender\": \"male\",\n  \"birth_date\": \"1990-01-01\",\n  \"department_id\": \"uuid-dept\",\n  \"position_id\": \"uuid-position\",\n  \"location_id\": \"uuid-location\",\n  \"supervisor_id\": \"uuid-supervisor\",\n  \"manager_id\": \"uuid-manager\",\n  \"employment_status\": \"permanent\",\n  \"join_date\": \"2024-01-01\",\n  \"contract_end_date\": \"2024-12-31\",\n  \"base_salary\": \"5000000\",\n  \"fixed_allowance\": \"1000000\",\n  \"phone_allowance\": \"200000\",\n  \"dinas_allowance\": \"300000\",\n  \"shift_type\": \"normal\",\n  \"is_security\": false,\n  \"phone\": \"08123456789\",\n  \"address\": \"Jl. Example No. 1\",\n  \"role_id\": \"uuid-role\",\n  \"company_id\": \"uuid-company\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/employees",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "employees"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["employees"]
             }
           },
           "response": []
@@ -318,13 +269,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/employees/{{employeeId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "employees",
-                "{{employeeId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["employees", "{{employeeId}}"]
             }
           },
           "response": []
@@ -345,17 +291,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"full_name\": \"John Doe Updated\",\n  \"phone\": \"08123456789\"\n}"
+              "raw": "{\n  \"full_name\": \"John Doe Updated\",\n  \"phone\": \"08123456789\",\n  \"address\": \"Jl. Example No. 2\",\n  \"gender\": \"male\",\n  \"birth_date\": \"1990-01-01\",\n  \"department_id\": \"uuid-dept\",\n  \"position_id\": \"uuid-position\",\n  \"location_id\": \"uuid-location\",\n  \"supervisor_id\": \"uuid-supervisor\",\n  \"manager_id\": \"uuid-manager\",\n  \"employment_status\": \"permanent\",\n  \"join_date\": \"2024-01-01\",\n  \"contract_end_date\": \"2024-12-31\",\n  \"base_salary\": 5000000,\n  \"fixed_allowance\": 1000000,\n  \"phone_allowance\": 200000,\n  \"dinas_allowance\": 300000,\n  \"shift_type\": \"normal\",\n  \"is_security\": false,\n  \"is_active\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/employees/{{employeeId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "employees",
-                "{{employeeId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["employees", "{{employeeId}}"]
             }
           },
           "response": []
@@ -372,14 +313,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/employees/{{employeeId}}/schedules",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "employees",
-                "{{employeeId}}",
-                "schedules"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["employees", "{{employeeId}}", "schedules"]
             }
           },
           "response": []
@@ -404,14 +339,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/employees/{{employeeId}}/location",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "employees",
-                "{{employeeId}}",
-                "location"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["employees", "{{employeeId}}", "location"]
             }
           },
           "response": []
@@ -440,26 +369,26 @@
                   "src": "/C:/Users/ikrarnegaraa/Downloads/tes.jpg"
                 },
                 {
-                  "key": "latitude",
+                  "key": "lat",
                   "type": "text",
                   "value": "-6.2088"
                 },
                 {
-                  "key": "longitude",
+                  "key": "lng",
                   "type": "text",
                   "value": "106.8456"
+                },
+                {
+                  "key": "notes",
+                  "type": "text",
+                  "value": ""
                 }
               ]
             },
             "url": {
               "raw": "{{baseUrl}}/attendance/clock-in",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "attendance",
-                "clock-in"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "clock-in"]
             }
           },
           "response": []
@@ -483,26 +412,26 @@
                   "src": "/path/to/photo.jpg"
                 },
                 {
-                  "key": "latitude",
+                  "key": "lat",
                   "type": "text",
                   "value": "-6.2088"
                 },
                 {
-                  "key": "longitude",
+                  "key": "lng",
                   "type": "text",
                   "value": "106.8456"
+                },
+                {
+                  "key": "notes",
+                  "type": "text",
+                  "value": ""
                 }
               ]
             },
             "url": {
               "raw": "{{baseUrl}}/attendance/clock-out",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "attendance",
-                "clock-out"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "clock-out"]
             }
           },
           "response": []
@@ -519,13 +448,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/attendance/history",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "attendance",
-                "history"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "history"]
             }
           },
           "response": []
@@ -542,13 +466,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/attendance/all",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "attendance",
-                "all"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "all"]
             }
           },
           "response": []
@@ -569,17 +488,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"attendance_id\": \"uuid-attendance\",\n  \"correction_type\": \"clock_in\",\n  \"corrected_time\": \"08:00\",\n  \"reason\": \"Forgot to clock in\"\n}"
+              "raw": "{\n  \"attendance_id\": \"uuid-attendance\",\n  \"correction_type\": \"clock_in\",\n  \"correct_clock_in\": \"08:00\",\n  \"correct_clock_out\": \"17:00\",\n  \"reason\": \"Forgot to clock in\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/attendance/corrections",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "attendance",
-                "corrections"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "corrections"]
             }
           },
           "response": []
@@ -596,13 +510,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/attendance/corrections",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "attendance",
-                "corrections"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "corrections"]
             }
           },
           "response": []
@@ -619,9 +528,7 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/attendance/corrections/{{correctionId}}/cancel",
-              "host": [
-                "{{baseUrl}}"
-              ],
+              "host": ["{{baseUrl}}"],
               "path": [
                 "attendance",
                 "corrections",
@@ -648,13 +555,11 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Approved by manager\"\n}"
+              "raw": "{\n  \"action\": \"approve\",\n  \"rejection_reason\": \"\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/attendance/corrections/{{correctionId}}/approve",
-              "host": [
-                "{{baseUrl}}"
-              ],
+              "host": ["{{baseUrl}}"],
               "path": [
                 "attendance",
                 "corrections",
@@ -682,13 +587,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/face-registration/status",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "face-registration",
-                "status"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["face-registration", "status"]
             }
           },
           "response": []
@@ -730,12 +630,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/face-registration",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "face-registration"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["face-registration"]
             }
           },
           "response": []
@@ -757,18 +653,14 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/locations",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "locations"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["locations"]
             }
           },
           "response": []
         },
         {
-          "name": "Create Location (HRD+)",
+          "name": "Create Location (Manager HRGA+)",
           "request": {
             "method": "POST",
             "header": [
@@ -783,22 +675,18 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Head Office\",\n  \"address\": \"Jl. Sudirman No.1\",\n  \"latitude\": -6.2088,\n  \"longitude\": 106.8456,\n  \"radius\": 100\n}"
+              "raw": "{\n  \"company_id\": \"uuid-company\",\n  \"name\": \"Head Office\",\n  \"type\": \"office\",\n  \"latitude\": -6.2088,\n  \"longitude\": 106.8456,\n  \"radius_meters\": 100,\n  \"address\": \"Jl. Sudirman No.1\",\n  \"is_active\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/locations",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "locations"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["locations"]
             }
           },
           "response": []
         },
         {
-          "name": "Update Location (HRD+)",
+          "name": "Update Location (Manager HRGA+)",
           "request": {
             "method": "PATCH",
             "header": [
@@ -813,23 +701,18 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Branch Office\",\n  \"radius\": 150\n}"
+              "raw": "{\n  \"name\": \"Branch Office\",\n  \"type\": \"office\",\n  \"radius_meters\": 150,\n  \"latitude\": -6.2088,\n  \"longitude\": 106.8456,\n  \"address\": \"Jl. Thamrin No.1\",\n  \"is_active\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/locations/{{locationId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "locations",
-                "{{locationId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["locations", "{{locationId}}"]
             }
           },
           "response": []
         },
         {
-          "name": "Delete Location (HRD+)",
+          "name": "Delete Location (Manager HRGA+)",
           "request": {
             "method": "DELETE",
             "header": [
@@ -840,13 +723,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/locations/{{locationId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "locations",
-                "{{locationId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["locations", "{{locationId}}"]
             }
           },
           "response": []
@@ -868,12 +746,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/work-schedules",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "work-schedules"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["work-schedules"]
             }
           },
           "response": []
@@ -894,16 +768,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Shift Pagi\",\n  \"clock_in_time\": \"08:00\",\n  \"clock_out_time\": \"17:00\",\n  \"work_days\": [1,2,3,4,5],\n  \"is_flexible\": false\n}"
+              "raw": "{\n  \"name\": \"Shift Pagi\",\n  \"schedule_type\": \"normal\",\n  \"shift_code\": \"PAGI\",\n  \"start_time\": \"08:00\",\n  \"end_time\": \"17:00\",\n  \"break_start\": \"12:00\",\n  \"break_end\": \"13:00\",\n  \"work_days\": [1,2,3,4,5],\n  \"is_holiday_off\": true,\n  \"notes\": \"Regular office hours\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/work-schedules",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "work-schedules"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["work-schedules"]
             }
           },
           "response": []
@@ -924,17 +794,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Shift Malam\",\n  \"clock_in_time\": \"20:00\"\n}"
+              "raw": "{\n  \"name\": \"Shift Malam\",\n  \"schedule_type\": \"normal\",\n  \"start_time\": \"20:00\",\n  \"end_time\": \"05:00\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/work-schedules/{{scheduleId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "work-schedules",
-                "{{scheduleId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["work-schedules", "{{scheduleId}}"]
             }
           },
           "response": []
@@ -951,13 +816,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/work-schedules/{{scheduleId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "work-schedules",
-                "{{scheduleId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["work-schedules", "{{scheduleId}}"]
             }
           },
           "response": []
@@ -979,12 +839,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/time-off-types",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "time-off-types"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off-types"]
             }
           },
           "response": []
@@ -1005,16 +861,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Izin Sakit\",\n  \"is_paid\": true,\n  \"requires_document\": true\n}"
+              "raw": "{\n  \"name\": \"Izin Sakit\",\n  \"code\": \"SAKIT\",\n  \"affects_salary\": true,\n  \"requires_attachment\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/time-off-types",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "time-off-types"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off-types"]
             }
           },
           "response": []
@@ -1035,17 +887,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Izin Sakit Dengan Surat\",\n  \"is_paid\": true\n}"
+              "raw": "{\n  \"name\": \"Izin Sakit Dengan Surat\",\n  \"affects_salary\": true,\n  \"requires_attachment\": true\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/time-off-types/{{timeOffTypeId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "time-off-types",
-                "{{timeOffTypeId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off-types", "{{timeOffTypeId}}"]
             }
           },
           "response": []
@@ -1062,13 +909,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/time-off-types/{{timeOffTypeId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "time-off-types",
-                "{{timeOffTypeId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off-types", "{{timeOffTypeId}}"]
             }
           },
           "response": []
@@ -1090,12 +932,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/leave-types",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leave-types"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["leave-types"]
             }
           },
           "response": []
@@ -1116,16 +954,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cuti Tahunan\",\n  \"max_days_per_year\": 12,\n  \"is_paid\": true\n}"
+              "raw": "{\n  \"name\": \"Cuti Tahunan\",\n  \"code\": \"CT\",\n  \"default_days\": 12,\n  \"is_annual\": true,\n  \"is_paid\": true,\n  \"requires_attachment\": false,\n  \"max_days_per_request\": 5\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/leave-types",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leave-types"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["leave-types"]
             }
           },
           "response": []
@@ -1146,17 +980,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Cuti Besar\",\n  \"max_days_per_year\": 30\n}"
+              "raw": "{\n  \"name\": \"Cuti Besar\",\n  \"default_days\": 30\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/leave-types/{{leaveTypeId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leave-types",
-                "{{leaveTypeId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["leave-types", "{{leaveTypeId}}"]
             }
           },
           "response": []
@@ -1173,13 +1002,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/leave-types/{{leaveTypeId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leave-types",
-                "{{leaveTypeId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["leave-types", "{{leaveTypeId}}"]
             }
           },
           "response": []
@@ -1196,13 +1020,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/recruitment/jobs",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "recruitment",
-                "jobs"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "jobs"]
             }
           },
           "response": []
@@ -1214,14 +1033,8 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/recruitment/jobs/{{jobSlug}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "recruitment",
-                "jobs",
-                "{{jobSlug}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "jobs", "{{jobSlug}}"]
             }
           },
           "response": []
@@ -1238,17 +1051,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"job_id\": \"uuid-job\",\n  \"full_name\": \"Applicant Name\",\n  \"email\": \"applicant@example.com\",\n  \"phone\": \"08123456789\",\n  \"resume_url\": \"https://example.com/resume.pdf\",\n  \"cover_letter\": \"I am interested...\"\n}"
+              "raw": "{\n  \"job_posting_id\": \"uuid-job\",\n  \"full_name\": \"Applicant Name\",\n  \"email\": \"applicant@example.com\",\n  \"phone\": \"08123456789\",\n  \"resume_url\": \"https://example.com/resume.pdf\",\n  \"cover_letter\": \"I am interested...\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/recruitment/apply",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "recruitment",
-                "apply"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "apply"]
             }
           },
           "response": []
@@ -1269,17 +1077,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Software Engineer\",\n  \"slug\": \"software-engineer\",\n  \"department\": \"Engineering\",\n  \"description\": \"Job description here...\",\n  \"requirements\": [\"Bachelor degree\", \"3 years exp\"],\n  \"location\": \"Jakarta\",\n  \"is_active\": true\n}"
+              "raw": "{\n  \"title\": \"Software Engineer\",\n  \"department_id\": \"uuid-dept\",\n  \"position_id\": \"uuid-position\",\n  \"location_id\": \"uuid-location\",\n  \"description\": \"Job description here...\",\n  \"requirements\": \"Bachelor degree, 3 years exp\",\n  \"employment_type\": \"full_time\",\n  \"public_slug\": \"software-engineer\",\n  \"opened_at\": \"2024-01-01\",\n  \"closed_at\": \"2024-12-31\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/recruitment/jobs",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "recruitment",
-                "jobs"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "jobs"]
             }
           },
           "response": []
@@ -1300,18 +1103,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"title\": \"Senior Software Engineer\",\n  \"is_active\": true\n}"
+              "raw": "{\n  \"title\": \"Senior Software Engineer\",\n  \"description\": \"Updated description\",\n  \"requirements\": \"Updated requirements\",\n  \"employment_type\": \"full_time\",\n  \"status\": \"active\",\n  \"closed_at\": \"2024-12-31\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/recruitment/jobs/{{jobId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "recruitment",
-                "jobs",
-                "{{jobId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "jobs", "{{jobId}}"]
             }
           },
           "response": []
@@ -1328,14 +1125,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/recruitment/jobs/{{jobId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "recruitment",
-                "jobs",
-                "{{jobId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "jobs", "{{jobId}}"]
             }
           },
           "response": []
@@ -1352,13 +1143,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/recruitment/applications",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "recruitment",
-                "applications"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["recruitment", "applications"]
             }
           },
           "response": []
@@ -1383,9 +1169,7 @@
             },
             "url": {
               "raw": "{{baseUrl}}/recruitment/applications/{{applicationId}}/status",
-              "host": [
-                "{{baseUrl}}"
-              ],
+              "host": ["{{baseUrl}}"],
               "path": [
                 "recruitment",
                 "applications",
@@ -1412,22 +1196,21 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/reports/attendance?start_date=2024-01-01&end_date=2024-01-31",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reports",
-                "attendance"
-              ],
+              "raw": "{{baseUrl}}/reports/attendance?month=2024-01&department_id=uuid-dept&employee_id=uuid-employee",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "attendance"],
               "query": [
                 {
-                  "key": "start_date",
-                  "value": "2024-01-01"
+                  "key": "month",
+                  "value": "2024-01"
                 },
                 {
-                  "key": "end_date",
-                  "value": "2024-01-31"
+                  "key": "department_id",
+                  "value": "uuid-dept"
+                },
+                {
+                  "key": "employee_id",
+                  "value": "uuid-employee"
                 }
               ]
             }
@@ -1445,22 +1228,21 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/reports/leave?start_date=2024-01-01&end_date=2024-01-31",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reports",
-                "leave"
-              ],
+              "raw": "{{baseUrl}}/reports/leave?year=2024&department_id=uuid-dept&status=approved",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "leave"],
               "query": [
                 {
-                  "key": "start_date",
-                  "value": "2024-01-01"
+                  "key": "year",
+                  "value": "2024"
                 },
                 {
-                  "key": "end_date",
-                  "value": "2024-01-31"
+                  "key": "department_id",
+                  "value": "uuid-dept"
+                },
+                {
+                  "key": "status",
+                  "value": "approved"
                 }
               ]
             }
@@ -1478,18 +1260,17 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/reports/payroll?month=2024-01",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reports",
-                "payroll"
-              ],
+              "raw": "{{baseUrl}}/reports/payroll?payroll_period_id=uuid-period&department_id=uuid-dept",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "payroll"],
               "query": [
                 {
-                  "key": "month",
-                  "value": "2024-01"
+                  "key": "payroll_period_id",
+                  "value": "uuid-period"
+                },
+                {
+                  "key": "department_id",
+                  "value": "uuid-dept"
                 }
               ]
             }
@@ -1507,18 +1288,21 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/reports/overtime?month=2024-01",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reports",
-                "overtime"
-              ],
+              "raw": "{{baseUrl}}/reports/overtime?month=2024-01&department_id=uuid-dept&employee_id=uuid-employee",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "overtime"],
               "query": [
                 {
                   "key": "month",
                   "value": "2024-01"
+                },
+                {
+                  "key": "department_id",
+                  "value": "uuid-dept"
+                },
+                {
+                  "key": "employee_id",
+                  "value": "uuid-employee"
                 }
               ]
             }
@@ -1536,23 +1320,21 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/reports/attendance/export?start_date=2024-01-01&end_date=2024-01-31",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reports",
-                "attendance",
-                "export"
-              ],
+              "raw": "{{baseUrl}}/reports/attendance/export?month=2024-01&department_id=uuid-dept&employee_id=uuid-employee",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "attendance", "export"],
               "query": [
                 {
-                  "key": "start_date",
-                  "value": "2024-01-01"
+                  "key": "month",
+                  "value": "2024-01"
                 },
                 {
-                  "key": "end_date",
-                  "value": "2024-01-31"
+                  "key": "department_id",
+                  "value": "uuid-dept"
+                },
+                {
+                  "key": "employee_id",
+                  "value": "uuid-employee"
                 }
               ]
             }
@@ -1570,23 +1352,21 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/reports/leave/export?start_date=2024-01-01&end_date=2024-01-31",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reports",
-                "leave",
-                "export"
-              ],
+              "raw": "{{baseUrl}}/reports/leave/export?year=2024&department_id=uuid-dept&status=approved",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "leave", "export"],
               "query": [
                 {
-                  "key": "start_date",
-                  "value": "2024-01-01"
+                  "key": "year",
+                  "value": "2024"
                 },
                 {
-                  "key": "end_date",
-                  "value": "2024-01-31"
+                  "key": "department_id",
+                  "value": "uuid-dept"
+                },
+                {
+                  "key": "status",
+                  "value": "approved"
                 }
               ]
             }
@@ -1604,19 +1384,17 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/reports/payroll/export?month=2024-01",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reports",
-                "payroll",
-                "export"
-              ],
+              "raw": "{{baseUrl}}/reports/payroll/export?payroll_period_id=uuid-period&department_id=uuid-dept",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "payroll", "export"],
               "query": [
                 {
-                  "key": "month",
-                  "value": "2024-01"
+                  "key": "payroll_period_id",
+                  "value": "uuid-period"
+                },
+                {
+                  "key": "department_id",
+                  "value": "uuid-dept"
                 }
               ]
             }
@@ -1634,19 +1412,21 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/reports/overtime/export?month=2024-01",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reports",
-                "overtime",
-                "export"
-              ],
+              "raw": "{{baseUrl}}/reports/overtime/export?month=2024-01&department_id=uuid-dept&employee_id=uuid-employee",
+              "host": ["{{baseUrl}}"],
+              "path": ["reports", "overtime", "export"],
               "query": [
                 {
                   "key": "month",
                   "value": "2024-01"
+                },
+                {
+                  "key": "department_id",
+                  "value": "uuid-dept"
+                },
+                {
+                  "key": "employee_id",
+                  "value": "uuid-employee"
                 }
               ]
             }
@@ -1670,12 +1450,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/holiday-calendar",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "holiday-calendar"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["holiday-calendar"]
             }
           },
           "response": []
@@ -1696,16 +1472,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Hari Kemerdekaan\",\n  \"date\": \"2024-08-17\",\n  \"type\": \"national\"\n}"
+              "raw": "{\n  \"company_id\": \"uuid-company\",\n  \"name\": \"Hari Kemerdekaan\",\n  \"holiday_date\": \"2024-08-17\",\n  \"type\": \"national\",\n  \"is_recurring\": false,\n  \"year\": 2024\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/holiday-calendar",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "holiday-calendar"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["holiday-calendar"]
             }
           },
           "response": []
@@ -1726,17 +1498,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Hari Kemerdekaan RI\",\n  \"date\": \"2024-08-17\"\n}"
+              "raw": "{\n  \"name\": \"Hari Kemerdekaan RI\",\n  \"holiday_date\": \"2024-08-17\",\n  \"type\": \"national\",\n  \"is_recurring\": false,\n  \"year\": 2024\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/holiday-calendar/{{holidayId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "holiday-calendar",
-                "{{holidayId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["holiday-calendar", "{{holidayId}}"]
             }
           },
           "response": []
@@ -1753,13 +1520,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/holiday-calendar/{{holidayId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "holiday-calendar",
-                "{{holidayId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["holiday-calendar", "{{holidayId}}"]
             }
           },
           "response": []
@@ -1781,13 +1543,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/payroll/payslips",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payroll",
-                "payslips"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "payslips"]
             }
           },
           "response": []
@@ -1804,14 +1561,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/payroll/payslips/{{payslipId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payroll",
-                "payslips",
-                "{{payslipId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "payslips", "{{payslipId}}"]
             }
           },
           "response": []
@@ -1832,17 +1583,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"employee_id\": \"uuid-employee\",\n  \"period_id\": \"uuid-period\"\n}"
+              "raw": "{\n  \"employee_id\": \"uuid-employee\",\n  \"payroll_period_id\": \"uuid-period\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/payroll/generate",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payroll",
-                "generate"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "generate"]
             }
           },
           "response": []
@@ -1863,17 +1609,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"period_id\": \"uuid-period\",\n  \"department_id\": \"uuid-dept\"\n}"
+              "raw": "{\n  \"payroll_period_id\": \"uuid-period\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/payroll/generate-batch",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payroll",
-                "generate-batch"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "generate-batch"]
             }
           },
           "response": []
@@ -1898,13 +1639,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/payroll/publish",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payroll",
-                "publish"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "publish"]
             }
           },
           "response": []
@@ -1925,17 +1661,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"period_id\": \"uuid-period\"\n}"
+              "raw": "{\n  \"payroll_period_id\": \"uuid-period\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/payroll/export",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payroll",
-                "export"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "export"]
             }
           },
           "response": []
@@ -1952,13 +1683,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/payroll/periods",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payroll",
-                "periods"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "periods"]
             }
           },
           "response": []
@@ -1979,17 +1705,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"January 2024\",\n  \"start_date\": \"2024-01-01\",\n  \"end_date\": \"2024-01-31\",\n  \"payment_date\": \"2024-02-05\"\n}"
+              "raw": "{\n  \"company_id\": \"uuid-company\",\n  \"period_name\": \"January 2024\",\n  \"month\": 1,\n  \"year\": 2024,\n  \"start_date\": \"2024-01-01\",\n  \"end_date\": \"2024-01-31\",\n  \"attendance_cutoff_start\": \"2024-01-01\",\n  \"attendance_cutoff_end\": \"2024-01-31\",\n  \"payment_date\": \"2024-02-05\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/payroll/periods",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payroll",
-                "periods"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "periods"]
             }
           },
           "response": []
@@ -2010,18 +1731,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"January 2024 Updated\",\n  \"payment_date\": \"2024-02-10\"\n}"
+              "raw": "{\n  \"period_name\": \"January 2024 Updated\",\n  \"status\": \"draft\",\n  \"payment_date\": \"2024-02-10\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/payroll/periods/{{periodId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payroll",
-                "periods",
-                "{{periodId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "periods", "{{periodId}}"]
             }
           },
           "response": []
@@ -2038,13 +1753,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/payroll/thr",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payroll",
-                "thr"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "thr"]
             }
           },
           "response": []
@@ -2065,18 +1775,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"period_id\": \"uuid-period\",\n  \"employee_ids\": [\"uuid-1\", \"uuid-2\"]\n}"
+              "raw": "{\n  \"employee_id\": \"uuid-employee\",\n  \"period_name\": \"THR 2024\",\n  \"year\": 2024\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/payroll/thr/generate",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "payroll",
-                "thr",
-                "generate"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["payroll", "thr", "generate"]
             }
           },
           "response": []
@@ -2102,16 +1806,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"time_off_type_id\": \"uuid-type\",\n  \"start_date\": \"2024-02-01\",\n  \"end_date\": \"2024-02-02\",\n  \"reason\": \"Sick leave\"\n}"
+              "raw": "{\n  \"time_off_type_id\": \"uuid-type\",\n  \"start_date\": \"2024-02-01\",\n  \"end_date\": \"2024-02-02\",\n  \"start_time\": \"08:00\",\n  \"end_time\": \"17:00\",\n  \"reason\": \"Sick leave\",\n  \"work_handover_to\": \"uuid-employee\",\n  \"attachment_url\": \"https://example.com/doc.pdf\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/time-off",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "time-off"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off"]
             }
           },
           "response": []
@@ -2128,12 +1828,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/time-off",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "time-off"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off"]
             }
           },
           "response": []
@@ -2154,18 +1850,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Approved by manager\"\n}"
+              "raw": "{\n  \"action\": \"approve\",\n  \"rejection_reason\": \"\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/time-off/{{timeOffId}}/approve",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "time-off",
-                "{{timeOffId}}",
-                "approve"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off", "{{timeOffId}}", "approve"]
             }
           },
           "response": []
@@ -2182,14 +1872,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/time-off/{{timeOffId}}/cancel",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "time-off",
-                "{{timeOffId}}",
-                "cancel"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["time-off", "{{timeOffId}}", "cancel"]
             }
           },
           "response": []
@@ -2215,16 +1899,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"leave_type_id\": \"uuid-type\",\n  \"start_date\": \"2024-03-01\",\n  \"end_date\": \"2024-03-05\",\n  \"reason\": \"Annual leave\",\n  \"delegate_to\": \"uuid-delegate\"\n}"
+              "raw": "{\n  \"leave_type_id\": \"uuid-type\",\n  \"start_date\": \"2024-03-01\",\n  \"end_date\": \"2024-03-05\",\n  \"total_days\": 5,\n  \"reason\": \"Annual leave\",\n  \"work_handover_to\": \"uuid-employee\",\n  \"attachment_url\": \"https://example.com/doc.pdf\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/leave",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leave"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["leave"]
             }
           },
           "response": []
@@ -2241,13 +1921,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/leave/balance",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leave",
-                "balance"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["leave", "balance"]
             }
           },
           "response": []
@@ -2264,12 +1939,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/leave",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leave"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["leave"]
             }
           },
           "response": []
@@ -2290,18 +1961,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Approved by manager\"\n}"
+              "raw": "{\n  \"action\": \"approve\",\n  \"rejection_reason\": \"\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/leave/{{leaveId}}/approve",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leave",
-                "{{leaveId}}",
-                "approve"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["leave", "{{leaveId}}", "approve"]
             }
           },
           "response": []
@@ -2318,13 +1983,39 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/leave/{{leaveId}}/cancel",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "leave",
-                "{{leaveId}}",
-                "cancel"
+              "host": ["{{baseUrl}}"],
+              "path": ["leave", "{{leaveId}}", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "List Subordinate Leaves (Supervisor+)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/leave/subordinates?status=pending&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["leave", "subordinates"],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                }
               ]
             }
           },
@@ -2347,12 +2038,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/notifications",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "notifications"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"]
             }
           },
           "response": []
@@ -2369,13 +2056,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/notifications/unread-count",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "notifications",
-                "unread-count"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "unread-count"]
             }
           },
           "response": []
@@ -2392,14 +2074,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/notifications/{{notificationId}}/read",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "notifications",
-                "{{notificationId}}",
-                "read"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "{{notificationId}}", "read"]
             }
           },
           "response": []
@@ -2416,13 +2092,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/notifications/read-all",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "notifications",
-                "read-all"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications", "read-all"]
             }
           },
           "response": []
@@ -2443,16 +2114,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"user_id\": \"uuid-user\",\n  \"title\": \"Notification Title\",\n  \"message\": \"Notification message body\",\n  \"type\": \"info\"\n}"
+              "raw": "{\n  \"user_id\": \"uuid-user\",\n  \"type\": \"info\",\n  \"title\": \"Notification Title\",\n  \"message\": \"Notification message body\",\n  \"reference_type\": \"leave\",\n  \"reference_id\": \"uuid-ref\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/notifications",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "notifications"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["notifications"]
             }
           },
           "response": []
@@ -2463,7 +2130,7 @@
       "name": "Overtime",
       "item": [
         {
-          "name": "Create Overtime (Supervisor+)",
+          "name": "Create Overtime (Employee)",
           "request": {
             "method": "POST",
             "header": [
@@ -2478,16 +2145,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"employee_id\": \"uuid-employee\",\n  \"date\": \"2024-01-15\",\n  \"start_time\": \"18:00\",\n  \"end_time\": \"21:00\",\n  \"reason\": \"Project deadline\",\n  \"type\": \"weekday\"\n}"
+              "raw": "{\n  \"employee_id\": \"uuid-employee\",\n  \"date\": \"2024-01-15\",\n  \"start_time\": \"18:00\",\n  \"end_time\": \"21:00\",\n  \"type\": \"weekday\",\n  \"description\": \"Project deadline\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/overtime",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "overtime"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime"]
             }
           },
           "response": []
@@ -2504,12 +2167,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/overtime",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "overtime"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime"]
             }
           },
           "response": []
@@ -2526,13 +2185,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/overtime/summary?month=2024-01",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "overtime",
-                "summary"
-              ],
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime", "summary"],
               "query": [
                 {
                   "key": "month",
@@ -2559,18 +2213,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Approved by manager\"\n}"
+              "raw": "{\n  \"action\": \"approve\",\n  \"rejection_reason\": \"\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/overtime/{{overtimeId}}/approve",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "overtime",
-                "{{overtimeId}}",
-                "approve"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime", "{{overtimeId}}", "approve"]
             }
           },
           "response": []
@@ -2591,18 +2239,48 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"processed\",\n  \"notes\": \"Processed by HR\"\n}"
+              "raw": "{\n  \"action\": \"approve\",\n  \"rejection_reason\": \"\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/overtime/{{overtimeId}}/process",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "overtime",
-                "{{overtimeId}}",
-                "process"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime", "{{overtimeId}}", "process"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Cancel Overtime (Employee)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/overtime/{{overtimeId}}/cancel",
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime", "{{overtimeId}}", "cancel"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Overtime (Admin+)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/overtime/{{overtimeId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime", "{{overtimeId}}"]
             }
           },
           "response": []
@@ -2624,12 +2302,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/overtime-meal-allowances",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "overtime-meal-allowances"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime-meal-allowances"]
             }
           },
           "response": []
@@ -2650,16 +2324,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"min_overtime_hours\": 2,\n  \"amount\": 50000,\n  \"description\": \"Meal allowance for overtime > 2 hours\"\n}"
+              "raw": "{\n  \"day_type\": \"weekday\",\n  \"time_start\": \"18:00\",\n  \"time_end\": \"23:59\",\n  \"amount\": \"50000\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/overtime-meal-allowances",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "overtime-meal-allowances"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime-meal-allowances"]
             }
           },
           "response": []
@@ -2680,17 +2350,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"min_overtime_hours\": 3,\n  \"amount\": 75000\n}"
+              "raw": "{\n  \"day_type\": \"weekday\",\n  \"time_start\": \"18:00\",\n  \"time_end\": \"23:59\",\n  \"amount\": \"75000\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/overtime-meal-allowances/{{allowanceId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "overtime-meal-allowances",
-                "{{allowanceId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime-meal-allowances", "{{allowanceId}}"]
             }
           },
           "response": []
@@ -2707,13 +2372,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/overtime-meal-allowances/{{allowanceId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "overtime-meal-allowances",
-                "{{allowanceId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["overtime-meal-allowances", "{{allowanceId}}"]
             }
           },
           "response": []
@@ -2735,12 +2395,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/remote-work",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "remote-work"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["remote-work"]
             }
           },
           "response": []
@@ -2765,12 +2421,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/remote-work",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "remote-work"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["remote-work"]
             }
           },
           "response": []
@@ -2791,18 +2443,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Approved\"\n}"
+              "raw": "{\n  \"action\": \"approve\",\n  \"rejection_reason\": \"\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/remote-work/{{remoteWorkId}}/approve",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "remote-work",
-                "{{remoteWorkId}}",
-                "approve"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["remote-work", "{{remoteWorkId}}", "approve"]
             }
           },
           "response": []
@@ -2824,12 +2470,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/overnight",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "overnight"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["overnight"]
             }
           },
           "response": []
@@ -2854,12 +2496,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/overnight",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "overnight"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["overnight"]
             }
           },
           "response": []
@@ -2880,18 +2518,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"approved\",\n  \"notes\": \"Approved\"\n}"
+              "raw": "{\n  \"action\": \"approve\",\n  \"rejection_reason\": \"\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/overnight/{{overnightId}}/approve",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "overnight",
-                "{{overnightId}}",
-                "approve"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["overnight", "{{overnightId}}", "approve"]
             }
           },
           "response": []
@@ -2913,12 +2545,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/reimbursements",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reimbursements"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["reimbursements"]
             }
           },
           "response": []
@@ -2943,12 +2571,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/reimbursements",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reimbursements"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["reimbursements"]
             }
           },
           "response": []
@@ -2969,18 +2593,12 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"status\": \"supervisor_approved\",\n  \"notes\": \"Approved by supervisor\"\n}"
+              "raw": "{\n  \"action\": \"approve\",\n  \"rejection_reason\": \"\"\n}"
             },
             "url": {
               "raw": "{{baseUrl}}/reimbursements/{{reimbursementId}}/approve",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "reimbursements",
-                "{{reimbursementId}}",
-                "approve"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["reimbursements", "{{reimbursementId}}", "approve"]
             }
           },
           "response": []
@@ -3002,12 +2620,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/parameters",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "parameters"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["parameters"]
             }
           },
           "response": []
@@ -3024,13 +2638,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/parameters/{{parameterKey}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "parameters",
-                "{{parameterKey}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["parameters", "{{parameterKey}}"]
             }
           },
           "response": []
@@ -3055,12 +2664,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/parameters",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "parameters"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["parameters"]
             }
           },
           "response": []
@@ -3085,13 +2690,8 @@
             },
             "url": {
               "raw": "{{baseUrl}}/parameters/{{parameterKey}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "parameters",
-                "{{parameterKey}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["parameters", "{{parameterKey}}"]
             }
           },
           "response": []
@@ -3108,13 +2708,8 @@
             ],
             "url": {
               "raw": "{{baseUrl}}/parameters/{{parameterKey}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "parameters",
-                "{{parameterKey}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["parameters", "{{parameterKey}}"]
             }
           },
           "response": []
@@ -3129,9 +2724,7 @@
         "type": "text/javascript",
         "packages": {},
         "requests": {},
-        "exec": [
-          ""
-        ]
+        "exec": [""]
       }
     },
     {
@@ -3140,9 +2733,7 @@
         "type": "text/javascript",
         "packages": {},
         "requests": {},
-        "exec": [
-          ""
-        ]
+        "exec": [""]
       }
     }
   ],

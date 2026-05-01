@@ -36,7 +36,7 @@ export class LocationController {
   }
 
   @Post()
-  @Roles('hrd', 'admin', 'super_admin')
+  @Roles('manager_hrga', 'hrd', 'admin', 'super_admin')
   async create(
     @CurrentUser('role') role: string,
     @Body() dto: CreateLocationDto,
@@ -45,7 +45,7 @@ export class LocationController {
   }
 
   @Patch(':id')
-  @Roles('hrd', 'admin', 'super_admin')
+  @Roles('manager_hrga', 'hrd', 'admin', 'super_admin')
   async update(
     @CurrentUser('role') role: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -55,7 +55,7 @@ export class LocationController {
   }
 
   @Delete(':id')
-  @Roles('hrd', 'admin', 'super_admin')
+  @Roles('manager_hrga', 'hrd', 'admin', 'super_admin')
   async delete(
     @CurrentUser('role') role: string,
     @Param('id', ParseUUIDPipe) id: string,

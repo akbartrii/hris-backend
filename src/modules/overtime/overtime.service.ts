@@ -156,7 +156,13 @@ export class OvertimeService {
   }
 
   private canSubmitOvertime(role: string): boolean {
-    return ['atasan', 'manager_hrga', 'admin', 'super_admin'].includes(role);
+    return [
+      'karyawan',
+      'atasan',
+      'manager_hrga',
+      'admin',
+      'super_admin',
+    ].includes(role);
   }
 
   async createOvertime(
@@ -171,6 +177,10 @@ export class OvertimeService {
     }
 
     const requester = await this.getEmployeeFromUser(userId);
+
+    if (requesterRole === 'karyawan' && dto.employee_id !== requester.id) {
+      throw new ForbiddenException('You can only submit overtime for yourself');
+    }
 
     const targetEmployee = await this.prisma.tr_employees.findUnique({
       where: { id: dto.employee_id },
@@ -358,16 +368,16 @@ export class OvertimeService {
       const where: any = {};
       const userRole = user.ms_roles?.name || 'karyawan';
 
-      if (!['admin', 'hrd', 'manager_hrga', 'super_admin'].includes(userRole)) {
-        where.employee_id = user.tr_employees.id;
-      }
-
       if (query.status) {
         where.status = query.status;
       }
 
-      if (query.employee_id) {
-        where.employee_id = query.employee_id;
+      if (['admin', 'hrd', 'manager_hrga', 'super_admin'].includes(userRole)) {
+        if (query.employee_id) {
+          where.employee_id = query.employee_id;
+        }
+      } else {
+        where.employee_id = user.tr_employees.id;
       }
 
       if (query.month) {
