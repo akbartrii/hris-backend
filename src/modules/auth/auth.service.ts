@@ -60,6 +60,7 @@ export class AuthService {
 
       return {
         access_token: token,
+        user_id: user.id,
         user: {
           id: user.id,
           email: user.email,

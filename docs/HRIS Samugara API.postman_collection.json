@@ -1928,7 +1928,7 @@
           "response": []
         },
         {
-          "name": "List Leaves (Employee)",
+          "name": "List Leaves (Admin+)",
           "request": {
             "method": "GET",
             "header": [

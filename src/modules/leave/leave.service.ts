@@ -234,7 +234,7 @@ export class LeaveService {
     const where: any = {};
     const userRole = user.ms_roles?.name || 'karyawan';
 
-    if (!['admin', 'hrd', 'manager_hrga', 'super_admin'].includes(userRole)) {
+    if (!['admin', 'super_admin'].includes(userRole)) {
       where.employee_id = user.tr_employees.id;
     }
 
