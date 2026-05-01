@@ -567,6 +567,70 @@ export class AttendanceService {
     return { data, meta: { page, limit, total } };
   }
 
+  async listSubordinateAttendance(userId: string, query: ListAttendanceDto) {
+    const user = await this.prisma.tr_users.findUnique({
+      where: { id: userId },
+      include: { tr_employees: true },
+    });
+    if (!user || !user.tr_employees) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 10;
+    const skip = (page - 1) * limit;
+
+    const subordinates = await this.prisma.tr_employees.findMany({
+      where: {
+        OR: [
+          { supervisor_id: user.tr_employees.id },
+          { manager_id: user.tr_employees.id },
+        ],
+      },
+      select: { id: true },
+    });
+
+    const subordinateIds = subordinates.map((e) => e.id);
+    if (subordinateIds.length === 0) {
+      return { data: [], meta: { page, limit, total: 0 } };
+    }
+
+    const where: any = {
+      employee_id: { in: subordinateIds },
+    };
+
+    if (query.date) {
+      where.attendance_date = new Date(query.date);
+    }
+
+    if (query.month) {
+      const [year, month] = query.month.split('-').map(Number);
+      const startDate = new Date(year, month - 1, 1);
+      const endDate = new Date(year, month, 0);
+      where.attendance_date = { gte: startDate, lte: endDate };
+    }
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    const [data, total] = await Promise.all([
+      this.prisma.tr_attendances.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { attendance_date: 'desc' },
+        include: {
+          ms_locations: true,
+          tr_employees: { select: { id: true, full_name: true, nik: true } },
+        },
+      }),
+      this.prisma.tr_attendances.count({ where }),
+    ]);
+
+    return { data, meta: { page, limit, total } };
+  }
+
   async createCorrection(userId: string, dto: CreateCorrectionDto) {
     const employee = await this.getEmployeeFromUser(userId);
 

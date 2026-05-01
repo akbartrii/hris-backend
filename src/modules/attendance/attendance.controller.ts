@@ -77,6 +77,15 @@ export class AttendanceController {
     return this.attendanceService.listAllAttendance(query);
   }
 
+  @Get('subordinates')
+  @Roles('atasan', 'manager_hrga', 'admin', 'super_admin')
+  async listSubordinateAttendance(
+    @CurrentUser('userId') userId: string,
+    @Query() query: ListAttendanceDto,
+  ) {
+    return this.attendanceService.listSubordinateAttendance(userId, query);
+  }
+
   @Post('corrections')
   async createCorrection(
     @CurrentUser('userId') userId: string,
