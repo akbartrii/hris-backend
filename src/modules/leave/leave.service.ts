@@ -318,6 +318,8 @@ export class LeaveService {
     dto: ApproveLeaveDto,
     approverRole: string,
   ) {
+    const startTime = Date.now();
+
     const approver = await this.getEmployeeFromUser(userId);
     const leave = await this.prisma.tr_leave_requests.findUnique({
       where: { id: leaveId },
@@ -346,6 +348,7 @@ export class LeaveService {
       }
 
       if (dto.action === 'approve') {
+        const txStart = Date.now();
         await this.prisma.$transaction([
           this.prisma.tr_leave_balances.updateMany({
             where: {
@@ -366,6 +369,9 @@ export class LeaveService {
             },
           }),
         ]);
+        this.logger.log(
+          `Leave approve transaction took ${Date.now() - txStart}ms`,
+        );
       } else {
         await this.prisma.tr_leave_requests.update({
           where: { id: leaveId },
@@ -376,6 +382,7 @@ export class LeaveService {
           },
         });
       }
+      this.logger.log(`Leave approve total took ${Date.now() - startTime}ms`);
       return { message: `Leave request ${dto.action}d by supervisor` };
     }
 
@@ -398,6 +405,7 @@ export class LeaveService {
           },
         });
       } else {
+        const txStart = Date.now();
         await this.prisma.$transaction([
           this.prisma.tr_leave_balances.updateMany({
             where: {
@@ -418,7 +426,11 @@ export class LeaveService {
             },
           }),
         ]);
+        this.logger.log(
+          `Leave reject transaction took ${Date.now() - txStart}ms`,
+        );
       }
+      this.logger.log(`Leave approve total took ${Date.now() - startTime}ms`);
       return { message: `Leave request ${dto.action}d by HRGA` };
     }
 

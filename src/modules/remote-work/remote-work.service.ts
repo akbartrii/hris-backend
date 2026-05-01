@@ -23,7 +23,9 @@ export class RemoteWorkService {
     }
 
     const where: any = {};
-    const isAdmin = ['hrd', 'admin', 'super_admin'].includes(userRole);
+    const isAdmin = ['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(
+      userRole,
+    );
 
     if (query.employee_id && isAdmin) {
       where.employee_id = query.employee_id;

@@ -13,7 +13,7 @@ export class HolidayCalendarService {
   constructor(private prisma: PrismaService) {}
 
   private isAdminOrHRD(role: string): boolean {
-    return ['hrd', 'admin', 'super_admin'].includes(role);
+    return ['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(role);
   }
 
   async list(

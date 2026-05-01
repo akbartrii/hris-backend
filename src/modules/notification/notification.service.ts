@@ -15,8 +15,8 @@ export class NotificationService {
     private fcmService: FcmService,
   ) {}
 
-  private isAdminOrHRD(role: string): boolean {
-    return ['hrd', 'admin', 'super_admin'].includes(role);
+  private canManageNotifications(role: string): boolean {
+    return ['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(role);
   }
 
   async listNotifications(userId: string, query: ListNotificationDto) {
@@ -81,7 +81,17 @@ export class NotificationService {
     return { message: 'All notifications marked as read' };
   }
 
-  async createNotification(dto: CreateNotificationDto) {
+  async createNotification(
+    userId: string,
+    userRole: string,
+    dto: CreateNotificationDto,
+  ) {
+    if (!this.canManageNotifications(userRole)) {
+      throw new ForbiddenException(
+        'Only manager HRGA, HRD, or admin can create notifications',
+      );
+    }
+
     const notification = await this.prisma.tr_notifications.create({
       data: {
         user_id: dto.user_id,

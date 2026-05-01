@@ -17,7 +17,7 @@ export class ReportService {
   ) {}
 
   private isAdminOrHRD(role: string): boolean {
-    return ['hrd', 'admin', 'super_admin'].includes(role);
+    return ['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(role);
   }
 
   private async getEmployeeIdsByDepartment(

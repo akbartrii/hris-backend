@@ -42,6 +42,9 @@ export class AuthService {
       }
 
       const jwtSecret = this.configService.get<string>('JWT_SECRET');
+      if (!jwtSecret) {
+        throw new InternalServerErrorException('JWT_SECRET not configured');
+      }
       const token = jwt.sign(
         {
           sub: user.id,

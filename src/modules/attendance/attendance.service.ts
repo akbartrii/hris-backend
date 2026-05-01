@@ -745,16 +745,21 @@ export class AttendanceService {
       }
 
       if (dto.action === 'approve') {
+        const attendanceDate = correction.tr_attendances?.attendance_date;
+        if (!attendanceDate) {
+          throw new NotFoundException('Attendance record not found');
+        }
+
         const updateData: any = {};
         if (correction.correct_clock_in) {
           updateData.clock_in = this.combineDateTime(
-            correction.tr_attendances.attendance_date,
+            attendanceDate,
             correction.correct_clock_in,
           );
         }
         if (correction.correct_clock_out) {
           updateData.clock_out = this.combineDateTime(
-            correction.tr_attendances.attendance_date,
+            attendanceDate,
             correction.correct_clock_out,
           );
         }

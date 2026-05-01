@@ -15,6 +15,7 @@ import { ListNotificationDto } from './dto/list-notification.dto';
 import { CreateNotificationDto } from './dto/create-notification.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Notification')
@@ -51,7 +52,12 @@ export class NotificationController {
   }
 
   @Post()
-  async createNotification(@Body() dto: CreateNotificationDto) {
-    return this.notificationService.createNotification(dto);
+  @Roles('manager_hrga', 'hrd', 'admin', 'super_admin')
+  async createNotification(
+    @CurrentUser('userId') userId: string,
+    @CurrentUser('role') role: string,
+    @Body() dto: CreateNotificationDto,
+  ) {
+    return this.notificationService.createNotification(userId, role, dto);
   }
 }

@@ -170,7 +170,7 @@ export class UpdatePayrollPeriodDto {
   @ApiPropertyOptional({ description: 'Status' })
   @IsString()
   @IsOptional()
-  @IsIn(['draft', 'processing', 'closed'])
+  @IsIn(['draft', 'processing', 'published', 'closed'])
   status?: string;
 
   @ApiPropertyOptional({ description: 'Start date (ISO string)' })

@@ -13,12 +13,24 @@ export class PrismaService
 {
   private readonly logger = new Logger(PrismaService.name);
 
+  constructor() {
+    super({
+      log:
+        process.env.NODE_ENV === 'development'
+          ? ['query', 'info', 'warn', 'error']
+          : ['warn', 'error'],
+    });
+  }
+
   async onModuleInit() {
-    let retries = 3;
+    let retries = 5;
     while (retries > 0) {
       try {
+        const start = Date.now();
         await this.$connect();
-        this.logger.log('Prisma connected successfully');
+        this.logger.log(
+          `Prisma connected successfully in ${Date.now() - start}ms`,
+        );
         return;
       } catch (error) {
         retries--;

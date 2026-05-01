@@ -159,7 +159,9 @@ export class ReimbursementService {
     }
 
     // Step 2: HR final approval
-    const isHR = ['hrd', 'admin', 'super_admin'].includes(userRole);
+    const isHR = ['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(
+      userRole,
+    );
     if (reimbursement.status === 'supervisor_approved' && isHR) {
       return this.prisma.tr_reimbursements.update({
         where: { id: reimbursementId },

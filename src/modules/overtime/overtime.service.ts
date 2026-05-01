@@ -217,8 +217,14 @@ export class OvertimeService {
       );
     }
 
+    if (!targetEmployee.user_id) {
+      throw new BadRequestException(
+        'Employee does not have an associated user account',
+      );
+    }
+
     const user = await this.prisma.tr_users.findUnique({
-      where: { id: targetEmployee.user_id || undefined },
+      where: { id: targetEmployee.user_id },
     });
     const companyId = user?.company_id;
 
@@ -616,7 +622,9 @@ export class OvertimeService {
     dto: ApproveOvertimeDto,
     processorRole: string,
   ) {
-    if (!['hrd', 'admin', 'super_admin'].includes(processorRole)) {
+    if (
+      !['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(processorRole)
+    ) {
       throw new ForbiddenException('Only HRD or above can process overtime');
     }
 

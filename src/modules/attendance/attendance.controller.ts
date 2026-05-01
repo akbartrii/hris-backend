@@ -86,6 +86,7 @@ export class AttendanceController {
   }
 
   @Patch('corrections/:id/cancel')
+  @Roles('karyawan', 'atasan', 'manager_hrga', 'hrd', 'admin', 'super_admin')
   async cancelCorrection(
     @CurrentUser('userId') userId: string,
     @Param('id', ParseUUIDPipe) id: string,

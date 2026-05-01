@@ -54,6 +54,7 @@ export class TimeOffController {
   }
 
   @Patch(':id/cancel')
+  @Roles('karyawan', 'atasan', 'manager_hrga', 'hrd', 'admin', 'super_admin')
   async cancelTimeOff(
     @CurrentUser('userId') userId: string,
     @Param('id', ParseUUIDPipe) id: string,

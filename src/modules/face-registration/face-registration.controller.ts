@@ -11,11 +11,12 @@ import { ApiBearerAuth, ApiTags, ApiConsumes } from '@nestjs/swagger';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import { FaceRegistrationService } from './face-registration.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 
 @ApiTags('Face Registration')
 @ApiBearerAuth()
-@UseGuards(JwtAuthGuard)
+@UseGuards(JwtAuthGuard, RolesGuard)
 @Controller('face-registration')
 export class FaceRegistrationController {
   constructor(private readonly service: FaceRegistrationService) {}

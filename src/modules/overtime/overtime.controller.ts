@@ -38,6 +38,7 @@ export class OvertimeController {
   }
 
   @Patch(':id/cancel')
+  @Roles('karyawan', 'atasan', 'manager_hrga', 'hrd', 'admin', 'super_admin')
   async cancelOvertime(
     @CurrentUser('userId') userId: string,
     @Param('id', ParseUUIDPipe) id: string,
