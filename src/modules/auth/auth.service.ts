@@ -25,7 +25,7 @@ export class AuthService {
 
       const user = await this.prisma.tr_users.findUnique({
         where: { email },
-        include: { ms_roles: true },
+        include: { ms_roles: true, tr_employees: true },
       });
 
       if (!user) {
@@ -60,7 +60,7 @@ export class AuthService {
 
       return {
         access_token: token,
-        user_id: user.id,
+        employee_id: user.tr_employees?.id || null,
         user: {
           id: user.id,
           email: user.email,
