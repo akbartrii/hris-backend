@@ -68,6 +68,11 @@ export class CreateEmployeeDto {
   @IsUUID()
   manager_id?: string;
 
+  @ApiPropertyOptional({ description: 'Team ID' })
+  @IsOptional()
+  @IsUUID()
+  team_id?: string;
+
   @ApiPropertyOptional({
     description: 'Employment status',
     enum: ['permanent', 'contract', 'probation', 'internship'],

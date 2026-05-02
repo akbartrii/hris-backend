@@ -6,3 +6,4 @@ database/
 coverage/
 *.log
 .DS_Store
+meeting/

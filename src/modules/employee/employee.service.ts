@@ -95,6 +95,7 @@ export class EmployeeService {
     if (dto.supervisor_id !== undefined)
       employeeData.supervisor_id = dto.supervisor_id;
     if (dto.manager_id !== undefined) employeeData.manager_id = dto.manager_id;
+    if (dto.team_id !== undefined) employeeData.team_id = dto.team_id;
     if (dto.employment_status !== undefined)
       employeeData.employment_status = dto.employment_status;
     if (dto.join_date !== undefined)
@@ -139,6 +140,10 @@ export class EmployeeService {
 
     if (query.position_id) {
       where.position_id = query.position_id;
+    }
+
+    if (query.team_id) {
+      where.team_id = query.team_id;
     }
 
     if (query.search) {
@@ -234,6 +239,7 @@ export class EmployeeService {
     if (dto.supervisor_id !== undefined)
       updateData.supervisor_id = dto.supervisor_id;
     if (dto.manager_id !== undefined) updateData.manager_id = dto.manager_id;
+    if (dto.team_id !== undefined) updateData.team_id = dto.team_id;
     if (dto.employment_status !== undefined)
       updateData.employment_status = dto.employment_status;
     if (dto.join_date !== undefined)
@@ -290,6 +296,34 @@ export class EmployeeService {
     });
 
     return schedules;
+  }
+
+  async getTeamMates(userId: string) {
+    const employee = await this.prisma.tr_employees.findUnique({
+      where: { user_id: userId },
+      select: { team_id: true },
+    });
+
+    if (!employee || !employee.team_id) {
+      return [];
+    }
+
+    const teamMates = await this.prisma.tr_employees.findMany({
+      where: {
+        team_id: employee.team_id,
+        NOT: { user_id: userId },
+        is_active: true,
+      },
+      select: {
+        id: true,
+        full_name: true,
+        nik: true,
+        ms_positions: { select: { id: true, name: true } },
+      },
+      orderBy: { full_name: 'asc' },
+    });
+
+    return teamMates;
   }
 
   async assignLocation(

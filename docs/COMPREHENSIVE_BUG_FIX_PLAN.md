@@ -247,29 +247,32 @@ Tabel berikut harus di-update via SQL di Supabase:
 
 ## Action Items (Urutan Pengerjaan)
 
-### Phase 1: CRITICAL (Hari ini)
+### Phase 1: CRITICAL (Hari ini) ✅ DONE
 
-- [ ] Fix 1: Tambah `@Roles('admin', 'super_admin')` di `POST /notifications`
-- [ ] Fix 2: Run `docs/fix-status-constraints.sql` di Supabase
-- [ ] Fix 3: Fix `notification.service.ts` - validasi sender authorization
+- [x] Fix 1: Tambah `@Roles('admin', 'super_admin')` di `POST /notifications`
+- [x] Fix 2: Run `docs/fix-status-constraints.sql` di Supabase
+- [x] Fix 3: Fix `notification.service.ts` - validasi sender authorization
 
-### Phase 2: HIGH (Minggu ini)
+### Phase 2: HIGH (Minggu ini) ✅ DONE
 
-- [ ] Standarisasi semua `isAdminOrHRD` arrays untuk include `'manager_hrga'`
-- [ ] Update semua `@Roles()` yang exclude `manager_hrga` tapi include `hrd`
+- [x] Standarisasi semua `isAdminOrHRD` arrays untuk include `'manager_hrga'`
+- [x] Update semua `@Roles()` yang exclude `manager_hrga` tapi include `hrd`
+- [x] Fix `POST /locations` — confirmed `@Roles` dan service sudah include `manager_hrga`
+- [x] Create login users for all roles with clear role-based emails
 
-### Phase 3: MEDIUM (Minggu depan)
+### Phase 3: MEDIUM (Minggu depan) ✅ DONE
 
-- [ ] Fix null reference: attendance correction + overtime
-- [ ] Fix time format validation di DTO (work schedule, meal allowance)
-- [ ] Fix JWT secret null check
-- [ ] Fix employee default role check
-- [ ] Sync payroll period status enum
+- [x] Fix null reference: attendance correction + overtime
+- [x] Fix time format validation di DTO (work schedule, meal allowance)
+- [x] Fix JWT secret null check
+- [x] Fix employee default role check
+- [x] Sync payroll period status enum
 
-### Phase 4: LOW (Sprint berikutnya)
+### Phase 4: LOW (Sprint berikutnya) ✅ DONE
 
-- [ ] Tambah `@Roles` di cancel endpoints
-- [ ] Tambah `RolesGuard` di face registration
+- [x] Tambah `@Roles` di cancel endpoints
+- [x] Tambah `RolesGuard` di face registration
+- [x] Tambah `GET /attendance/subordinates` endpoint
 - [ ] Consider Redis caching untuk user auth
 
 ---

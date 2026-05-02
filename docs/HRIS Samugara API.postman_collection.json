@@ -473,6 +473,34 @@
           "response": []
         },
         {
+          "name": "List Subordinate Attendance (Supervisor+)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attendance/subordinates?month=2026-04&status=present",
+              "host": ["{{baseUrl}}"],
+              "path": ["attendance", "subordinates"],
+              "query": [
+                {
+                  "key": "month",
+                  "value": "2026-04"
+                },
+                {
+                  "key": "status",
+                  "value": "present"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Create Correction (Employee)",
           "request": {
             "method": "POST",

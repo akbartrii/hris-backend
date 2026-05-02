@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt, Min, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsInt, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
 export class ListEmployeeDto {
@@ -12,6 +12,11 @@ export class ListEmployeeDto {
   @IsString()
   @IsOptional()
   position_id?: string;
+
+  @ApiPropertyOptional({ description: 'Filter by team UUID' })
+  @IsString()
+  @IsOptional()
+  team_id?: string;
 
   @ApiPropertyOptional({ description: 'Search by name or NIK' })
   @IsString()

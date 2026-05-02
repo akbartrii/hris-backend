@@ -61,6 +61,11 @@ export class UpdateEmployeeDto {
   @IsOptional()
   manager_id?: string;
 
+  @ApiPropertyOptional({ description: 'Team ID' })
+  @IsUUID()
+  @IsOptional()
+  team_id?: string;
+
   @ApiPropertyOptional({
     description: 'Employment status',
     enum: ['permanent', 'contract', 'probation', 'internship'],

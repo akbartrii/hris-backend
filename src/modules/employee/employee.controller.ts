@@ -75,6 +75,11 @@ export class EmployeeController {
     return this.employeeService.getEmployeeSchedules(userId, role, id);
   }
 
+  @Get('team-mates')
+  async getTeamMates(@CurrentUser('userId') userId: string) {
+    return this.employeeService.getTeamMates(userId);
+  }
+
   @Patch(':id/location')
   async assignLocation(
     @CurrentUser('userId') userId: string,

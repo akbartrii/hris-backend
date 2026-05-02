@@ -28,6 +28,7 @@ import { OvernightModule } from './modules/overnight/overnight.module';
 import { ReimbursementModule } from './modules/reimbursement/reimbursement.module';
 import { ParameterModule } from './modules/parameter/parameter.module';
 import { FaceRegistrationModule } from './modules/face-registration/face-registration.module';
+import { TeamModule } from './modules/team/team.module';
 import { KeepAliveService } from './common/services/keep-alive.service';
 
 @Module({
@@ -65,6 +66,7 @@ import { KeepAliveService } from './common/services/keep-alive.service';
     ReimbursementModule,
     ParameterModule,
     FaceRegistrationModule,
+    TeamModule,
   ],
   controllers: [AppController],
   providers: [
