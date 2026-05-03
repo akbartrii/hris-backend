@@ -186,6 +186,7 @@ export class PayrollService {
       id: string;
       month: number;
       year: number;
+      company_id: string;
       start_date: Date | null;
       end_date: Date | null;
       attendance_cutoff_start: Date | null;
@@ -284,7 +285,7 @@ export class PayrollService {
       workedDays,
       period.month,
       period.year,
-      employee.company_id,
+      period.company_id,
     );
 
     let effectiveBaseSalary: number;

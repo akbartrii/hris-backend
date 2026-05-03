@@ -1,5 +1,6 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
-import * as faceapi from '@vladmandic/face-api';
+import * as faceapi from '@vladmandic/face-api/dist/face-api.node-wasm.js';
+import * as tf from '@tensorflow/tfjs';
 import { Canvas, Image, ImageData } from 'canvas';
 import * as path from 'path';
 
@@ -15,13 +16,17 @@ export class FaceRecognitionService implements OnModuleInit {
   private async loadModels() {
     try {
       this.logger.log('Loading face recognition models...');
-      
+
+      // Initialize WASM backend
+      await tf.setBackend('wasm');
+      await tf.ready();
+
       // Patch environment for Node.js
       // @ts-ignore
       faceapi.env.monkeyPatch({ Canvas, Image, ImageData });
 
       const modelPath = path.join(process.cwd(), 'assets/models');
-      
+
       await Promise.all([
         faceapi.nets.ssdMobilenetv1.loadFromDisk(modelPath),
         faceapi.nets.faceLandmark68Net.loadFromDisk(modelPath),
@@ -39,7 +44,9 @@ export class FaceRecognitionService implements OnModuleInit {
     if (!this.isLoaded) await this.loadModels();
 
     try {
-      const img = await (faceapi.env.monkeyPatch as any).Image.loadFromBuffer(imageBuffer);
+      const img = await (faceapi.env.monkeyPatch as any).Image.loadFromBuffer(
+        imageBuffer,
+      );
       const detection = await faceapi
         .detectSingleFace(img)
         .withFaceLandmarks()
@@ -61,7 +68,11 @@ export class FaceRecognitionService implements OnModuleInit {
     return dist;
   }
 
-  isMatch(descriptor1: number[], descriptor2: number[], threshold = 0.6): boolean {
+  isMatch(
+    descriptor1: number[],
+    descriptor2: number[],
+    threshold = 0.6,
+  ): boolean {
     const distance = this.compareFaces(descriptor1, descriptor2);
     return distance < threshold;
   }

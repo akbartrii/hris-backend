@@ -14,6 +14,7 @@ import { ClockOutDto } from './dto/clock-out.dto';
 import { CreateCorrectionDto } from './dto/create-correction.dto';
 import { ApproveCorrectionDto } from './dto/approve-correction.dto';
 import { ListAttendanceDto } from './dto/list-attendance.dto';
+import { FaceRecognitionService } from '../../common/services/face-recognition.service';
 
 @Injectable()
 export class AttendanceService {
