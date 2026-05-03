@@ -34,7 +34,7 @@ export class CreateOvertimeDto {
   end_time: string;
 
   @ApiProperty({
-    description: 'Overtime type: weekday or weekend',
+    description: 'Overtime type: weekday, weekend, or holiday',
     example: 'weekday',
   })
   @IsString()
