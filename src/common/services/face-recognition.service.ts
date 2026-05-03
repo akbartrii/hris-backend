@@ -1,7 +1,7 @@
 import { Injectable, OnModuleInit, Logger } from '@nestjs/common';
 import * as faceapi from '@vladmandic/face-api/dist/face-api.node-wasm.js';
 import * as tf from '@tensorflow/tfjs';
-import { Canvas, Image, ImageData } from 'canvas';
+import { Canvas, Image, ImageData, loadImage } from 'canvas';
 import * as path from 'path';
 
 @Injectable()
@@ -44,11 +44,9 @@ export class FaceRecognitionService implements OnModuleInit {
     if (!this.isLoaded) await this.loadModels();
 
     try {
-      const img = await (faceapi.env.monkeyPatch as any).Image.loadFromBuffer(
-        imageBuffer,
-      );
+      const img = await loadImage(imageBuffer);
       const detection = await faceapi
-        .detectSingleFace(img)
+        .detectSingleFace(img as any)
         .withFaceLandmarks()
         .withFaceDescriptor();
 

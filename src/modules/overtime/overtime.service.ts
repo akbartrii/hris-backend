@@ -61,7 +61,7 @@ export class OvertimeService {
 
   private async determineDayType(
     date: Date,
-    companyId: string,
+    companyId?: string,
   ): Promise<string> {
     const dateOnly = new Date(date);
     dateOnly.setHours(0, 0, 0, 0);
@@ -70,7 +70,7 @@ export class OvertimeService {
 
     const holiday = await this.prisma.ms_holiday_calendars.findFirst({
       where: {
-        company_id: companyId,
+        ...(companyId ? { company_id: companyId } : {}),
         holiday_date: { gte: dateOnly, lt: nextDay },
       },
     });
@@ -243,7 +243,11 @@ export class OvertimeService {
     });
     const companyId = user?.company_id;
 
-    const dayType = await this.determineDayType(overtimeDate, companyId || '');
+    if (!companyId) {
+      throw new BadRequestException('Target employee does not have a company');
+    }
+
+    const dayType = await this.determineDayType(overtimeDate, companyId);
 
     const startMinutes = this.timeToMinutes(dto.start_time);
     const endMinutes = this.timeToMinutes(dto.end_time);
@@ -264,13 +268,23 @@ export class OvertimeService {
       'overtime_divisor',
       173,
     );
+    if (divisor <= 0) {
+      throw new BadRequestException('Invalid overtime_divisor parameter');
+    }
+
     const ratePerHour = (baseSalary + fixedAllowance) / divisor;
+    if (!Number.isFinite(ratePerHour)) {
+      throw new BadRequestException('Invalid overtime rate calculation');
+    }
 
     const totalOvertimePay = await this.calculateOvertimePay(
       rawMinutes,
       dayType,
       ratePerHour,
     );
+    if (!Number.isFinite(totalOvertimePay)) {
+      throw new BadRequestException('Invalid overtime pay calculation');
+    }
 
     const mealStartMinutes = startMinutes;
     const mealEndMinutes =
@@ -282,26 +296,49 @@ export class OvertimeService {
       mealEndMinutes,
     );
 
-    const overtime = await this.prisma.tr_overtime_requests.create({
-      data: {
-        employee_id: dto.employee_id,
-        requested_by: requester.id,
-        date: overtimeDate,
-        start_time: new Date(`1970-01-01T${dto.start_time}:00`),
-        end_time: new Date(`1970-01-01T${dto.end_time}:00`),
-        total_hours: totalHours,
-        raw_minutes: rawMinutes,
-        type: dto.type,
-        day_type: dayType,
-        description: dto.description,
-        rate_per_hour: ratePerHour,
-        total_overtime_pay: totalOvertimePay,
-        total_meal_allowance: totalMealAllowance,
-        status: 'pending',
-      },
-    });
+    try {
+      const overtime = await this.prisma.tr_overtime_requests.create({
+        data: {
+          employee_id: dto.employee_id,
+          requested_by: requester.id,
+          date: overtimeDate,
+          start_time: new Date(`1970-01-01T${dto.start_time}:00`),
+          end_time: new Date(`1970-01-01T${dto.end_time}:00`),
+          total_hours: totalHours,
+          raw_minutes: rawMinutes,
+          type: dto.type,
+          day_type: dayType,
+          description: dto.description,
+          rate_per_hour: ratePerHour,
+          total_overtime_pay: totalOvertimePay,
+          total_meal_allowance: totalMealAllowance,
+          status: 'pending',
+        },
+      });
 
-    return overtime;
+      return overtime;
+    } catch (error) {
+      this.logger.error('Failed to create overtime request', {
+        error: error instanceof Error ? error.message : String(error),
+        stack: error instanceof Error ? error.stack : undefined,
+        payload: dto,
+        calculations: {
+          baseSalary,
+          fixedAllowance,
+          divisor,
+          ratePerHour,
+          totalOvertimePay,
+          totalMealAllowance,
+          totalHours,
+          rawMinutes,
+          dayType,
+        },
+      });
+      throw new BadRequestException(
+        'Failed to create overtime request: ' +
+          (error instanceof Error ? error.message : String(error)),
+      );
+    }
   }
 
   async cancelOvertime(userId: string, overtimeId: string) {
