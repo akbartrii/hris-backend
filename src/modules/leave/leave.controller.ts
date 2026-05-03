@@ -29,9 +29,10 @@ export class LeaveController {
   @Post()
   async createLeave(
     @CurrentUser('userId') userId: string,
+    @CurrentUser('role') role: string,
     @Body() dto: CreateLeaveDto,
   ) {
-    return this.leaveService.createLeave(userId, dto);
+    return this.leaveService.createLeave(userId, role, dto);
   }
 
   @Get('balance')

@@ -22,6 +22,10 @@ export class ReimbursementService {
       throw new NotFoundException('Employee not found');
     }
 
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+
     const where: any = {};
     const isAdmin = ['admin', 'super_admin'].includes(userRole);
 
@@ -36,10 +40,18 @@ export class ReimbursementService {
       where.category = query.category;
     }
 
-    return this.prisma.tr_reimbursements.findMany({
-      where,
-      orderBy: { created_at: 'desc' },
-    });
+    const [data, total] = await Promise.all([
+      this.prisma.tr_reimbursements.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.tr_reimbursements.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    return { data, meta: { page, limit, total, totalPages } };
   }
 
   async listSubordinateReimbursements(
@@ -54,6 +66,10 @@ export class ReimbursementService {
       throw new NotFoundException('Employee not found');
     }
 
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+
     const subordinates = await this.prisma.tr_employees.findMany({
       where: {
         OR: [
@@ -66,7 +82,7 @@ export class ReimbursementService {
 
     const subordinateIds = subordinates.map((e) => e.id);
     if (subordinateIds.length === 0) {
-      return [];
+      return { data: [], meta: { page, limit, total: 0, totalPages: 0 } };
     }
 
     const where: any = {
@@ -80,10 +96,18 @@ export class ReimbursementService {
       where.category = query.category;
     }
 
-    return this.prisma.tr_reimbursements.findMany({
-      where,
-      orderBy: { created_at: 'desc' },
-    });
+    const [data, total] = await Promise.all([
+      this.prisma.tr_reimbursements.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.tr_reimbursements.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    return { data, meta: { page, limit, total, totalPages } };
   }
 
   async create(userId: string, dto: CreateReimbursementDto) {

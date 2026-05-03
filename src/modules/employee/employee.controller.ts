@@ -51,6 +51,11 @@ export class EmployeeController {
     return this.employeeService.getTeamMates(userId);
   }
 
+  @Get('subordinates')
+  async getSubordinates(@CurrentUser('userId') userId: string) {
+    return this.employeeService.getSubordinates(userId);
+  }
+
   @Get(':id')
   async getEmployeeDetail(
     @CurrentUser('userId') userId: string,

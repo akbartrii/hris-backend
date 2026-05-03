@@ -42,4 +42,20 @@ export class CreateLeaveTypeDto {
   @IsInt()
   @IsOptional()
   max_days_per_request?: number;
+
+  @ApiPropertyOptional({
+    description: 'Leave category',
+    enum: [
+      'annual',
+      'government_mandatory',
+      'umroh',
+      'sick',
+      'personal',
+      'other',
+    ],
+    default: 'other',
+  })
+  @IsString()
+  @IsOptional()
+  category?: string;
 }

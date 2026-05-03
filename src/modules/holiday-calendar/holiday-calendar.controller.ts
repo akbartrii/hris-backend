@@ -15,6 +15,7 @@ import { HolidayCalendarService } from './holiday-calendar.service';
 import { CreateHolidayDto } from './dto/create-holiday.dto';
 import { UpdateHolidayDto } from './dto/update-holiday.dto';
 import { ListHolidayDto } from './dto/list-holiday.dto';
+import { SyncHolidayDto } from './dto/sync-holiday.dto';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { RolesGuard } from '../../common/guards/roles.guard';
 import { Roles } from '../../common/decorators/roles.decorator';
@@ -66,5 +67,14 @@ export class HolidayCalendarController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     return this.service.delete(userId, role, id);
+  }
+
+  @Post('sync')
+  @Roles('hrd', 'admin', 'super_admin')
+  async sync(
+    @CurrentUser('companyId') companyId: string,
+    @Body() dto: SyncHolidayDto,
+  ) {
+    return this.service.syncHolidays(companyId, dto.year);
   }
 }

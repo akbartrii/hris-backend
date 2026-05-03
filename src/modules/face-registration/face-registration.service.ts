@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { SupabaseStorageService } from '../../common/services/supabase-storage.service';
+import { FaceRecognitionService } from '../../common/services/face-recognition.service';
 
 @Injectable()
 export class FaceRegistrationService {
@@ -14,6 +15,7 @@ export class FaceRegistrationService {
   constructor(
     private prisma: PrismaService,
     private storageService: SupabaseStorageService,
+    private faceRecognitionService: FaceRecognitionService,
   ) {}
 
   async getStatus(userId: string) {
@@ -83,6 +85,17 @@ export class FaceRegistrationService {
       uploadPhoto(files.left_photo, 'left'),
     ]);
 
+    // Extract face descriptor from front photo for later verification
+    const descriptor = await this.faceRecognitionService.getFaceDescriptor(
+      files.front_photo.buffer,
+    );
+
+    if (!descriptor) {
+      throw new BadRequestException(
+        'Could not detect face in front photo. Please ensure your face is clearly visible.',
+      );
+    }
+
     await this.prisma.tr_face_registrations.upsert({
       where: { employee_id: employeeId },
       update: {
@@ -90,6 +103,7 @@ export class FaceRegistrationService {
         smile_photo_url: smileUrl,
         right_photo_url: rightUrl,
         left_photo_url: leftUrl,
+        face_descriptor: descriptor as any,
         updated_at: new Date(),
       },
       create: {
@@ -98,6 +112,7 @@ export class FaceRegistrationService {
         smile_photo_url: smileUrl,
         right_photo_url: rightUrl,
         left_photo_url: leftUrl,
+        face_descriptor: descriptor as any,
       },
     });
 

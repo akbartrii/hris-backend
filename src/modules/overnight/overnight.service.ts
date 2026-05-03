@@ -22,6 +22,10 @@ export class OvernightService {
       throw new NotFoundException('Employee not found');
     }
 
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+
     const where: any = {};
     const isAdmin = ['admin', 'super_admin'].includes(userRole);
 
@@ -33,10 +37,18 @@ export class OvernightService {
       where.status = query.status;
     }
 
-    return this.prisma.tr_overnight_requests.findMany({
-      where,
-      orderBy: { created_at: 'desc' },
-    });
+    const [data, total] = await Promise.all([
+      this.prisma.tr_overnight_requests.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.tr_overnight_requests.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    return { data, meta: { page, limit, total, totalPages } };
   }
 
   async listSubordinateOvernights(userId: string, query: ListOvernightDto) {
@@ -47,6 +59,10 @@ export class OvernightService {
     if (!user || !user.tr_employees) {
       throw new NotFoundException('Employee not found');
     }
+
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
 
     const subordinates = await this.prisma.tr_employees.findMany({
       where: {
@@ -60,7 +76,7 @@ export class OvernightService {
 
     const subordinateIds = subordinates.map((e) => e.id);
     if (subordinateIds.length === 0) {
-      return [];
+      return { data: [], meta: { page, limit, total: 0, totalPages: 0 } };
     }
 
     const where: any = {
@@ -71,10 +87,18 @@ export class OvernightService {
       where.status = query.status;
     }
 
-    return this.prisma.tr_overnight_requests.findMany({
-      where,
-      orderBy: { created_at: 'desc' },
-    });
+    const [data, total] = await Promise.all([
+      this.prisma.tr_overnight_requests.findMany({
+        where,
+        skip,
+        take: limit,
+        orderBy: { created_at: 'desc' },
+      }),
+      this.prisma.tr_overnight_requests.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    return { data, meta: { page, limit, total, totalPages } };
   }
 
   async create(userId: string, dto: CreateOvernightDto) {

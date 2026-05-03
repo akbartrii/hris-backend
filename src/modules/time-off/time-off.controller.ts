@@ -29,9 +29,10 @@ export class TimeOffController {
   @Post()
   async createTimeOff(
     @CurrentUser('userId') userId: string,
+    @CurrentUser('role') role: string,
     @Body() dto: CreateTimeOffDto,
   ) {
-    return this.timeOffService.createTimeOff(userId, dto);
+    return this.timeOffService.createTimeOff(userId, role, dto);
   }
 
   @Get()

@@ -1,0 +1,1 @@
+ALTER TABLE ms_leave_types ADD COLUMN IF NOT EXISTS category VARCHAR(50) DEFAULT 'other';

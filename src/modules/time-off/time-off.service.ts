@@ -24,8 +24,22 @@ export class TimeOffService {
     return user.tr_employees;
   }
 
-  async createTimeOff(userId: string, dto: CreateTimeOffDto) {
-    const employee = await this.getEmployeeFromUser(userId);
+  private isAdminOrHRD(role: string): boolean {
+    return ['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(role);
+  }
+
+  async createTimeOff(userId: string, userRole: string, dto: CreateTimeOffDto) {
+    let employee = await this.getEmployeeFromUser(userId);
+
+    if (dto.employee_id && this.isAdminOrHRD(userRole)) {
+      const targetEmployee = await this.prisma.tr_employees.findUnique({
+        where: { id: dto.employee_id },
+      });
+      if (!targetEmployee) {
+        throw new NotFoundException('Target employee not found');
+      }
+      employee = targetEmployee;
+    }
 
     const timeOffType = await this.prisma.ms_time_off_types.findUnique({
       where: { id: dto.time_off_type_id },

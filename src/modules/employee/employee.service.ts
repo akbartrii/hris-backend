@@ -326,6 +326,36 @@ export class EmployeeService {
     return teamMates;
   }
 
+  async getSubordinates(userId: string) {
+    const employee = await this.prisma.tr_employees.findUnique({
+      where: { user_id: userId },
+      select: { id: true },
+    });
+
+    if (!employee) {
+      return [];
+    }
+
+    const subordinates = await this.prisma.tr_employees.findMany({
+      where: {
+        OR: [{ supervisor_id: employee.id }, { manager_id: employee.id }],
+        is_active: true,
+      },
+      select: {
+        id: true,
+        full_name: true,
+        nik: true,
+        ms_positions: { select: { id: true, name: true } },
+        ms_departments_tr_employees_department_idToms_departments: {
+          select: { id: true, name: true },
+        },
+      },
+      orderBy: { full_name: 'asc' },
+    });
+
+    return subordinates;
+  }
+
   async assignLocation(
     userId: string,
     userRole: string,

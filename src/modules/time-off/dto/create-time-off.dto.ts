@@ -43,6 +43,11 @@ export class CreateTimeOffDto {
   @IsUUID()
   work_handover_to?: string;
 
+  @ApiPropertyOptional({ description: 'Employee ID (for admin submission)' })
+  @IsOptional()
+  @IsUUID()
+  employee_id?: string;
+
   @ApiPropertyOptional({ description: 'Attachment URL (optional)' })
   @IsOptional()
   @IsString()

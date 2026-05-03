@@ -1,17 +1,10 @@
-import { IsOptional, IsString, IsInt } from 'class-validator';
+import { IsOptional, IsString } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
+import { PaginationDto } from '../../../common/dto/pagination.dto';
 
-export class ListLeaveDto {
+export class ListLeaveDto extends PaginationDto {
   @ApiPropertyOptional({ description: 'Filter by status' })
   @IsOptional()
   @IsString()
   status?: string;
-
-  @ApiPropertyOptional({ description: 'Page number', default: 1 })
-  @IsOptional()
-  page?: number;
-
-  @ApiPropertyOptional({ description: 'Items per page', default: 10 })
-  @IsOptional()
-  limit?: number;
 }

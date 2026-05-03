@@ -101,17 +101,62 @@ export class PayrollService {
     baseSalary: number,
     fixedAllowance: number,
     workedDays: number,
-  ): Promise<{ prorateAmount: number; isProrated: boolean }> {
-    const effectiveDays = await this.parameterService.getNumber(
-      'prorate_effective_days',
-      21,
+    month: number,
+    year: number,
+    companyId: string,
+  ): Promise<{
+    prorateAmount: number;
+    isProrated: boolean;
+    effectiveDays: number;
+  }> {
+    const effectiveDays = await this.calculateEffectiveWorkDays(
+      month,
+      year,
+      companyId,
     );
+
     if (workedDays >= effectiveDays) {
-      return { prorateAmount: 0, isProrated: false };
+      return { prorateAmount: 0, isProrated: false, effectiveDays };
     }
     const daily = (baseSalary + fixedAllowance) / effectiveDays;
     const prorate = Number((daily * workedDays).toFixed(2));
-    return { prorateAmount: prorate, isProrated: true };
+    return { prorateAmount: prorate, isProrated: true, effectiveDays };
+  }
+
+  private async calculateEffectiveWorkDays(
+    month: number,
+    year: number,
+    companyId: string,
+  ): Promise<number> {
+    const startDate = new Date(year, month - 1, 1);
+    const endDate = new Date(year, month, 0);
+
+    const holidays = await this.prisma.ms_holiday_calendars.findMany({
+      where: {
+        company_id: companyId,
+        holiday_date: { gte: startDate, lte: endDate },
+      },
+      select: { holiday_date: true },
+    });
+
+    const holidaySet = new Set(
+      holidays.map((h) => h.holiday_date.toISOString().split('T')[0]),
+    );
+
+    let workingDays = 0;
+    const current = new Date(startDate);
+    while (current <= endDate) {
+      const dayOfWeek = current.getDay();
+      const dateStr = current.toISOString().split('T')[0];
+
+      // 0 = Sunday, 6 = Saturday
+      if (dayOfWeek !== 0 && dayOfWeek !== 6 && !holidaySet.has(dateStr)) {
+        workingDays++;
+      }
+      current.setDate(current.getDate() + 1);
+    }
+
+    return workingDays || 21; // Fallback to 21 if somehow 0
   }
 
   private async computeMonthsWorked(
@@ -237,6 +282,9 @@ export class PayrollService {
       baseSalary,
       fixedAllowance,
       workedDays,
+      period.month,
+      period.year,
+      employee.company_id,
     );
 
     let effectiveBaseSalary: number;
@@ -319,6 +367,7 @@ export class PayrollService {
       pph21,
       workedDays,
       isProrated: prorate.isProrated,
+      effectiveDays: prorate.effectiveDays,
       grossIncome,
       totalDeductions,
       netIncome,

@@ -32,6 +32,10 @@ export class LeaveService {
     return user.tr_employees;
   }
 
+  private isAdminOrHRD(role: string): boolean {
+    return ['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(role);
+  }
+
   private async getOrCreateLeaveBalance(
     employeeId: string,
     leaveTypeId: string,
@@ -77,8 +81,19 @@ export class LeaveService {
     return Math.floor((endDay - startDay) / msPerDay) + 1;
   }
 
-  async createLeave(userId: string, dto: CreateLeaveDto) {
-    const employee = await this.getEmployeeFromUser(userId);
+  async createLeave(userId: string, userRole: string, dto: CreateLeaveDto) {
+    let employee = await this.getEmployeeFromUser(userId);
+
+    // If admin/HR provides an employee_id, use that instead
+    if (dto.employee_id && this.isAdminOrHRD(userRole)) {
+      const targetEmployee = await this.prisma.tr_employees.findUnique({
+        where: { id: dto.employee_id },
+      });
+      if (!targetEmployee) {
+        throw new NotFoundException('Target employee not found');
+      }
+      employee = targetEmployee;
+    }
     const leaveType = await this.prisma.ms_leave_types.findUnique({
       where: { id: dto.leave_type_id },
     });
@@ -227,8 +242,8 @@ export class LeaveService {
       throw new NotFoundException('Employee not found');
     }
 
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 10;
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
     const where: any = {};
@@ -256,7 +271,8 @@ export class LeaveService {
       this.prisma.tr_leave_requests.count({ where }),
     ]);
 
-    return { data, meta: { page, limit, total } };
+    const totalPages = Math.ceil(total / limit);
+    return { data, meta: { page, limit, total, totalPages } };
   }
 
   async listSubordinateLeaves(userId: string, query: ListLeaveDto) {
@@ -268,8 +284,8 @@ export class LeaveService {
       throw new NotFoundException('Employee not found');
     }
 
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 10;
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
     const subordinates = await this.prisma.tr_employees.findMany({
@@ -284,7 +300,7 @@ export class LeaveService {
 
     const subordinateIds = subordinates.map((e) => e.id);
     if (subordinateIds.length === 0) {
-      return { data: [], meta: { page, limit, total: 0 } };
+      return { data: [], meta: { page, limit, total: 0, totalPages: 0 } };
     }
 
     const where: any = {
@@ -309,7 +325,8 @@ export class LeaveService {
       this.prisma.tr_leave_requests.count({ where }),
     ]);
 
-    return { data, meta: { page, limit, total } };
+    const totalPages = Math.ceil(total / limit);
+    return { data, meta: { page, limit, total, totalPages } };
   }
 
   async approveLeave(

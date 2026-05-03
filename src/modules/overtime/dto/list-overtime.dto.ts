@@ -1,8 +1,8 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsString, IsOptional, IsInt, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString, IsOptional } from 'class-validator';
+import { PaginationDto } from '../../../common/dto/pagination.dto';
 
-export class ListOvertimeDto {
+export class ListOvertimeDto extends PaginationDto {
   @ApiPropertyOptional({ description: 'Filter by status' })
   @IsString()
   @IsOptional()
@@ -20,18 +20,4 @@ export class ListOvertimeDto {
   @IsString()
   @IsOptional()
   employee_id?: string;
-
-  @ApiPropertyOptional({ description: 'Page number', default: 1 })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @IsOptional()
-  page?: number = 1;
-
-  @ApiPropertyOptional({ description: 'Items per page', default: 10 })
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  @IsOptional()
-  limit?: number = 10;
 }

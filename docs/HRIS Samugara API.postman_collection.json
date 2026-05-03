@@ -2077,9 +2077,23 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/leave",
+              "raw": "{{baseUrl}}/leave?page=1&limit=10&status=pending",
               "host": ["{{baseUrl}}"],
-              "path": ["leave"]
+              "path": ["leave"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
             }
           },
           "response": []
@@ -2305,9 +2319,27 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/overtime",
+              "raw": "{{baseUrl}}/overtime?page=1&limit=10&status=pending&month=2026-05",
               "host": ["{{baseUrl}}"],
-              "path": ["overtime"]
+              "path": ["overtime"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "month",
+                  "value": "2026-05"
+                }
+              ]
             }
           },
           "response": []
@@ -2323,13 +2355,25 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/overtime/subordinates?status=pending",
+              "raw": "{{baseUrl}}/overtime/subordinates?status=pending&page=1&limit=10&month=2026-05",
               "host": ["{{baseUrl}}"],
               "path": ["overtime", "subordinates"],
               "query": [
                 {
                   "key": "status",
                   "value": "pending"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "month",
+                  "value": "2026-05"
                 }
               ]
             }
@@ -2632,9 +2676,23 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/overnight",
+              "raw": "{{baseUrl}}/overnight?page=1&limit=10&status=pending",
               "host": ["{{baseUrl}}"],
-              "path": ["overnight"]
+              "path": ["overnight"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                }
+              ]
             }
           },
           "response": []
@@ -2650,13 +2708,21 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/overnight/subordinates?status=pending",
+              "raw": "{{baseUrl}}/overnight/subordinates?status=pending&page=1&limit=10",
               "host": ["{{baseUrl}}"],
               "path": ["overnight", "subordinates"],
               "query": [
                 {
                   "key": "status",
                   "value": "pending"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
                 }
               ]
             }
@@ -2731,9 +2797,27 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/reimbursements",
+              "raw": "{{baseUrl}}/reimbursements?page=1&limit=10&status=pending&category=transport",
               "host": ["{{baseUrl}}"],
-              "path": ["reimbursements"]
+              "path": ["reimbursements"],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "status",
+                  "value": "pending"
+                },
+                {
+                  "key": "category",
+                  "value": "transport"
+                }
+              ]
             }
           },
           "response": []
@@ -2749,13 +2833,25 @@
               }
             ],
             "url": {
-              "raw": "{{baseUrl}}/reimbursements/subordinates?status=pending",
+              "raw": "{{baseUrl}}/reimbursements/subordinates?status=pending&page=1&limit=10&category=transport",
               "host": ["{{baseUrl}}"],
               "path": ["reimbursements", "subordinates"],
               "query": [
                 {
                   "key": "status",
                   "value": "pending"
+                },
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "category",
+                  "value": "transport"
                 }
               ]
             }

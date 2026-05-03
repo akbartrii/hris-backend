@@ -36,12 +36,27 @@ export class OvertimeService {
     return hours * 60 + minutes;
   }
 
-  private async roundUpHours(totalMinutes: number): Promise<number> {
-    const roundingMinutes = await this.parameterService.getNumber(
-      'overtime_rounding_minutes',
-      30,
-    );
-    return Math.ceil(totalMinutes / roundingMinutes) * (roundingMinutes / 60);
+  private roundUpHours(totalMinutes: number): number {
+    if (totalMinutes <= 30) {
+      return 0.5;
+    }
+    if (totalMinutes <= 60) {
+      return 1.0;
+    }
+
+    const fullHours = Math.floor(totalMinutes / 60);
+    const remainder = totalMinutes % 60;
+
+    if (remainder === 0) {
+      return fullHours;
+    }
+    if (remainder <= 15) {
+      return fullHours;
+    }
+    if (remainder <= 45) {
+      return fullHours + 0.5;
+    }
+    return fullHours + 1.0;
   }
 
   private async determineDayType(
@@ -241,7 +256,7 @@ export class OvertimeService {
       startMinutes,
       endMinutes,
     );
-    const totalHours = await this.roundUpHours(rawMinutes);
+    const totalHours = this.roundUpHours(rawMinutes);
 
     const baseSalary = Number(targetEmployee.base_salary || 0);
     const fixedAllowance = Number(targetEmployee.fixed_allowance || 0);
@@ -367,8 +382,8 @@ export class OvertimeService {
         throw new NotFoundException('Employee not found');
       }
 
-      const page = Number(query.page) || 1;
-      const limit = Number(query.limit) || 10;
+      const page = query.page ?? 1;
+      const limit = query.limit ?? 10;
       const skip = (page - 1) * limit;
 
       const where: any = {};
@@ -408,7 +423,8 @@ export class OvertimeService {
         this.prisma.tr_overtime_requests.count({ where }),
       ]);
 
-      return { data, meta: { page, limit, total } };
+      const totalPages = Math.ceil(total / limit);
+      return { data, meta: { page, limit, total, totalPages } };
     } catch (error) {
       this.logger.error(`Error in listOvertimes for user ${userId}:`, error);
       throw error;
@@ -424,8 +440,8 @@ export class OvertimeService {
       throw new NotFoundException('Employee not found');
     }
 
-    const page = Number(query.page) || 1;
-    const limit = Number(query.limit) || 10;
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
     const subordinates = await this.prisma.tr_employees.findMany({
@@ -440,7 +456,7 @@ export class OvertimeService {
 
     const subordinateIds = subordinates.map((e) => e.id);
     if (subordinateIds.length === 0) {
-      return { data: [], meta: { page, limit, total: 0 } };
+      return { data: [], meta: { page, limit, total: 0, totalPages: 0 } };
     }
 
     const where: any = {
@@ -473,7 +489,8 @@ export class OvertimeService {
       this.prisma.tr_overtime_requests.count({ where }),
     ]);
 
-    return { data, meta: { page, limit, total } };
+    const totalPages = Math.ceil(total / limit);
+    return { data, meta: { page, limit, total, totalPages } };
   }
 
   async getOvertimeSummary(userId: string, month?: string) {

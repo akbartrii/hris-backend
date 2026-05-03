@@ -108,4 +108,53 @@ export class HolidayCalendarService {
 
     return this.prisma.ms_holiday_calendars.delete({ where: { id } });
   }
+
+  async syncHolidays(companyId: string, year: number) {
+    try {
+      const response = await fetch(
+        `https://api-hari-libur.vercel.app/api?year=${year}`,
+      );
+      if (!response.ok) {
+        throw new Error('Failed to fetch holidays from public API');
+      }
+
+      const holidays = await response.json();
+      const results = [];
+
+      for (const h of holidays) {
+        // Example structure: { holiday_date: "2026-01-01", holiday_name: "Tahun Baru 2026 Masehi", is_national_holiday: true }
+        const holidayDate = new Date(h.holiday_date);
+
+        const upserted = await this.prisma.ms_holiday_calendars.upsert({
+          where: {
+            company_id_holiday_date: {
+              company_id: companyId,
+              holiday_date: holidayDate,
+            },
+          },
+          update: {
+            name: h.holiday_name,
+            type: h.is_national_holiday ? 'national' : 'other',
+            year: year,
+          },
+          create: {
+            company_id: companyId,
+            holiday_date: holidayDate,
+            name: h.holiday_name,
+            type: h.is_national_holiday ? 'national' : 'other',
+            year: year,
+            is_recurring: false,
+          },
+        });
+        results.push(upserted);
+      }
+
+      return {
+        message: `Successfully synced ${results.length} holidays for year ${year}`,
+        count: results.length,
+      };
+    } catch (error) {
+      throw new Error(`Holiday sync failed: ${error.message}`);
+    }
+  }
 }

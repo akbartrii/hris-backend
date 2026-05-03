@@ -23,6 +23,7 @@ export class AttendanceService {
     private prisma: PrismaService,
     private storageService: SupabaseStorageService,
     private parameterService: ParameterService,
+    private faceRecognitionService: FaceRecognitionService,
   ) {}
 
   private toRadians(degrees: number): number {
@@ -305,6 +306,39 @@ export class AttendanceService {
     });
   }
 
+  private async verifyFace(employeeId: string, photo: Buffer) {
+    const registration = await this.prisma.tr_face_registrations.findUnique({
+      where: { employee_id: employeeId },
+    });
+
+    if (!registration || !registration.face_descriptor) {
+      throw new BadRequestException(
+        'Face registration required. Please complete face registration first.',
+      );
+    }
+
+    const currentDescriptor = await this.faceRecognitionService.getFaceDescriptor(
+      photo,
+    );
+
+    if (!currentDescriptor) {
+      throw new BadRequestException(
+        'Could not detect face in photo. Please ensure your face is clearly visible.',
+      );
+    }
+
+    const isMatch = this.faceRecognitionService.isMatch(
+      registration.face_descriptor as any,
+      currentDescriptor,
+    );
+
+    if (!isMatch) {
+      throw new BadRequestException(
+        'Face verification failed. Wajah tidak cocok dengan data terdaftar.',
+      );
+    }
+  }
+
   private async checkFaceRegistration(employeeId: string) {
     const employee = await this.prisma.tr_employees.findUnique({
       where: { id: employeeId },
@@ -324,6 +358,7 @@ export class AttendanceService {
     today.setHours(0, 0, 0, 0);
 
     await this.checkFaceRegistration(employee.id);
+    await this.verifyFace(employee.id, photo.buffer);
 
     const existing = await this.prisma.tr_attendances.findFirst({
       where: { employee_id: employee.id, attendance_date: today },
@@ -418,6 +453,7 @@ export class AttendanceService {
     today.setHours(0, 0, 0, 0);
 
     await this.checkFaceRegistration(employee.id);
+    await this.verifyFace(employee.id, photo.buffer);
 
     const attendance = await this.prisma.tr_attendances.findFirst({
       where: { employee_id: employee.id, attendance_date: today },
