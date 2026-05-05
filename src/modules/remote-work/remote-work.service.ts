@@ -41,10 +41,22 @@ export class RemoteWorkService {
       where.status = query.status;
     }
 
-    return this.prisma.tr_remote_work_requests.findMany({
-      where,
-      orderBy: { created_at: 'desc' },
-    });
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.tr_remote_work_requests.findMany({
+        where,
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: limit,
+      }),
+      this.prisma.tr_remote_work_requests.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    return { data, meta: { page, limit, total, totalPages } };
   }
 
   async listSubordinates(
@@ -81,20 +93,32 @@ export class RemoteWorkService {
       where.status = query.status;
     }
 
-    return this.prisma.tr_remote_work_requests.findMany({
-      where,
-      orderBy: { created_at: 'desc' },
-      include: {
-        tr_employees_tr_remote_work_requests_employee_idTotr_employees: {
-          select: {
-            full_name: true,
-            tr_users: {
-              select: { email: true },
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 10;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      this.prisma.tr_remote_work_requests.findMany({
+        where,
+        orderBy: { created_at: 'desc' },
+        skip,
+        take: limit,
+        include: {
+          tr_employees_tr_remote_work_requests_employee_idTotr_employees: {
+            select: {
+              full_name: true,
+              tr_users: {
+                select: { email: true },
+              },
             },
           },
         },
-      },
-    });
+      }),
+      this.prisma.tr_remote_work_requests.count({ where }),
+    ]);
+
+    const totalPages = Math.ceil(total / limit);
+    return { data, meta: { page, limit, total, totalPages } };
   }
 
   async create(userId: string, dto: CreateRemoteWorkDto) {
