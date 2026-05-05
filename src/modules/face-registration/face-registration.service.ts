@@ -85,12 +85,14 @@ export class FaceRegistrationService {
 
     this.logger.log(`[FaceReg] Resizing done in ${Date.now() - resizeStart}ms`);
 
-    // Step 2: Face detect front photo FIRST (fail fast - no upload if fail)
-    this.logger.log(`[FaceReg] Face detecting front photo...`);
+    // Step 2: Face detect front photo FIRST using ORIGINAL (not resized)
+    // Resize might corrupt buffer for face-api, use original for detection
+    this.logger.log(`[FaceReg] Face detecting front photo (original)...`);
     const detectStart = Date.now();
 
-    const descriptor =
-      await this.faceRecognitionService.getFaceDescriptor(frontResized);
+    const descriptor = await this.faceRecognitionService.getFaceDescriptor(
+      files.front_photo.buffer,
+    );
 
     this.logger.log(
       `[FaceReg] Face detection done in ${Date.now() - detectStart}ms`,
