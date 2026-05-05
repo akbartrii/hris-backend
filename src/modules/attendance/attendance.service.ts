@@ -312,10 +312,19 @@ export class AttendanceService {
       where: { employee_id: employeeId },
     });
 
-    if (!registration || !registration.face_descriptor) {
+    if (!registration) {
       throw new BadRequestException(
         'Face registration required. Please complete face registration first.',
       );
+    }
+
+    // If no face descriptor yet (new registration flow), skip verification for now
+    // Will be cached on first clock-in after platform upgrade
+    if (!registration.face_descriptor) {
+      this.logger.warn(
+        `[FaceVerify] No face descriptor for employee ${employeeId}. Skipping face verification.`,
+      );
+      return;
     }
 
     const currentDescriptor =

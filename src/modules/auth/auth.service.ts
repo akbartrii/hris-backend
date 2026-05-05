@@ -63,6 +63,11 @@ export class AuthService {
         data: { last_login_at: new Date() },
       });
 
+      // Build assigned locations for the employee
+      const assignedLocations = await this.buildAssignedLocations(
+        user.tr_employees?.id,
+      );
+
       return {
         access_token: token,
         employee_id: user.tr_employees?.id || null,
@@ -72,6 +77,7 @@ export class AuthService {
           full_name: user.full_name,
           role: user.ms_roles?.name || 'karyawan',
         },
+        assigned_locations: assignedLocations,
       };
     } catch (error) {
       if (error instanceof UnauthorizedException) {
@@ -82,6 +88,69 @@ export class AuthService {
         'Authentication service temporarily unavailable',
       );
     }
+  }
+
+  private async buildAssignedLocations(employeeId: string | undefined) {
+    const locations: any[] = [];
+
+    if (!employeeId) {
+      return locations;
+    }
+
+    const employee = await this.prisma.tr_employees.findUnique({
+      where: { id: employeeId },
+      include: { ms_locations: true },
+    });
+
+    if (!employee) {
+      return locations;
+    }
+
+    // Office location
+    if (employee.ms_locations) {
+      locations.push({
+        id: employee.ms_locations.id,
+        name: employee.ms_locations.name,
+        type: employee.ms_locations.type || 'office',
+        latitude: employee.ms_locations.latitude,
+        longitude: employee.ms_locations.longitude,
+        radius_meters: employee.ms_locations.radius_meters,
+        address: employee.ms_locations.address,
+        is_active: employee.ms_locations.is_active,
+      });
+    }
+
+    // Active WFH location
+    if (employee.current_remote_work_id) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const wfh = await this.prisma.tr_remote_work_requests.findUnique({
+        where: { id: employee.current_remote_work_id },
+      });
+
+      if (
+        wfh &&
+        wfh.status === 'approved' &&
+        wfh.start_date <= today &&
+        wfh.end_date >= today
+      ) {
+        locations.push({
+          id: wfh.id,
+          name: `WFH - ${wfh.address || 'Rumah'}`,
+          type: 'wfh',
+          latitude: wfh.latitude,
+          longitude: wfh.longitude,
+          radius_meters: wfh.radius_meters || 50,
+          address: wfh.address,
+          is_active: true,
+          start_date: wfh.start_date,
+          end_date: wfh.end_date,
+        });
+      }
+    }
+
+    return locations;
   }
 
   async getProfile(userId: string) {
