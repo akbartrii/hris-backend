@@ -93,11 +93,23 @@ export class RemoteWorkService {
     // Supervisor (atasan) can only see their direct subordinates
     // Admin/HR roles can see all requests
     if (userRole === 'atasan') {
+      this.logger.log(
+        `[listSubordinates] user_id=${userId}, employee_id=${user.tr_employees.id}, name=${user.tr_employees.full_name}`,
+      );
       const subordinates = await this.prisma.tr_employees.findMany({
         where: { supervisor_id: user.tr_employees.id },
-        select: { id: true },
+        select: { id: true, full_name: true },
       });
       const subordinateIds = subordinates.map((e) => e.id);
+      this.logger.log(
+        `[listSubordinates] Found ${subordinates.length} subordinates: ${subordinates.map((e) => `${e.full_name}(${e.id})`).join(', ')}`,
+      );
+      if (subordinateIds.length === 0) {
+        return {
+          data: [],
+          meta: { page: 1, limit: 10, total: 0, totalPages: 0 },
+        };
+      }
       where.employee_id = { in: subordinateIds };
     }
 
@@ -108,6 +120,8 @@ export class RemoteWorkService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
+
+    this.logger.log(`[listSubordinates] Query where: ${JSON.stringify(where)}`);
 
     const [data, total] = await Promise.all([
       this.prisma.tr_remote_work_requests.findMany({
@@ -128,6 +142,10 @@ export class RemoteWorkService {
       }),
       this.prisma.tr_remote_work_requests.count({ where }),
     ]);
+
+    this.logger.log(
+      `[listSubordinates] Found ${data.length} requests out of ${total}`,
+    );
 
     const totalPages = Math.ceil(total / limit);
     return { data, meta: { page, limit, total, totalPages } };
