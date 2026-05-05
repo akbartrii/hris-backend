@@ -34,6 +34,15 @@ export class RemoteWorkController {
     return this.service.list(userId, role, query);
   }
 
+  @Get('subordinates')
+  async listSubordinates(
+    @CurrentUser('userId') userId: string,
+    @CurrentUser('role') role: string,
+    @Query() query: ListRemoteWorkDto,
+  ) {
+    return this.service.listSubordinates(userId, role, query);
+  }
+
   @Post()
   async create(
     @CurrentUser('userId') userId: string,
@@ -50,5 +59,14 @@ export class RemoteWorkController {
     @Body() dto: ApproveRemoteWorkDto,
   ) {
     return this.service.approve(userId, role, id, dto);
+  }
+
+  @Patch(':id/cancel')
+  async cancel(
+    @CurrentUser('userId') userId: string,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body('reason') reason?: string,
+  ) {
+    return this.service.cancel(userId, id, reason);
   }
 }

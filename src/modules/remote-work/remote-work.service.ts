@@ -5,13 +5,17 @@ import {
   BadRequestException,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
+import { NotificationService } from '../notification/notification.service';
 import { CreateRemoteWorkDto } from './dto/create-remote-work.dto';
 import { ListRemoteWorkDto } from './dto/list-remote-work.dto';
 import { ApproveRemoteWorkDto } from './dto/approve-remote-work.dto';
 
 @Injectable()
 export class RemoteWorkService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private notificationService: NotificationService,
+  ) {}
 
   async list(userId: string, userRole: string, query: ListRemoteWorkDto) {
     const user = await this.prisma.tr_users.findUnique({
@@ -40,6 +44,56 @@ export class RemoteWorkService {
     return this.prisma.tr_remote_work_requests.findMany({
       where,
       orderBy: { created_at: 'desc' },
+    });
+  }
+
+  async listSubordinates(
+    userId: string,
+    userRole: string,
+    query: ListRemoteWorkDto,
+  ) {
+    const user = await this.prisma.tr_users.findUnique({
+      where: { id: userId },
+      include: { tr_employees: true },
+    });
+    if (!user || !user.tr_employees) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    if (userRole !== 'atasan' && userRole !== 'super_admin') {
+      throw new ForbiddenException(
+        'Only supervisor or super admin can view subordinate requests',
+      );
+    }
+
+    const where: any = {};
+
+    if (userRole === 'atasan') {
+      const subordinates = await this.prisma.tr_employees.findMany({
+        where: { supervisor_id: user.tr_employees.id },
+        select: { id: true },
+      });
+      const subordinateIds = subordinates.map((e) => e.id);
+      where.employee_id = { in: subordinateIds };
+    }
+
+    if (query.status) {
+      where.status = query.status;
+    }
+
+    return this.prisma.tr_remote_work_requests.findMany({
+      where,
+      orderBy: { created_at: 'desc' },
+      include: {
+        tr_employees_tr_remote_work_requests_employee_idTotr_employees: {
+          select: {
+            full_name: true,
+            tr_users: {
+              select: { email: true },
+            },
+          },
+        },
+      },
     });
   }
 
@@ -72,7 +126,7 @@ export class RemoteWorkService {
       );
     }
 
-    return this.prisma.tr_remote_work_requests.create({
+    const request = await this.prisma.tr_remote_work_requests.create({
       data: {
         employee_id: user.tr_employees.id,
         start_date: start,
@@ -86,6 +140,26 @@ export class RemoteWorkService {
         supervisor_id: user.tr_employees.supervisor_id,
       },
     });
+
+    // Notify supervisor
+    if (user.tr_employees.supervisor_id) {
+      const supervisor = await this.prisma.tr_employees.findUnique({
+        where: { id: user.tr_employees.supervisor_id },
+        include: { tr_users: true },
+      });
+      if (supervisor?.tr_users) {
+        await this.notificationService.createNotificationInternal(
+          supervisor.tr_users.id,
+          'remote_work_request',
+          'Permintaan WFH Baru',
+          `${user.tr_employees.full_name} mengajukan WFH dari ${dto.start_date} s/d ${dto.end_date}`,
+          'remote_work',
+          request.id,
+        );
+      }
+    }
+
+    return request;
   }
 
   async approve(
@@ -122,19 +196,29 @@ export class RemoteWorkService {
       );
     }
 
+    let updatedRequest;
+
     if (dto.action === 'approve') {
       await this.prisma.tr_employees.update({
         where: { id: request.employee_id },
         data: { current_remote_work_id: requestId },
       });
 
-      return this.prisma.tr_remote_work_requests.update({
+      updatedRequest = await this.prisma.tr_remote_work_requests.update({
         where: { id: requestId },
         data: {
           status: 'approved',
           approved_at: new Date(),
         },
       });
+
+      // Notify employee
+      await this.notifyEmployee(
+        request.employee_id,
+        'WFH Disetujui',
+        `Permintaan WFH kamu dari ${request.start_date.toISOString().split('T')[0]} s/d ${request.end_date.toISOString().split('T')[0]} telah disetujui`,
+        requestId,
+      );
     } else {
       await this.prisma.tr_employees.updateMany({
         where: {
@@ -144,13 +228,99 @@ export class RemoteWorkService {
         data: { current_remote_work_id: null },
       });
 
-      return this.prisma.tr_remote_work_requests.update({
+      updatedRequest = await this.prisma.tr_remote_work_requests.update({
         where: { id: requestId },
         data: {
           status: 'rejected',
           rejected_reason: dto.rejection_reason || 'Rejected by supervisor',
         },
       });
+
+      // Notify employee
+      await this.notifyEmployee(
+        request.employee_id,
+        'WFH Ditolak',
+        `Permintaan WFH kamu ditolak. Alasan: ${dto.rejection_reason || 'Rejected by supervisor'}`,
+        requestId,
+      );
+    }
+
+    return updatedRequest;
+  }
+
+  async cancel(userId: string, requestId: string, reason?: string) {
+    const user = await this.prisma.tr_users.findUnique({
+      where: { id: userId },
+      include: { tr_employees: true },
+    });
+    if (!user || !user.tr_employees) {
+      throw new NotFoundException('Employee not found');
+    }
+
+    const request = await this.prisma.tr_remote_work_requests.findUnique({
+      where: { id: requestId },
+    });
+    if (!request) {
+      throw new NotFoundException('Remote work request not found');
+    }
+
+    if (request.employee_id !== user.tr_employees.id) {
+      throw new ForbiddenException('You can only cancel your own request');
+    }
+
+    if (request.status !== 'pending') {
+      throw new BadRequestException('Only pending requests can be cancelled');
+    }
+
+    const updatedRequest = await this.prisma.tr_remote_work_requests.update({
+      where: { id: requestId },
+      data: {
+        status: 'cancelled',
+        cancelled_at: new Date(),
+        cancelled_reason: reason || null,
+      },
+    });
+
+    // Notify supervisor
+    if (request.supervisor_id) {
+      const supervisor = await this.prisma.tr_employees.findUnique({
+        where: { id: request.supervisor_id },
+        include: { tr_users: true },
+      });
+      if (supervisor?.tr_users) {
+        await this.notificationService.createNotificationInternal(
+          supervisor.tr_users.id,
+          'remote_work_cancelled',
+          'WFH Dibatalkan',
+          `${user.tr_employees.full_name} membatalkan permintaan WFH dari ${request.start_date.toISOString().split('T')[0]} s/d ${request.end_date.toISOString().split('T')[0]}${reason ? `. Alasan: ${reason}` : ''}`,
+          'remote_work',
+          requestId,
+        );
+      }
+    }
+
+    return updatedRequest;
+  }
+
+  private async notifyEmployee(
+    employeeId: string,
+    title: string,
+    message: string,
+    requestId: string,
+  ) {
+    const employee = await this.prisma.tr_employees.findUnique({
+      where: { id: employeeId },
+      include: { tr_users: true },
+    });
+    if (employee?.tr_users) {
+      await this.notificationService.createNotificationInternal(
+        employee.tr_users.id,
+        'remote_work_status',
+        title,
+        message,
+        'remote_work',
+        requestId,
+      );
     }
   }
 }

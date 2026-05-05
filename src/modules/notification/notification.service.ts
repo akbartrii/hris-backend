@@ -117,6 +117,34 @@ export class NotificationService {
     return notification;
   }
 
+  async createNotificationInternal(
+    targetUserId: string,
+    type: string,
+    title: string,
+    message: string,
+    referenceType?: string,
+    referenceId?: string,
+  ) {
+    const notification = await this.prisma.tr_notifications.create({
+      data: {
+        user_id: targetUserId,
+        type,
+        title,
+        message,
+        reference_type: referenceType,
+        reference_id: referenceId,
+        is_read: false,
+      },
+    });
+
+    await this.fcmService.sendPushNotification(targetUserId, title, message, {
+      reference_type: referenceType || '',
+      reference_id: referenceId || '',
+    });
+
+    return notification;
+  }
+
   async getUnreadCount(userId: string) {
     const count = await this.prisma.tr_notifications.count({
       where: { user_id: userId, is_read: false },
