@@ -3,6 +3,7 @@ import {
   ForbiddenException,
   NotFoundException,
   BadRequestException,
+  Logger,
 } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
 import { NotificationService } from '../notification/notification.service';
@@ -12,6 +13,8 @@ import { ApproveRemoteWorkDto } from './dto/approve-remote-work.dto';
 
 @Injectable()
 export class RemoteWorkService {
+  private readonly logger = new Logger(RemoteWorkService.name);
+
   constructor(
     private prisma: PrismaService,
     private notificationService: NotificationService,
@@ -176,11 +179,17 @@ export class RemoteWorkService {
 
     // Notify supervisor
     if (user.tr_employees.supervisor_id) {
+      this.logger.log(
+        `[Create] Notifying supervisor_id=${user.tr_employees.supervisor_id} about request from employee_id=${user.tr_employees.id}`,
+      );
       const supervisor = await this.prisma.tr_employees.findUnique({
         where: { id: user.tr_employees.supervisor_id },
         include: { tr_users: true },
       });
       if (supervisor?.tr_users) {
+        this.logger.log(
+          `[Create] Sending notif to supervisor user_id=${supervisor.tr_users.id}, name=${supervisor.full_name}`,
+        );
         await this.notificationService.createNotificationInternal(
           supervisor.tr_users.id,
           'remote_work_request',
@@ -189,7 +198,15 @@ export class RemoteWorkService {
           'remote_work',
           request.id,
         );
+      } else {
+        this.logger.warn(
+          `[Create] Supervisor employee_id=${user.tr_employees.supervisor_id} has no linked user`,
+        );
       }
+    } else {
+      this.logger.warn(
+        `[Create] Employee ${user.tr_employees.id} has no supervisor_id`,
+      );
     }
 
     return request;
@@ -246,6 +263,9 @@ export class RemoteWorkService {
       });
 
       // Notify employee
+      this.logger.log(
+        `[Approve] Sending approval notif to requester employee_id=${request.employee_id}`,
+      );
       await this.notifyEmployee(
         request.employee_id,
         'WFH Disetujui',
@@ -270,6 +290,9 @@ export class RemoteWorkService {
       });
 
       // Notify employee
+      this.logger.log(
+        `[Reject] Sending rejection notif to requester employee_id=${request.employee_id}`,
+      );
       await this.notifyEmployee(
         request.employee_id,
         'WFH Ditolak',
@@ -346,6 +369,9 @@ export class RemoteWorkService {
       include: { tr_users: true },
     });
     if (employee?.tr_users) {
+      this.logger.log(
+        `[Notify] Target: employee_id=${employeeId}, user_id=${employee.tr_users.id}, name=${employee.full_name}, title=${title}`,
+      );
       await this.notificationService.createNotificationInternal(
         employee.tr_users.id,
         'remote_work_status',
@@ -353,6 +379,10 @@ export class RemoteWorkService {
         message,
         'remote_work',
         requestId,
+      );
+    } else {
+      this.logger.warn(
+        `[Notify] Cannot notify employee_id=${employeeId}: no user linked`,
       );
     }
   }

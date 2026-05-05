@@ -122,18 +122,26 @@ export class AuthService {
 
     // Active WFH location
     if (employee.current_remote_work_id) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
+      const todayStr = new Date().toISOString().split('T')[0];
 
       const wfh = await this.prisma.tr_remote_work_requests.findUnique({
         where: { id: employee.current_remote_work_id },
       });
 
+      const startStr = wfh?.start_date
+        ? new Date(wfh.start_date).toISOString().split('T')[0]
+        : null;
+      const endStr = wfh?.end_date
+        ? new Date(wfh.end_date).toISOString().split('T')[0]
+        : null;
+
       if (
         wfh &&
         wfh.status === 'approved' &&
-        wfh.start_date <= today &&
-        wfh.end_date >= today
+        startStr &&
+        endStr &&
+        startStr <= todayStr &&
+        endStr >= todayStr
       ) {
         locations.push({
           id: wfh.id,
