@@ -94,6 +94,7 @@ export class AuthService {
     const locations: any[] = [];
 
     if (!employeeId) {
+      this.logger.log(`[buildAssignedLocations] No employeeId provided`);
       return locations;
     }
 
@@ -103,8 +104,15 @@ export class AuthService {
     });
 
     if (!employee) {
+      this.logger.log(
+        `[buildAssignedLocations] Employee ${employeeId} not found`,
+      );
       return locations;
     }
+
+    this.logger.log(
+      `[buildAssignedLocations] Employee ${employeeId}, current_remote_work_id=${employee.current_remote_work_id}, location_id=${employee.location_id}`,
+    );
 
     // Office location
     if (employee.ms_locations) {
@@ -128,6 +136,10 @@ export class AuthService {
         where: { id: employee.current_remote_work_id },
       });
 
+      this.logger.log(
+        `[buildAssignedLocations] WFH request found: status=${wfh?.status}, start=${wfh?.start_date}, end=${wfh?.end_date}, today=${todayStr}`,
+      );
+
       const startStr = wfh?.start_date
         ? new Date(wfh.start_date).toISOString().split('T')[0]
         : null;
@@ -143,6 +155,7 @@ export class AuthService {
         startStr <= todayStr &&
         endStr >= todayStr
       ) {
+        this.logger.log(`[buildAssignedLocations] WFH location ADDED`);
         locations.push({
           id: wfh.id,
           name: `WFH - ${wfh.address || 'Rumah'}`,
@@ -155,9 +168,18 @@ export class AuthService {
           start_date: wfh.start_date,
           end_date: wfh.end_date,
         });
+      } else {
+        this.logger.log(
+          `[buildAssignedLocations] WFH location NOT added. wfh=${!!wfh}, status=${wfh?.status}, startStr=${startStr}, endStr=${endStr}, todayStr=${todayStr}`,
+        );
       }
+    } else {
+      this.logger.log(`[buildAssignedLocations] No current_remote_work_id`);
     }
 
+    this.logger.log(
+      `[buildAssignedLocations] Returning ${locations.length} locations`,
+    );
     return locations;
   }
 

@@ -249,10 +249,14 @@ export class RemoteWorkService {
     let updatedRequest;
 
     if (dto.action === 'approve') {
+      this.logger.log(
+        `[Approve] Updating employee ${request.employee_id} current_remote_work_id=${requestId}`,
+      );
       await this.prisma.tr_employees.update({
         where: { id: request.employee_id },
         data: { current_remote_work_id: requestId },
       });
+      this.logger.log(`[Approve] Employee updated successfully`);
 
       updatedRequest = await this.prisma.tr_remote_work_requests.update({
         where: { id: requestId },
