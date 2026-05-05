@@ -7,6 +7,8 @@ import {
 import { ConfigService } from '@nestjs/config';
 import { PrismaService } from '../../prisma/prisma.service';
 import { LoginDto } from './dto/login.dto';
+import { SaveFcmTokenDto } from './dto/save-fcm-token.dto';
+import { RevokeFcmTokenDto } from './dto/revoke-fcm-token.dto';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
 
@@ -103,5 +105,90 @@ export class AuthService {
       is_active: user.is_active,
       last_login_at: user.last_login_at,
     };
+  }
+
+  async saveFcmToken(userId: string, dto: SaveFcmTokenDto) {
+    try {
+      // Upsert device by fcm_token (unique)
+      const device = await this.prisma.tr_user_devices.upsert({
+        where: { fcm_token: dto.fcm_token },
+        update: {
+          user_id: userId,
+          device_id: dto.device_id || null,
+          platform: dto.platform || null,
+          is_active: true,
+          updated_at: new Date(),
+        },
+        create: {
+          user_id: userId,
+          fcm_token: dto.fcm_token,
+          device_id: dto.device_id || null,
+          platform: dto.platform || null,
+          is_active: true,
+        },
+      });
+
+      // Also update legacy fcm_token on tr_users for backward compatibility
+      await this.prisma.tr_users.update({
+        where: { id: userId },
+        data: { fcm_token: dto.fcm_token },
+      });
+
+      return {
+        message: 'FCM token saved successfully',
+        device_id: device.id,
+      };
+    } catch (error) {
+      this.logger.error(`Failed to save FCM token for user ${userId}:`, error);
+      throw new InternalServerErrorException('Failed to save FCM token');
+    }
+  }
+
+  async revokeFcmToken(userId: string, dto: RevokeFcmTokenDto) {
+    try {
+      const device = await this.prisma.tr_user_devices.findFirst({
+        where: {
+          user_id: userId,
+          fcm_token: dto.fcm_token,
+        },
+      });
+
+      if (!device) {
+        return { message: 'Token not found or already revoked' };
+      }
+
+      await this.prisma.tr_user_devices.update({
+        where: { id: device.id },
+        data: { is_active: false, updated_at: new Date() },
+      });
+
+      return { message: 'FCM token revoked successfully' };
+    } catch (error) {
+      this.logger.error(
+        `Failed to revoke FCM token for user ${userId}:`,
+        error,
+      );
+      throw new InternalServerErrorException('Failed to revoke FCM token');
+    }
+  }
+
+  async revokeAllFcmTokens(userId: string) {
+    try {
+      const { count } = await this.prisma.tr_user_devices.updateMany({
+        where: { user_id: userId, is_active: true },
+        data: { is_active: false, updated_at: new Date() },
+      });
+
+      return {
+        message: 'All FCM tokens revoked successfully',
+        revoked_count: count,
+      };
+    } catch (error) {
+      this.logger.error(
+        `Failed to revoke all FCM tokens for user ${userId}:`,
+        error,
+      );
+      throw new InternalServerErrorException('Failed to revoke FCM tokens');
+    }
   }
 }

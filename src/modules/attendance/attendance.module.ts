@@ -9,6 +9,10 @@ import { FaceRecognitionService } from '../../common/services/face-recognition.s
 @Module({
   imports: [PrismaModule, ParameterModule],
   controllers: [AttendanceController],
-  providers: [AttendanceService, SupabaseStorageService, FaceRecognitionService],
+  providers: [
+    AttendanceService,
+    SupabaseStorageService,
+    FaceRecognitionService,
+  ],
 })
 export class AttendanceModule {}

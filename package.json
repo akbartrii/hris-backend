@@ -41,6 +41,7 @@
     "class-validator": "^0.15.1",
     "docx": "^9.6.1",
     "exceljs": "^4.4.0",
+    "firebase-admin": "^13.8.0",
     "jsonwebtoken": "^9.0.3",
     "prisma": "^6.19.3",
     "puppeteer": "^24.42.0",

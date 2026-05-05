@@ -318,9 +318,8 @@ export class AttendanceService {
       );
     }
 
-    const currentDescriptor = await this.faceRecognitionService.getFaceDescriptor(
-      photo,
-    );
+    const currentDescriptor =
+      await this.faceRecognitionService.getFaceDescriptor(photo);
 
     if (!currentDescriptor) {
       throw new BadRequestException(
