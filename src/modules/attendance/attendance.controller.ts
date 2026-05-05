@@ -63,6 +63,11 @@ export class AttendanceController {
     return this.attendanceService.clockOut(userId, dto, photo);
   }
 
+  @Get('today')
+  async getTodayStatus(@CurrentUser('userId') userId: string) {
+    return this.attendanceService.getTodayStatus(userId);
+  }
+
   @Get('history')
   async listAttendance(
     @CurrentUser('userId') userId: string,

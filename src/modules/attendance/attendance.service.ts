@@ -542,6 +542,61 @@ export class AttendanceService {
     return updated;
   }
 
+  async getTodayStatus(userId: string) {
+    const employee = await this.getEmployeeFromUser(userId);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const attendance = await this.prisma.tr_attendances.findFirst({
+      where: { employee_id: employee.id, attendance_date: today },
+      include: { ms_locations: true },
+    });
+
+    const schedule = await this.getEmployeeSchedule(employee.id, today);
+
+    const now = new Date();
+    const currentMinutes = now.getHours() * 60 + now.getMinutes();
+    const scheduleStartMinutes = schedule?.start_time
+      ? (schedule.start_time as any as Date).getHours() * 60 +
+        (schedule.start_time as any as Date).getMinutes()
+      : 480; // default 08:00
+    const scheduleEndMinutes = schedule?.end_time
+      ? (schedule.end_time as any as Date).getHours() * 60 +
+        (schedule.end_time as any as Date).getMinutes()
+      : 1020; // default 17:00
+
+    return {
+      date: today,
+      attendance: attendance
+        ? {
+            id: attendance.id,
+            clock_in: attendance.clock_in,
+            clock_out: attendance.clock_out,
+            clock_in_photo_url: attendance.clock_in_photo_url,
+            clock_out_photo_url: attendance.clock_out_photo_url,
+            clock_in_lat: attendance.clock_in_lat,
+            clock_in_lng: attendance.clock_in_lng,
+            clock_out_lat: attendance.clock_out_lat,
+            clock_out_lng: attendance.clock_out_lng,
+            status: attendance.status,
+            is_holiday: attendance.is_holiday,
+            late_minutes: attendance.late_minutes,
+            early_leave_minutes: attendance.early_leave_minutes,
+            notes: attendance.notes,
+          }
+        : null,
+      schedule: schedule
+        ? {
+            start_time: schedule.start_time,
+            end_time: schedule.end_time,
+          }
+        : null,
+      can_clock_in:
+        !attendance?.clock_in && currentMinutes >= scheduleStartMinutes - 60,
+      can_clock_out: !!attendance?.clock_in && !attendance?.clock_out,
+    };
+  }
+
   async listAttendance(userId: string, query: ListAttendanceDto) {
     const employee = await this.getEmployeeFromUser(userId);
     const page = Number(query.page) || 1;
