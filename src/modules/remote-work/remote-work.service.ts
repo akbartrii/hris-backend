@@ -72,7 +72,14 @@ export class RemoteWorkService {
       throw new NotFoundException('Employee not found');
     }
 
-    if (userRole !== 'atasan' && userRole !== 'super_admin') {
+    const allowedRoles = [
+      'atasan',
+      'manager_hrga',
+      'hrd',
+      'admin',
+      'super_admin',
+    ];
+    if (!allowedRoles.includes(userRole)) {
       throw new ForbiddenException(
         'Only supervisor or super admin can view subordinate requests',
       );
@@ -80,6 +87,8 @@ export class RemoteWorkService {
 
     const where: any = {};
 
+    // Supervisor (atasan) can only see their direct subordinates
+    // Admin/HR roles can see all requests
     if (userRole === 'atasan') {
       const subordinates = await this.prisma.tr_employees.findMany({
         where: { supervisor_id: user.tr_employees.id },

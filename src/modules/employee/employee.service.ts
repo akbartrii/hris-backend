@@ -327,14 +327,23 @@ export class EmployeeService {
   }
 
   async getSubordinates(userId: string) {
+    console.log(`[getSubordinates] userId=${userId}`);
+
     const employee = await this.prisma.tr_employees.findUnique({
       where: { user_id: userId },
-      select: { id: true },
+      select: { id: true, full_name: true },
     });
 
+    console.log(`[getSubordinates] employee=`, employee);
+
     if (!employee) {
+      console.log(`[getSubordinates] No employee found for userId=${userId}`);
       return [];
     }
+
+    console.log(
+      `[getSubordinates] Looking for subordinates with supervisor_id=${employee.id} OR manager_id=${employee.id}`,
+    );
 
     const subordinates = await this.prisma.tr_employees.findMany({
       where: {
@@ -345,6 +354,8 @@ export class EmployeeService {
         id: true,
         full_name: true,
         nik: true,
+        supervisor_id: true,
+        manager_id: true,
         ms_positions: { select: { id: true, name: true } },
         ms_departments_tr_employees_department_idToms_departments: {
           select: { id: true, name: true },
@@ -352,6 +363,16 @@ export class EmployeeService {
       },
       orderBy: { full_name: 'asc' },
     });
+
+    console.log(
+      `[getSubordinates] Found ${subordinates.length} subordinates:`,
+      subordinates.map((s) => ({
+        id: s.id,
+        name: s.full_name,
+        supervisor_id: s.supervisor_id,
+        manager_id: s.manager_id,
+      })),
+    );
 
     return subordinates;
   }
