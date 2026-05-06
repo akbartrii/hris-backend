@@ -35,6 +35,11 @@ export class LocationController {
     return this.service.list(userId, query);
   }
 
+  @Get('assigned')
+  async getAssignedLocations(@CurrentUser('userId') userId: string) {
+    return this.service.getAssignedLocations(userId);
+  }
+
   @Post()
   @Roles('manager_hrga', 'hrd', 'admin', 'super_admin')
   async create(

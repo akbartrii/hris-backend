@@ -267,14 +267,30 @@ export class RemoteWorkService {
     let updatedRequest;
 
     if (dto.action === 'approve') {
-      this.logger.log(
-        `[Approve] Updating employee ${request.employee_id} current_remote_work_id=${requestId}`,
-      );
-      await this.prisma.tr_employees.update({
-        where: { id: request.employee_id },
-        data: { current_remote_work_id: requestId },
-      });
-      this.logger.log(`[Approve] Employee updated successfully`);
+      // Only update current_remote_work_id if this request is currently active
+      // or if there's no existing active WFH. Don't overwrite current active WFH with a future one.
+      const todayStr = new Date().toISOString().split('T')[0];
+      const reqStartStr = new Date(request.start_date)
+        .toISOString()
+        .split('T')[0];
+      const reqEndStr = new Date(request.end_date).toISOString().split('T')[0];
+      const isCurrentlyActive =
+        reqStartStr <= todayStr && reqEndStr >= todayStr;
+
+      if (isCurrentlyActive) {
+        this.logger.log(
+          `[Approve] Request is currently active. Updating employee ${request.employee_id} current_remote_work_id=${requestId}`,
+        );
+        await this.prisma.tr_employees.update({
+          where: { id: request.employee_id },
+          data: { current_remote_work_id: requestId },
+        });
+        this.logger.log(`[Approve] Employee updated successfully`);
+      } else {
+        this.logger.log(
+          `[Approve] Request is for future dates (${reqStartStr} s/d ${reqEndStr}), not updating current_remote_work_id to avoid overwriting active WFH`,
+        );
+      }
 
       updatedRequest = await this.prisma.tr_remote_work_requests.update({
         where: { id: requestId },

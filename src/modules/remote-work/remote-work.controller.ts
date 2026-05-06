@@ -8,6 +8,7 @@ import {
   Query,
   UseGuards,
   ParseUUIDPipe,
+  Header,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { RemoteWorkService } from './remote-work.service';
@@ -35,6 +36,12 @@ export class RemoteWorkController {
   }
 
   @Get('subordinates')
+  @Header(
+    'Cache-Control',
+    'no-store, no-cache, must-revalidate, proxy-revalidate',
+  )
+  @Header('Pragma', 'no-cache')
+  @Header('Expires', '0')
   async listSubordinates(
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,

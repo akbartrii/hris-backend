@@ -139,7 +139,7 @@ export class AttendanceService {
         return {
           isValid: distance <= radius,
           distance: Math.round(distance),
-          locationId: wfhRequest.id,
+          locationId: undefined,
           radius,
         };
       }
@@ -391,7 +391,7 @@ export class AttendanceService {
     const photoPath = `${employee.id}/${dateStr}_clock_in.${ext}`;
     const bucket =
       (await this.parameterService.getValue('attendance_photo_bucket')) ||
-      'attendance-photos';
+      'attendance-proof';
     const photoUrl = await this.storageService.uploadFile(
       bucket,
       photoPath,
@@ -490,7 +490,7 @@ export class AttendanceService {
     const photoPath = `${employee.id}/${dateStr}_clock_out.${ext}`;
     const bucket =
       (await this.parameterService.getValue('attendance_photo_bucket')) ||
-      'attendance-photos';
+      'attendance-proof';
     const photoUrl = await this.storageService.uploadFile(
       bucket,
       photoPath,

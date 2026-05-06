@@ -72,6 +72,75 @@ export class LocationService {
     return locations;
   }
 
+  async getAssignedLocations(userId: string) {
+    const locations: any[] = [];
+
+    const user = await this.prisma.tr_users.findUnique({
+      where: { id: userId },
+      include: { tr_employees: { include: { ms_locations: true } } },
+    });
+
+    if (!user?.tr_employees) {
+      return locations;
+    }
+
+    const employee = user.tr_employees;
+
+    // Office location
+    if (employee.ms_locations) {
+      locations.push({
+        id: employee.ms_locations.id,
+        name: employee.ms_locations.name,
+        type: employee.ms_locations.type || 'office',
+        latitude: employee.ms_locations.latitude,
+        longitude: employee.ms_locations.longitude,
+        radius_meters: employee.ms_locations.radius_meters,
+        address: employee.ms_locations.address,
+        is_active: employee.ms_locations.is_active,
+      });
+    }
+
+    // Active WFH location
+    if (employee.current_remote_work_id) {
+      const todayStr = new Date().toISOString().split('T')[0];
+
+      const wfh = await this.prisma.tr_remote_work_requests.findUnique({
+        where: { id: employee.current_remote_work_id },
+      });
+
+      const startStr = wfh?.start_date
+        ? new Date(wfh.start_date).toISOString().split('T')[0]
+        : null;
+      const endStr = wfh?.end_date
+        ? new Date(wfh.end_date).toISOString().split('T')[0]
+        : null;
+
+      if (
+        wfh &&
+        wfh.status === 'approved' &&
+        startStr &&
+        endStr &&
+        startStr <= todayStr &&
+        endStr >= todayStr
+      ) {
+        locations.push({
+          id: wfh.id,
+          name: `WFH - ${wfh.address || 'Rumah'}`,
+          type: 'wfh',
+          latitude: wfh.latitude,
+          longitude: wfh.longitude,
+          radius_meters: wfh.radius_meters || 50,
+          address: wfh.address,
+          is_active: true,
+          start_date: wfh.start_date,
+          end_date: wfh.end_date,
+        });
+      }
+    }
+
+    return locations;
+  }
+
   async create(userRole: string, dto: CreateLocationDto) {
     if (!this.canManageLocations(userRole)) {
       throw new ForbiddenException(
