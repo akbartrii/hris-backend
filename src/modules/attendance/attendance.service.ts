@@ -50,15 +50,18 @@ export class AttendanceService {
     return R * c;
   }
 
-  private async getEmployeeFromUser(userId: string) {
-    const user = await this.prisma.ms_users.findUnique({
-      where: { id: userId },
-      include: { ms_employees: true },
+  private async getEmployeeWithLocation(employeeId: string) {
+    const employee = await this.prisma.ms_employees.findUnique({
+      where: { id: employeeId },
+      include: {
+        ms_locations: true,
+        tr_remote_work_requests_current_remote_work: true,
+      },
     });
-    if (!user || !user.ms_employees) {
+    if (!employee) {
       throw new NotFoundException('Employee not found');
     }
-    return user.ms_employees;
+    return employee;
   }
 
   private async getEmployeeSchedule(employeeId: string, date: Date) {
@@ -89,7 +92,7 @@ export class AttendanceService {
   }
 
   private async validateGPS(
-    employeeId: string,
+    employee: any,
     lat: number,
     lng: number,
   ): Promise<{
@@ -99,10 +102,7 @@ export class AttendanceService {
     radius: number;
     error?: string;
   }> {
-    const employee = await this.prisma.ms_employees.findUnique({
-      where: { id: employeeId },
-      include: { ms_locations: true },
-    });
+    const employeeId = employee.id;
 
     if (!employee) {
       return {
@@ -118,9 +118,7 @@ export class AttendanceService {
     today.setHours(0, 0, 0, 0);
 
     if (employee.current_remote_work_id) {
-      const wfhRequest = await this.prisma.tr_remote_work_requests.findUnique({
-        where: { id: employee.current_remote_work_id },
-      });
+      const wfhRequest = employee.tr_remote_work_requests_current_remote_work;
 
       if (
         wfhRequest &&
@@ -361,8 +359,13 @@ export class AttendanceService {
     }
   }
 
-  async clockIn(userId: string, dto: ClockInDto, photo: Express.Multer.File) {
-    const employee = await this.getEmployeeFromUser(userId);
+  async clockIn(
+    userId: string,
+    employeeId: string,
+    dto: ClockInDto,
+    photo: Express.Multer.File,
+  ) {
+    const employee = await this.getEmployeeWithLocation(employeeId);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -377,7 +380,7 @@ export class AttendanceService {
       throw new BadRequestException('Already clocked in today');
     }
 
-    const gpsValidation = await this.validateGPS(employee.id, dto.lat, dto.lng);
+    const gpsValidation = await this.validateGPS(employee, dto.lat, dto.lng);
 
     if (!gpsValidation.isValid) {
       throw new BadRequestException(
@@ -456,8 +459,13 @@ export class AttendanceService {
     return attendance;
   }
 
-  async clockOut(userId: string, dto: ClockOutDto, photo: Express.Multer.File) {
-    const employee = await this.getEmployeeFromUser(userId);
+  async clockOut(
+    userId: string,
+    employeeId: string,
+    dto: ClockOutDto,
+    photo: Express.Multer.File,
+  ) {
+    const employee = await this.getEmployeeWithLocation(employeeId);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
@@ -476,7 +484,7 @@ export class AttendanceService {
       throw new BadRequestException('Already clocked out today');
     }
 
-    const gpsValidation = await this.validateGPS(employee.id, dto.lat, dto.lng);
+    const gpsValidation = await this.validateGPS(employee, dto.lat, dto.lng);
 
     if (!gpsValidation.isValid) {
       throw new BadRequestException(
@@ -542,17 +550,16 @@ export class AttendanceService {
     return updated;
   }
 
-  async getTodayStatus(userId: string) {
-    const employee = await this.getEmployeeFromUser(userId);
+  async getTodayStatus(employeeId: string) {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
 
     const attendance = await this.prisma.tr_attendances.findFirst({
-      where: { employee_id: employee.id, attendance_date: today },
+      where: { employee_id: employeeId, attendance_date: today },
       include: { ms_locations: true },
     });
 
-    const schedule = await this.getEmployeeSchedule(employee.id, today);
+    const schedule = await this.getEmployeeSchedule(employeeId, today);
 
     const now = new Date();
     const currentMinutes = now.getHours() * 60 + now.getMinutes();
@@ -597,13 +604,12 @@ export class AttendanceService {
     };
   }
 
-  async listAttendance(userId: string, query: ListAttendanceDto) {
-    const employee = await this.getEmployeeFromUser(userId);
+  async listAttendance(employeeId: string, query: ListAttendanceDto) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const where: any = { employee_id: employee.id };
+    const where: any = { employee_id: employeeId };
 
     if (query.date) {
       where.attendance_date = new Date(query.date);
@@ -667,25 +673,17 @@ export class AttendanceService {
     return { data, meta: { page, limit, total } };
   }
 
-  async listSubordinateAttendance(userId: string, query: ListAttendanceDto) {
-    const user = await this.prisma.ms_users.findUnique({
-      where: { id: userId },
-      include: { ms_employees: true },
-    });
-    if (!user || !user.ms_employees) {
-      throw new NotFoundException('Employee not found');
-    }
-
+  async listSubordinateAttendance(
+    employeeId: string,
+    query: ListAttendanceDto,
+  ) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
 
     const subordinates = await this.prisma.ms_employees.findMany({
       where: {
-        OR: [
-          { supervisor_id: user.ms_employees.id },
-          { manager_id: user.ms_employees.id },
-        ],
+        OR: [{ supervisor_id: employeeId }, { manager_id: employeeId }],
       },
       select: { id: true },
     });
@@ -731,11 +729,13 @@ export class AttendanceService {
     return { data, meta: { page, limit, total } };
   }
 
-  async createCorrection(userId: string, dto: CreateCorrectionDto) {
-    const employee = await this.getEmployeeFromUser(userId);
-
+  async createCorrection(
+    userId: string,
+    employeeId: string,
+    dto: CreateCorrectionDto,
+  ) {
     const attendance = await this.prisma.tr_attendances.findFirst({
-      where: { id: dto.attendance_id, employee_id: employee.id },
+      where: { id: dto.attendance_id, employee_id: employeeId },
     });
 
     if (!attendance) {
@@ -759,7 +759,7 @@ export class AttendanceService {
     const correction = await this.prisma.tr_attendance_corrections.create({
       data: {
         attendance_id: dto.attendance_id,
-        employee_id: employee.id,
+        employee_id: employeeId,
         submitted_by: userId,
         correction_type: dto.correction_type,
         correct_clock_in: dto.correct_clock_in
@@ -776,9 +776,7 @@ export class AttendanceService {
     return correction;
   }
 
-  async cancelCorrection(userId: string, correctionId: string) {
-    const employee = await this.getEmployeeFromUser(userId);
-
+  async cancelCorrection(employeeId: string, correctionId: string) {
     const correction = await this.prisma.tr_attendance_corrections.findUnique({
       where: { id: correctionId },
     });
@@ -787,7 +785,7 @@ export class AttendanceService {
       throw new NotFoundException('Correction not found');
     }
 
-    if (correction.employee_id !== employee.id) {
+    if (correction.employee_id !== employeeId) {
       throw new ForbiddenException('You can only cancel your own corrections');
     }
 
@@ -805,25 +803,16 @@ export class AttendanceService {
     return { message: 'Correction cancelled' };
   }
 
-  async listCorrections(userId: string, query: any) {
-    const user = await this.prisma.ms_users.findUnique({
-      where: { id: userId },
-      include: { ms_employees: true, ms_roles: true },
-    });
-    if (!user || !user.ms_employees) {
-      throw new NotFoundException('Employee not found');
-    }
-
+  async listCorrections(employeeId: string, query: any) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
 
     const where: any = {};
-    const userRole = user.ms_roles?.name || 'karyawan';
-
-    if (!['admin', 'hrd', 'manager_hrga', 'super_admin'].includes(userRole)) {
-      where.employee_id = user.ms_employees.id;
-    }
+    // If it's a specific employee list, we filter by employee_id.
+    // The role filtering should happen in the controller if needed, 
+    // but here we just ensure we only show current employee data if requested.
+    where.employee_id = employeeId;
 
     if (query.status) where.status = query.status;
 
@@ -846,11 +835,11 @@ export class AttendanceService {
 
   async approveCorrection(
     userId: string,
+    employeeId: string,
     correctionId: string,
     dto: ApproveCorrectionDto,
     approverRole: string,
   ) {
-    const approver = await this.getEmployeeFromUser(userId);
     const correction = await this.prisma.tr_attendance_corrections.findUnique({
       where: { id: correctionId },
       include: { tr_attendances: true },
@@ -875,7 +864,7 @@ export class AttendanceService {
       const employee = await this.prisma.ms_employees.findUnique({
         where: { id: correction.employee_id },
       });
-      if (employee?.supervisor_id !== approver.id) {
+      if (employee?.supervisor_id !== employeeId) {
         throw new ForbiddenException(
           'You can only approve corrections of your subordinates',
         );
@@ -886,7 +875,7 @@ export class AttendanceService {
           where: { id: correctionId },
           data: {
             supervisor_approved_at: new Date(),
-            supervisor_id: approver.id,
+            supervisor_id: employeeId,
             status: 'supervisor_approved',
           },
         });
@@ -894,7 +883,7 @@ export class AttendanceService {
         await this.prisma.tr_attendance_corrections.update({
           where: { id: correctionId },
           data: {
-            supervisor_id: approver.id,
+            supervisor_id: employeeId,
             status: 'rejected',
             rejection_reason: dto.rejection_reason || 'Rejected by supervisor',
           },
@@ -939,7 +928,7 @@ export class AttendanceService {
           where: { id: correctionId },
           data: {
             hrga_approved_at: new Date(),
-            hrga_manager_id: approver.id,
+            hrga_manager_id: employeeId,
             status: 'approved',
           },
         });
@@ -947,7 +936,7 @@ export class AttendanceService {
         await this.prisma.tr_attendance_corrections.update({
           where: { id: correctionId },
           data: {
-            hrga_manager_id: approver.id,
+            hrga_manager_id: employeeId,
             status: 'rejected',
             rejection_reason: dto.rejection_reason || 'Rejected by HRGA',
           },

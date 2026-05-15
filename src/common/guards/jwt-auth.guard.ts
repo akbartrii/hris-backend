@@ -29,21 +29,13 @@ export class JwtAuthGuard implements CanActivate {
       const jwtSecret = this.configService.get<string>('JWT_SECRET');
       const decoded = jwt.verify(token, jwtSecret) as any;
 
-      const user = await this.prisma.ms_users.findUnique({
-        where: { id: decoded.sub },
-        include: { ms_roles: true, ms_employees: true },
-      });
-
-      if (!user) {
-        throw new UnauthorizedException('User not found');
-      }
-
       request.user = {
-        id: user.id,
-        email: user.email,
-        role: user.ms_roles?.name || 'karyawan',
-        userId: user.id,
-        employeeId: user.ms_employees?.id || null,
+        id: decoded.sub,
+        email: decoded.email,
+        role: decoded.role || 'karyawan',
+        userId: decoded.sub,
+        employeeId: decoded.employee_id || null,
+        companyId: decoded.company_id || null,
       };
 
       return true;

@@ -60,6 +60,8 @@ export class AuthService {
           sub: user.id,
           email: user.email,
           role: user.ms_roles?.name || 'karyawan',
+          employee_id: user.ms_employees?.id || null,
+          company_id: user.company_id,
         },
         jwtSecret,
         { expiresIn: '7d' },

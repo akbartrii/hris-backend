@@ -3,6 +3,9 @@ import { PrismaService } from '../../prisma/prisma.service';
 
 @Injectable()
 export class ParameterService {
+  private cache = new Map<string, { value: string | null; expiry: number }>();
+  private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes cache
+
   constructor(private prisma: PrismaService) {}
 
   async findAll() {
@@ -18,10 +21,24 @@ export class ParameterService {
   }
 
   async getValue(key: string): Promise<string | null> {
+    const now = Date.now();
+    const cached = this.cache.get(key);
+
+    if (cached && cached.expiry > now) {
+      return cached.value;
+    }
+
     const param = await this.prisma.ms_parameters.findUnique({
       where: { key },
     });
-    return param?.value ?? null;
+
+    const value = param?.value ?? null;
+    this.cache.set(key, {
+      value,
+      expiry: now + this.CACHE_TTL,
+    });
+
+    return value;
   }
 
   async getNumber(key: string, defaultValue: number = 0): Promise<number> {
@@ -30,21 +47,27 @@ export class ParameterService {
   }
 
   async create(key: string, value: string) {
-    return this.prisma.ms_parameters.create({
+    const res = await this.prisma.ms_parameters.create({
       data: { key, value },
     });
+    this.cache.delete(key);
+    return res;
   }
 
   async update(key: string, value: string) {
-    return this.prisma.ms_parameters.update({
+    const res = await this.prisma.ms_parameters.update({
       where: { key },
       data: { value },
     });
+    this.cache.delete(key);
+    return res;
   }
 
   async remove(key: string) {
-    return this.prisma.ms_parameters.delete({
+    const res = await this.prisma.ms_parameters.delete({
       where: { key },
     });
+    this.cache.delete(key);
+    return res;
   }
 }

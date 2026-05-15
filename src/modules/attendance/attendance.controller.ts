@@ -40,12 +40,18 @@ export class AttendanceController {
     @CurrentUser('userId') userId: string,
     @Body() dto: ClockInDto,
     @UploadedFile() photo: Express.Multer.File,
+    @CurrentUser() requestUser: any,
   ) {
     if (!photo) {
       throw new BadRequestException('Photo is required');
     }
     // redeploy
-    return this.attendanceService.clockIn(userId, dto, photo);
+    return this.attendanceService.clockIn(
+      userId,
+      requestUser.employeeId,
+      dto,
+      photo,
+    );
   }
 
   @Post('clock-out')
@@ -56,24 +62,30 @@ export class AttendanceController {
     @CurrentUser('userId') userId: string,
     @Body() dto: ClockOutDto,
     @UploadedFile() photo: Express.Multer.File,
+    @CurrentUser() requestUser: any,
   ) {
     if (!photo) {
       throw new BadRequestException('Photo is required');
     }
-    return this.attendanceService.clockOut(userId, dto, photo);
+    return this.attendanceService.clockOut(
+      userId,
+      requestUser.employeeId,
+      dto,
+      photo,
+    );
   }
 
   @Get('today')
-  async getTodayStatus(@CurrentUser('userId') userId: string) {
-    return this.attendanceService.getTodayStatus(userId);
+  async getTodayStatus(@CurrentUser('employeeId') employeeId: string) {
+    return this.attendanceService.getTodayStatus(employeeId);
   }
 
   @Get('history')
   async listAttendance(
-    @CurrentUser('userId') userId: string,
+    @CurrentUser('employeeId') employeeId: string,
     @Query() query: ListAttendanceDto,
   ) {
-    return this.attendanceService.listAttendance(userId, query);
+    return this.attendanceService.listAttendance(employeeId, query);
   }
 
   @Get('all')
@@ -85,35 +97,36 @@ export class AttendanceController {
   @Get('subordinates')
   @Roles('atasan', 'manager_hrga', 'admin', 'super_admin')
   async listSubordinateAttendance(
-    @CurrentUser('userId') userId: string,
+    @CurrentUser('employeeId') employeeId: string,
     @Query() query: ListAttendanceDto,
   ) {
-    return this.attendanceService.listSubordinateAttendance(userId, query);
+    return this.attendanceService.listSubordinateAttendance(employeeId, query);
   }
 
   @Post('corrections')
   async createCorrection(
     @CurrentUser('userId') userId: string,
+    @CurrentUser('employeeId') employeeId: string,
     @Body() dto: CreateCorrectionDto,
   ) {
-    return this.attendanceService.createCorrection(userId, dto);
+    return this.attendanceService.createCorrection(userId, employeeId, dto);
   }
 
   @Patch('corrections/:id/cancel')
   @Roles('karyawan', 'atasan', 'manager_hrga', 'hrd', 'admin', 'super_admin')
   async cancelCorrection(
-    @CurrentUser('userId') userId: string,
+    @CurrentUser('employeeId') employeeId: string,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.attendanceService.cancelCorrection(userId, id);
+    return this.attendanceService.cancelCorrection(employeeId, id);
   }
 
   @Get('corrections')
   async listCorrections(
-    @CurrentUser('userId') userId: string,
+    @CurrentUser('employeeId') employeeId: string,
     @Query() query: any,
   ) {
-    return this.attendanceService.listCorrections(userId, query);
+    return this.attendanceService.listCorrections(employeeId, query);
   }
 
   @Patch('corrections/:id/approve')
