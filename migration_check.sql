@@ -5,7 +5,7 @@ ALTER TABLE "public"."ms_teams" DROP CONSTRAINT "ms_teams_department_id_fkey";
 ALTER TABLE "public"."ms_ter_fee" DROP CONSTRAINT "ms_ter_fee_ter_type_fkey";
 
 -- DropForeignKey
-ALTER TABLE "public"."tr_employees" DROP CONSTRAINT "tr_employees_team_id_fkey";
+ALTER TABLE "public"."ms_employees" DROP CONSTRAINT "tr_employees_team_id_fkey";
 
 -- DropForeignKey
 ALTER TABLE "public"."tr_leave_requests" DROP CONSTRAINT "tr_leave_requests_work_handover_to_fkey";
@@ -58,7 +58,7 @@ ALTER TABLE "public"."ms_ter_fee" ALTER COLUMN "id" DROP DEFAULT;
 DROP SEQUENCE "";
 
 -- AlterTable
-ALTER TABLE "public"."tr_employees" DROP COLUMN "team_id";
+ALTER TABLE "public"."ms_employees" DROP COLUMN "team_id";
 
 -- AlterTable
 ALTER TABLE "public"."tr_time_off_requests" ADD COLUMN     "date" DATE NOT NULL,
@@ -78,5 +78,5 @@ CREATE INDEX "idx_time_off_requests_date" ON "public"."tr_time_off_requests"("da
 CREATE INDEX "idx_time_off_requests_work_handover" ON "public"."tr_time_off_requests"("work_handover_to" ASC);
 
 -- RenameForeignKey
-ALTER TABLE "public"."tr_employees" RENAME CONSTRAINT "tr_employees_current_remote_work_id_fkey" TO "fk_employees_current_remote_work";
+ALTER TABLE "public"."ms_employees" RENAME CONSTRAINT "tr_employees_current_remote_work_id_fkey" TO "fk_employees_current_remote_work";
 

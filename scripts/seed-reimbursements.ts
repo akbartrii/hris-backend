@@ -4,7 +4,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   // Ambil data employee yang sudah ada
-  const employees = await prisma.tr_employees.findMany({
+  const employees = await prisma.ms_employees.findMany({
     take: 5,
     select: {
       id: true,
@@ -15,7 +15,7 @@ async function main() {
 
   if (employees.length === 0) {
     console.error(
-      'Tidak ada data employee di database. Seed tr_employees terlebih dahulu.',
+      'Tidak ada data employee di database. Seed ms_employees terlebih dahulu.',
     );
     process.exit(1);
   }

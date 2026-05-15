@@ -30,7 +30,7 @@ export class EmployeeService {
     let user_id: string | null = null;
 
     if (dto.email && dto.password) {
-      const existingUser = await this.prisma.tr_users.findUnique({
+      const existingUser = await this.prisma.ms_users.findUnique({
         where: { email: dto.email },
       });
       if (existingUser) {
@@ -51,7 +51,7 @@ export class EmployeeService {
 
       let company_id = dto.company_id;
       if (!company_id) {
-        const adminUser = await this.prisma.tr_users.findUnique({
+        const adminUser = await this.prisma.ms_users.findUnique({
           where: { id: userId },
         });
         company_id = adminUser?.company_id;
@@ -63,7 +63,7 @@ export class EmployeeService {
 
       const hashedPassword = await bcrypt.hash(dto.password, 10);
 
-      const newUser = await this.prisma.tr_users.create({
+      const newUser = await this.prisma.ms_users.create({
         data: {
           email: dto.email,
           password_hash: hashedPassword,
@@ -116,7 +116,7 @@ export class EmployeeService {
     if (dto.phone !== undefined) employeeData.phone = dto.phone;
     if (dto.address !== undefined) employeeData.address = dto.address;
 
-    const employee = await this.prisma.tr_employees.create({
+    const employee = await this.prisma.ms_employees.create({
       data: employeeData,
     });
 
@@ -154,20 +154,20 @@ export class EmployeeService {
     }
 
     const [data, total] = await Promise.all([
-      this.prisma.tr_employees.findMany({
+      this.prisma.ms_employees.findMany({
         where,
         skip,
         take: limit,
         orderBy: { created_at: 'desc' },
         include: {
-          ms_departments_tr_employees_department_idToms_departments: {
+          ms_departments_ms_employees_department_idToms_departments: {
             select: { id: true, name: true },
           },
           ms_positions: { select: { id: true, name: true } },
           ms_locations: { select: { id: true, name: true } },
         },
       }),
-      this.prisma.tr_employees.count({ where }),
+      this.prisma.ms_employees.count({ where }),
     ]);
 
     return { data, meta: { page, limit, total } };
@@ -178,15 +178,15 @@ export class EmployeeService {
     userRole: string,
     employeeId: string,
   ) {
-    const employee = await this.prisma.tr_employees.findUnique({
+    const employee = await this.prisma.ms_employees.findUnique({
       where: { id: employeeId },
       include: {
-        ms_departments_tr_employees_department_idToms_departments: {
+        ms_departments_ms_employees_department_idToms_departments: {
           select: { id: true, name: true },
         },
         ms_positions: { select: { id: true, name: true } },
         ms_locations: { select: { id: true, name: true } },
-        tr_users: { select: { id: true, email: true, is_active: true } },
+        ms_users: { select: { id: true, email: true, is_active: true } },
       },
     });
 
@@ -195,7 +195,7 @@ export class EmployeeService {
     }
 
     if (!this.isAdminOrHRD(userRole)) {
-      const requester = await this.prisma.tr_employees.findUnique({
+      const requester = await this.prisma.ms_employees.findUnique({
         where: { user_id: userId },
       });
       if (!requester || requester.id !== employeeId) {
@@ -216,7 +216,7 @@ export class EmployeeService {
       throw new ForbiddenException('Only HR/Admin can update employee data');
     }
 
-    const employee = await this.prisma.tr_employees.findUnique({
+    const employee = await this.prisma.ms_employees.findUnique({
       where: { id: employeeId },
     });
 
@@ -257,7 +257,7 @@ export class EmployeeService {
     if (dto.is_security !== undefined) updateData.is_security = dto.is_security;
     if (dto.is_active !== undefined) updateData.is_active = dto.is_active;
 
-    const updated = await this.prisma.tr_employees.update({
+    const updated = await this.prisma.ms_employees.update({
       where: { id: employeeId },
       data: updateData,
     });
@@ -270,7 +270,7 @@ export class EmployeeService {
     userRole: string,
     employeeId: string,
   ) {
-    const employee = await this.prisma.tr_employees.findUnique({
+    const employee = await this.prisma.ms_employees.findUnique({
       where: { id: employeeId },
     });
 
@@ -279,7 +279,7 @@ export class EmployeeService {
     }
 
     if (!this.isAdminOrHRD(userRole)) {
-      const requester = await this.prisma.tr_employees.findUnique({
+      const requester = await this.prisma.ms_employees.findUnique({
         where: { user_id: userId },
       });
       if (!requester || requester.id !== employeeId) {
@@ -299,7 +299,7 @@ export class EmployeeService {
   }
 
   async getTeamMates(userId: string) {
-    const employee = await this.prisma.tr_employees.findUnique({
+    const employee = await this.prisma.ms_employees.findUnique({
       where: { user_id: userId },
       select: { team_id: true },
     });
@@ -308,7 +308,7 @@ export class EmployeeService {
       return [];
     }
 
-    const teamMates = await this.prisma.tr_employees.findMany({
+    const teamMates = await this.prisma.ms_employees.findMany({
       where: {
         team_id: employee.team_id,
         NOT: { user_id: userId },
@@ -329,7 +329,7 @@ export class EmployeeService {
   async getSubordinates(userId: string) {
     console.log(`[getSubordinates] userId=${userId}`);
 
-    const employee = await this.prisma.tr_employees.findUnique({
+    const employee = await this.prisma.ms_employees.findUnique({
       where: { user_id: userId },
       select: { id: true, full_name: true },
     });
@@ -345,7 +345,7 @@ export class EmployeeService {
       `[getSubordinates] Looking for subordinates with supervisor_id=${employee.id} OR manager_id=${employee.id}`,
     );
 
-    const subordinates = await this.prisma.tr_employees.findMany({
+    const subordinates = await this.prisma.ms_employees.findMany({
       where: {
         OR: [{ supervisor_id: employee.id }, { manager_id: employee.id }],
         is_active: true,
@@ -357,7 +357,7 @@ export class EmployeeService {
         supervisor_id: true,
         manager_id: true,
         ms_positions: { select: { id: true, name: true } },
-        ms_departments_tr_employees_department_idToms_departments: {
+        ms_departments_ms_employees_department_idToms_departments: {
           select: { id: true, name: true },
         },
       },
@@ -383,7 +383,7 @@ export class EmployeeService {
     employeeId: string,
     locationId: string,
   ) {
-    const employee = await this.prisma.tr_employees.findUnique({
+    const employee = await this.prisma.ms_employees.findUnique({
       where: { id: employeeId },
     });
 
@@ -392,7 +392,7 @@ export class EmployeeService {
     }
 
     if (!this.isAdminOrHRD(userRole)) {
-      const requester = await this.prisma.tr_employees.findUnique({
+      const requester = await this.prisma.ms_employees.findUnique({
         where: { user_id: userId },
       });
       if (!requester || requester.id !== employee.supervisor_id) {
@@ -414,7 +414,7 @@ export class EmployeeService {
       }
     }
 
-    const updated = await this.prisma.tr_employees.update({
+    const updated = await this.prisma.ms_employees.update({
       where: { id: employeeId },
       data: { location_id: locationId || null },
     });

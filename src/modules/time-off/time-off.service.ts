@@ -14,14 +14,14 @@ export class TimeOffService {
   constructor(private prisma: PrismaService) {}
 
   private async getEmployeeFromUser(userId: string) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
-    return user.tr_employees;
+    return user.ms_employees;
   }
 
   private isAdminOrHRD(role: string): boolean {
@@ -32,7 +32,7 @@ export class TimeOffService {
     let employee = await this.getEmployeeFromUser(userId);
 
     if (dto.employee_id && this.isAdminOrHRD(userRole)) {
-      const targetEmployee = await this.prisma.tr_employees.findUnique({
+      const targetEmployee = await this.prisma.ms_employees.findUnique({
         where: { id: dto.employee_id },
       });
       if (!targetEmployee) {
@@ -81,11 +81,11 @@ export class TimeOffService {
   }
 
   async listTimeOffs(userId: string, query: ListTimeOffDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true, ms_roles: true },
+      include: { ms_employees: true, ms_roles: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -97,7 +97,7 @@ export class TimeOffService {
     const userRole = user.ms_roles?.name || 'karyawan';
 
     if (!['admin', 'hrd', 'manager_hrga', 'super_admin'].includes(userRole)) {
-      where.employee_id = user.tr_employees.id;
+      where.employee_id = user.ms_employees.id;
     }
 
     if (query.status) {
@@ -112,7 +112,7 @@ export class TimeOffService {
         orderBy: { created_at: 'desc' },
         include: {
           ms_time_off_types: true,
-          tr_employees_tr_time_off_requests_employee_idTotr_employees: true,
+          ms_employees_tr_time_off_requests_employee_idToms_employees: true,
         },
       }),
       this.prisma.tr_time_off_requests.count({ where }),
@@ -148,7 +148,7 @@ export class TimeOffService {
         throw new BadRequestException('Time off request already processed');
       }
 
-      const requester = await this.prisma.tr_employees.findUnique({
+      const requester = await this.prisma.ms_employees.findUnique({
         where: { id: timeOff.employee_id },
       });
       if (!requester || requester.supervisor_id !== approver.id) {

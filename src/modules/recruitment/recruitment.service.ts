@@ -16,14 +16,14 @@ export class RecruitmentService {
   constructor(private prisma: PrismaService) {}
 
   private async getEmployeeFromUser(userId: string) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
-    return user.tr_employees;
+    return user.ms_employees;
   }
 
   private generateSlug(title: string): string {
@@ -38,12 +38,12 @@ export class RecruitmentService {
   }
 
   async createJob(userId: string, dto: CreateJobDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true, ms_roles: true },
+      include: { ms_employees: true, ms_roles: true },
     });
 
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -63,11 +63,11 @@ export class RecruitmentService {
 
     const job = await this.prisma.ms_job_postings.create({
       data: {
-        company_id: user.tr_employees.department_id
+        company_id: user.ms_employees.department_id
           ? (
               await this.prisma.ms_departments.findUnique({
                 where: {
-                  id: dto.department_id || user.tr_employees.department_id!,
+                  id: dto.department_id || user.ms_employees.department_id!,
                 },
               })
             )?.company_id || user.company_id
@@ -91,7 +91,7 @@ export class RecruitmentService {
   }
 
   async updateJob(userId: string, jobId: string, dto: UpdateJobDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
       include: { ms_roles: true },
     });
@@ -128,7 +128,7 @@ export class RecruitmentService {
   }
 
   async deleteJob(userId: string, jobId: string) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
       include: { ms_roles: true },
     });
@@ -228,12 +228,12 @@ export class RecruitmentService {
   }
 
   async listApplications(userId: string, query: any) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true, ms_roles: true },
+      include: { ms_employees: true, ms_roles: true },
     });
 
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -277,7 +277,7 @@ export class RecruitmentService {
     applicationId: string,
     dto: UpdateApplicationStatusDto,
   ) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
       include: { ms_roles: true },
     });

@@ -30,19 +30,19 @@ export class LocationService {
       orderBy: { name: 'asc' },
     });
 
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
 
-    if (user?.tr_employees) {
+    if (user?.ms_employees) {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
       // Check current active remote work
-      if (user.tr_employees.current_remote_work_id) {
+      if (user.ms_employees.current_remote_work_id) {
         const wfh = await this.prisma.tr_remote_work_requests.findUnique({
-          where: { id: user.tr_employees.current_remote_work_id },
+          where: { id: user.ms_employees.current_remote_work_id },
         });
 
         if (
@@ -75,16 +75,16 @@ export class LocationService {
   async getAssignedLocations(userId: string) {
     const locations: any[] = [];
 
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: { include: { ms_locations: true } } },
+      include: { ms_employees: { include: { ms_locations: true } } },
     });
 
-    if (!user?.tr_employees) {
+    if (!user?.ms_employees) {
       return locations;
     }
 
-    const employee = user.tr_employees;
+    const employee = user.ms_employees;
 
     // Office location
     if (employee.ms_locations) {

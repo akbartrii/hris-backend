@@ -25,7 +25,7 @@ model ms_companies {
   ms_job_postings      ms_job_postings[]
   ms_locations         ms_locations[]
   tr_payroll_periods   tr_payroll_periods[]
-  tr_users             tr_users[]
+  ms_users             ms_users[]
 }
 
 model ms_departments {
@@ -35,11 +35,11 @@ model ms_departments {
   code                                                       String?           @db.VarChar(50)
   head_employee_id                                           String?           @db.Uuid
   created_at                                                 DateTime?         @default(now()) @db.Timestamptz(6)
-  tr_employees_ms_departments_head_employee_idTotr_employees tr_employees?     @relation("ms_departments_head_employee_idTotr_employees", fields: [head_employee_id], references: [id], onUpdate: NoAction, map: "fk_departments_head_employee")
+  ms_employees_ms_departments_head_employee_idToms_employees ms_employees?     @relation("ms_departments_head_employee_idToms_employees", fields: [head_employee_id], references: [id], onUpdate: NoAction, map: "fk_departments_head_employee")
   ms_companies                                               ms_companies      @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   ms_job_postings                                            ms_job_postings[]
   ms_positions                                               ms_positions[]
-  tr_employees_tr_employees_department_idToms_departments    tr_employees[]    @relation("tr_employees_department_idToms_departments")
+  ms_employees_ms_employees_department_idToms_departments    ms_employees[]    @relation("ms_employees_department_idToms_departments")
   ms_teams                                                   ms_teams[]
 
   @@index([company_id], map: "idx_departments_company")
@@ -80,7 +80,7 @@ model ms_job_postings {
   created_by          String?               @db.Uuid
   created_at          DateTime?             @default(now()) @db.Timestamptz(6)
   updated_at          DateTime?             @default(now()) @db.Timestamptz(6)
-  tr_users            tr_users?             @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_job_postings_created_by")
+  ms_users            ms_users?             @relation(fields: [created_by], references: [id], onUpdate: NoAction, map: "fk_job_postings_created_by")
   ms_companies        ms_companies          @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   ms_departments      ms_departments?       @relation(fields: [department_id], references: [id], onUpdate: NoAction)
   ms_locations        ms_locations?         @relation(fields: [location_id], references: [id], onUpdate: NoAction)
@@ -120,7 +120,7 @@ model ms_locations {
   ms_job_postings ms_job_postings[]
   ms_companies    ms_companies      @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   tr_attendances  tr_attendances[]
-  tr_employees    tr_employees[]
+  ms_employees    ms_employees[]
 
   @@index([company_id], map: "idx_locations_company")
 }
@@ -144,7 +144,7 @@ model ms_positions {
   created_at      DateTime?         @default(now()) @db.Timestamptz(6)
   ms_job_postings ms_job_postings[]
   ms_departments  ms_departments?   @relation(fields: [department_id], references: [id], onUpdate: NoAction)
-  tr_employees    tr_employees[]
+  ms_employees    ms_employees[]
 }
 
 model ms_teams {
@@ -156,7 +156,7 @@ model ms_teams {
   created_at    DateTime?      @default(now()) @db.Timestamptz(6)
   updated_at    DateTime?      @default(now()) @db.Timestamptz(6)
   ms_departments ms_departments @relation(fields: [department_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  tr_employees  tr_employees[]
+  ms_employees  ms_employees[]
 
   @@index([department_id], map: "idx_teams_department")
 }
@@ -167,10 +167,10 @@ model ms_roles {
   display_name String?    @db.VarChar(255)
   permissions  Json?      @default("[]")
   created_at   DateTime?  @default(now()) @db.Timestamptz(6)
-  tr_users     tr_users[]
+  ms_users     ms_users[]
 }
 
-model tr_face_registrations {
+model ms_face_registrations {
   id              String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   employee_id     String       @unique @db.Uuid
   front_photo_url String
@@ -180,7 +180,7 @@ model tr_face_registrations {
   face_descriptor Json?
   registered_at   DateTime     @default(now()) @db.Timestamptz(6)
   updated_at      DateTime     @default(now()) @db.Timestamptz(6)
-  tr_employees    tr_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees    ms_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 }
 
 model ms_time_off_types {
@@ -251,7 +251,7 @@ model tr_approvals {
   notes           String?
   acted_at        DateTime?    @default(now()) @db.Timestamptz(6)
   created_at      DateTime?    @default(now()) @db.Timestamptz(6)
-  tr_employees    tr_employees @relation(fields: [approver_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees    ms_employees @relation(fields: [approver_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([approvable_type, approvable_id], map: "idx_approvals_approvable")
   @@index([approver_id, action], map: "idx_approvals_approver")
@@ -277,10 +277,10 @@ model tr_attendance_corrections {
   created_at                                                           DateTime?       @default(now()) @db.Timestamptz(6)
   updated_at                                                           DateTime?       @default(now()) @db.Timestamptz(6)
   tr_attendances                                                       tr_attendances? @relation(fields: [attendance_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  tr_employees_tr_attendance_corrections_employee_idTotr_employees     tr_employees    @relation("tr_attendance_corrections_employee_idTotr_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  tr_employees_tr_attendance_corrections_hrga_manager_idTotr_employees tr_employees?   @relation("tr_attendance_corrections_hrga_manager_idTotr_employees", fields: [hrga_manager_id], references: [id], onUpdate: NoAction)
-  tr_users                                                             tr_users?       @relation(fields: [submitted_by], references: [id], onUpdate: NoAction)
-  tr_employees_tr_attendance_corrections_supervisor_idTotr_employees   tr_employees?   @relation("tr_attendance_corrections_supervisor_idTotr_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
+  ms_employees_tr_attendance_corrections_employee_idToms_employees     ms_employees    @relation("tr_attendance_corrections_employee_idToms_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees_tr_attendance_corrections_hrga_manager_idToms_employees ms_employees?   @relation("tr_attendance_corrections_hrga_manager_idToms_employees", fields: [hrga_manager_id], references: [id], onUpdate: NoAction)
+  ms_users                                                             ms_users?       @relation(fields: [submitted_by], references: [id], onUpdate: NoAction)
+  ms_employees_tr_attendance_corrections_supervisor_idToms_employees   ms_employees?   @relation("tr_attendance_corrections_supervisor_idToms_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
 
   @@index([attendance_id], map: "idx_attendance_corrections_attendance")
   @@index([employee_id, status], map: "idx_attendance_corrections_employee")
@@ -312,7 +312,7 @@ model tr_attendances {
   created_at                DateTime?                   @default(now()) @db.Timestamptz(6)
   updated_at                DateTime?                   @default(now()) @db.Timestamptz(6)
   tr_attendance_corrections tr_attendance_corrections[]
-  tr_employees              tr_employees                @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees              ms_employees                @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   ms_locations              ms_locations?               @relation(fields: [location_id], references: [id], onUpdate: NoAction)
 
   @@unique([employee_id, attendance_date])
@@ -331,7 +331,7 @@ model tr_audit_logs {
   new_values   Json?
   performed_by String?   @db.Uuid
   performed_at DateTime? @default(now()) @db.Timestamptz(6)
-  tr_users     tr_users? @relation(fields: [performed_by], references: [id], onUpdate: NoAction)
+  ms_users     ms_users? @relation(fields: [performed_by], references: [id], onUpdate: NoAction)
 
   @@index([performed_by, performed_at], map: "idx_audit_logs_performed")
   @@index([table_name, record_id, performed_at], map: "idx_audit_logs_table_record")
@@ -344,7 +344,7 @@ model tr_employee_schedules {
   effective_date    DateTime          @db.Date
   end_date          DateTime?         @db.Date
   created_at        DateTime?         @default(now()) @db.Timestamptz(6)
-  tr_employees      tr_employees      @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees      ms_employees      @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   ms_work_schedules ms_work_schedules @relation(fields: [schedule_id], references: [id], onUpdate: NoAction)
 
   @@unique([employee_id, effective_date])
@@ -352,7 +352,7 @@ model tr_employee_schedules {
 }
 
 /// This table contains check constraints and requires additional setup for migrations. Visit https://pris.ly/d/check-constraints for more info.
-model tr_employees {
+model ms_employees {
   id                                                                                String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   user_id                                                                           String?                     @unique @db.Uuid
   department_id                                                                     String?                     @db.Uuid
@@ -387,47 +387,47 @@ model tr_employees {
   face_registration_status                                                          String?                     @default("not_registered") @db.VarChar(50)
   created_at                                                                        DateTime?                   @default(now()) @db.Timestamptz(6)
   updated_at                                                                        DateTime?                   @default(now()) @db.Timestamptz(6)
-  ms_departments_ms_departments_head_employee_idTotr_employees                      ms_departments[]            @relation("ms_departments_head_employee_idTotr_employees")
+  ms_departments_ms_departments_head_employee_idToms_employees                      ms_departments[]            @relation("ms_departments_head_employee_idToms_employees")
   tr_approvals                                                                      tr_approvals[]
-  tr_attendance_corrections_tr_attendance_corrections_employee_idTotr_employees     tr_attendance_corrections[] @relation("tr_attendance_corrections_employee_idTotr_employees")
-  tr_attendance_corrections_tr_attendance_corrections_hrga_manager_idTotr_employees tr_attendance_corrections[] @relation("tr_attendance_corrections_hrga_manager_idTotr_employees")
-  tr_attendance_corrections_tr_attendance_corrections_supervisor_idTotr_employees   tr_attendance_corrections[] @relation("tr_attendance_corrections_supervisor_idTotr_employees")
+  tr_attendance_corrections_tr_attendance_corrections_employee_idToms_employees     tr_attendance_corrections[] @relation("tr_attendance_corrections_employee_idToms_employees")
+  tr_attendance_corrections_tr_attendance_corrections_hrga_manager_idToms_employees tr_attendance_corrections[] @relation("tr_attendance_corrections_hrga_manager_idToms_employees")
+  tr_attendance_corrections_tr_attendance_corrections_supervisor_idToms_employees   tr_attendance_corrections[] @relation("tr_attendance_corrections_supervisor_idToms_employees")
   tr_attendances                                                                    tr_attendances[]
-  tr_face_registrations                                                             tr_face_registrations?
+  ms_face_registrations                                                             ms_face_registrations?
   tr_employee_schedules                                                             tr_employee_schedules[]
-  ms_departments_tr_employees_department_idToms_departments                         ms_departments?             @relation("tr_employees_department_idToms_departments", fields: [department_id], references: [id], onUpdate: NoAction)
+  ms_departments_ms_employees_department_idToms_departments                         ms_departments?             @relation("ms_employees_department_idToms_departments", fields: [department_id], references: [id], onUpdate: NoAction)
   ms_teams                                                                          ms_teams?                   @relation(fields: [team_id], references: [id], onUpdate: NoAction)
   ms_locations                                                                      ms_locations?               @relation(fields: [location_id], references: [id], onUpdate: NoAction)
-  tr_remote_work_requests_current_remote_work                                       tr_remote_work_requests?    @relation("tr_employees_current_remote_work", fields: [current_remote_work_id], references: [id], onUpdate: NoAction)
-  tr_employees_tr_employees_manager_idTotr_employees                                tr_employees?               @relation("tr_employees_manager_idTotr_employees", fields: [manager_id], references: [id], onUpdate: NoAction)
-  other_tr_employees_tr_employees_manager_idTotr_employees                          tr_employees[]              @relation("tr_employees_manager_idTotr_employees")
+  tr_remote_work_requests_current_remote_work                                       tr_remote_work_requests?    @relation("ms_employees_current_remote_work", fields: [current_remote_work_id], references: [id], onUpdate: NoAction)
+  ms_employees_ms_employees_manager_idToms_employees                                ms_employees?               @relation("ms_employees_manager_idToms_employees", fields: [manager_id], references: [id], onUpdate: NoAction)
+  other_ms_employees_ms_employees_manager_idToms_employees                          ms_employees[]              @relation("ms_employees_manager_idToms_employees")
   ms_positions                                                                      ms_positions?               @relation(fields: [position_id], references: [id], onUpdate: NoAction)
-  tr_employees_tr_employees_supervisor_idTotr_employees                             tr_employees?               @relation("tr_employees_supervisor_idTotr_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
-  other_tr_employees_tr_employees_supervisor_idTotr_employees                       tr_employees[]              @relation("tr_employees_supervisor_idTotr_employees")
-  tr_users                                                                          tr_users?                   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees_ms_employees_supervisor_idToms_employees                             ms_employees?               @relation("ms_employees_supervisor_idToms_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
+  other_ms_employees_ms_employees_supervisor_idToms_employees                       ms_employees[]              @relation("ms_employees_supervisor_idToms_employees")
+  ms_users                                                                          ms_users?                   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   tr_leave_balances                                                                 tr_leave_balances[]
-   tr_leave_requests_tr_leave_requests_employee_idTotr_employees                     tr_leave_requests[]         @relation("tr_leave_requests_employee_idTotr_employees")
-   tr_leave_requests_tr_leave_requests_hrga_manager_idTotr_employees                 tr_leave_requests[]         @relation("tr_leave_requests_hrga_manager_idTotr_employees")
-   tr_leave_requests_tr_leave_requests_supervisor_idTotr_employees                   tr_leave_requests[]         @relation("tr_leave_requests_supervisor_idTotr_employees")
-   tr_leave_requests_tr_leave_requests_work_handover_toTotr_employees                tr_leave_requests[]         @relation("tr_leave_requests_work_handover_toTotr_employees")
+   tr_leave_requests_tr_leave_requests_employee_idToms_employees                     tr_leave_requests[]         @relation("tr_leave_requests_employee_idToms_employees")
+   tr_leave_requests_tr_leave_requests_hrga_manager_idToms_employees                 tr_leave_requests[]         @relation("tr_leave_requests_hrga_manager_idToms_employees")
+   tr_leave_requests_tr_leave_requests_supervisor_idToms_employees                   tr_leave_requests[]         @relation("tr_leave_requests_supervisor_idToms_employees")
+   tr_leave_requests_tr_leave_requests_work_handover_toToms_employees                tr_leave_requests[]         @relation("tr_leave_requests_work_handover_toToms_employees")
    tr_loan_deductions                                                                tr_loan_deductions[]
-  tr_overtime_requests_tr_overtime_requests_employee_idTotr_employees               tr_overtime_requests[]      @relation("tr_overtime_requests_employee_idTotr_employees")
-  tr_overtime_requests_tr_overtime_requests_hrd_idTotr_employees                    tr_overtime_requests[]      @relation("tr_overtime_requests_hrd_idTotr_employees")
-  tr_overtime_requests_tr_overtime_requests_manager_idTotr_employees                tr_overtime_requests[]      @relation("tr_overtime_requests_manager_idTotr_employees")
-  tr_overtime_requests_tr_overtime_requests_requested_byTotr_employees              tr_overtime_requests[]      @relation("tr_overtime_requests_requested_byTotr_employees")
+  tr_overtime_requests_tr_overtime_requests_employee_idToms_employees               tr_overtime_requests[]      @relation("tr_overtime_requests_employee_idToms_employees")
+  tr_overtime_requests_tr_overtime_requests_hrd_idToms_employees                    tr_overtime_requests[]      @relation("tr_overtime_requests_hrd_idToms_employees")
+  tr_overtime_requests_tr_overtime_requests_manager_idToms_employees                tr_overtime_requests[]      @relation("tr_overtime_requests_manager_idToms_employees")
+  tr_overtime_requests_tr_overtime_requests_requested_byToms_employees              tr_overtime_requests[]      @relation("tr_overtime_requests_requested_byToms_employees")
   tr_payslips                                                                       tr_payslips[]
   tr_thr_records                                                                    tr_thr_records[]
-    tr_time_off_requests_tr_time_off_requests_employee_idTotr_employees               tr_time_off_requests[]      @relation("tr_time_off_requests_employee_idTotr_employees")
-    tr_time_off_requests_tr_time_off_requests_hrga_manager_idTotr_employees           tr_time_off_requests[]      @relation("tr_time_off_requests_hrga_manager_idTotr_employees")
-    tr_time_off_requests_tr_time_off_requests_supervisor_idTotr_employees             tr_time_off_requests[]      @relation("tr_time_off_requests_supervisor_idTotr_employees")
-    tr_time_off_requests_tr_time_off_requests_work_handover_toTotr_employees          tr_time_off_requests[]      @relation("tr_time_off_requests_work_handover_toTotr_employees")
-    tr_remote_work_requests_tr_remote_work_requests_employee_idTotr_employees         tr_remote_work_requests[]   @relation("tr_remote_work_requests_employee_idTotr_employees")
-    tr_remote_work_requests_tr_remote_work_requests_supervisor_idTotr_employees       tr_remote_work_requests[]   @relation("tr_remote_work_requests_supervisor_idTotr_employees")
-    tr_overnight_requests_tr_overnight_requests_employee_idTotr_employees             tr_overnight_requests[]     @relation("tr_overnight_requests_employee_idTotr_employees")
-    tr_overnight_requests_tr_overnight_requests_supervisor_idTotr_employees           tr_overnight_requests[]     @relation("tr_overnight_requests_supervisor_idTotr_employees")
-    tr_reimbursements_tr_reimbursements_employee_idTotr_employees                     tr_reimbursements[]         @relation("tr_reimbursements_employee_idTotr_employees")
-    tr_reimbursements_tr_reimbursements_supervisor_idTotr_employees                   tr_reimbursements[]         @relation("tr_reimbursements_supervisor_idTotr_employees")
-    tr_reimbursements_tr_reimbursements_hr_approved_byTotr_employees                  tr_reimbursements[]         @relation("tr_reimbursements_hr_approved_byTotr_employees")
+    tr_time_off_requests_tr_time_off_requests_employee_idToms_employees               tr_time_off_requests[]      @relation("tr_time_off_requests_employee_idToms_employees")
+    tr_time_off_requests_tr_time_off_requests_hrga_manager_idToms_employees           tr_time_off_requests[]      @relation("tr_time_off_requests_hrga_manager_idToms_employees")
+    tr_time_off_requests_tr_time_off_requests_supervisor_idToms_employees             tr_time_off_requests[]      @relation("tr_time_off_requests_supervisor_idToms_employees")
+    tr_time_off_requests_tr_time_off_requests_work_handover_toToms_employees          tr_time_off_requests[]      @relation("tr_time_off_requests_work_handover_toToms_employees")
+    tr_remote_work_requests_tr_remote_work_requests_employee_idToms_employees         tr_remote_work_requests[]   @relation("tr_remote_work_requests_employee_idToms_employees")
+    tr_remote_work_requests_tr_remote_work_requests_supervisor_idToms_employees       tr_remote_work_requests[]   @relation("tr_remote_work_requests_supervisor_idToms_employees")
+    tr_overnight_requests_tr_overnight_requests_employee_idToms_employees             tr_overnight_requests[]     @relation("tr_overnight_requests_employee_idToms_employees")
+    tr_overnight_requests_tr_overnight_requests_supervisor_idToms_employees           tr_overnight_requests[]     @relation("tr_overnight_requests_supervisor_idToms_employees")
+    tr_reimbursements_tr_reimbursements_employee_idToms_employees                     tr_reimbursements[]         @relation("tr_reimbursements_employee_idToms_employees")
+    tr_reimbursements_tr_reimbursements_supervisor_idToms_employees                   tr_reimbursements[]         @relation("tr_reimbursements_supervisor_idToms_employees")
+    tr_reimbursements_tr_reimbursements_hr_approved_byToms_employees                  tr_reimbursements[]         @relation("tr_reimbursements_hr_approved_byToms_employees")
  
    @@index([is_active], map: "idx_employees_active")
   @@index([department_id], map: "idx_employees_department")
@@ -469,7 +469,7 @@ model tr_leave_balances {
   remaining_days Int?           @default(dbgenerated("(total_days - used_days)"))
   created_at     DateTime?      @default(now()) @db.Timestamptz(6)
   updated_at     DateTime?      @default(now()) @db.Timestamptz(6)
-  tr_employees   tr_employees   @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees   ms_employees   @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   ms_leave_types ms_leave_types @relation(fields: [leave_type_id], references: [id], onUpdate: NoAction)
 
   @@unique([employee_id, leave_type_id, year])
@@ -495,11 +495,11 @@ model tr_leave_requests {
   rejection_reason                                             String?
   created_at                                                   DateTime?     @default(now()) @db.Timestamptz(6)
   updated_at                                                   DateTime?     @default(now()) @db.Timestamptz(6)
-  tr_employees_tr_leave_requests_employee_idTotr_employees     tr_employees   @relation("tr_leave_requests_employee_idTotr_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  tr_employees_tr_leave_requests_hrga_manager_idTotr_employees tr_employees?  @relation("tr_leave_requests_hrga_manager_idTotr_employees", fields: [hrga_manager_id], references: [id], onUpdate: NoAction)
+  ms_employees_tr_leave_requests_employee_idToms_employees     ms_employees   @relation("tr_leave_requests_employee_idToms_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees_tr_leave_requests_hrga_manager_idToms_employees ms_employees?  @relation("tr_leave_requests_hrga_manager_idToms_employees", fields: [hrga_manager_id], references: [id], onUpdate: NoAction)
   ms_leave_types                                               ms_leave_types @relation(fields: [leave_type_id], references: [id], onUpdate: NoAction)
-  tr_employees_tr_leave_requests_supervisor_idTotr_employees   tr_employees?  @relation("tr_leave_requests_supervisor_idTotr_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
-  tr_employees_tr_leave_requests_work_handover_toTotr_employees tr_employees? @relation("tr_leave_requests_work_handover_toTotr_employees", fields: [work_handover_to], references: [id], onUpdate: NoAction)
+  ms_employees_tr_leave_requests_supervisor_idToms_employees   ms_employees?  @relation("tr_leave_requests_supervisor_idToms_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
+  ms_employees_tr_leave_requests_work_handover_toToms_employees ms_employees? @relation("tr_leave_requests_work_handover_toToms_employees", fields: [work_handover_to], references: [id], onUpdate: NoAction)
 
   @@index([start_date, end_date], map: "idx_leave_requests_dates")
   @@index([employee_id, status], map: "idx_leave_requests_employee")
@@ -517,7 +517,7 @@ model tr_loan_deductions {
   status            String?      @default("active") @db.VarChar(50)
   created_at        DateTime?    @default(now()) @db.Timestamptz(6)
   updated_at        DateTime?    @default(now()) @db.Timestamptz(6)
-  tr_employees      tr_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees      ms_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([employee_id, status], map: "idx_loan_deductions_employee")
 }
@@ -533,7 +533,7 @@ model tr_notifications {
   is_read        Boolean?  @default(false)
   read_at        DateTime? @db.Timestamptz(6)
   created_at     DateTime? @default(now()) @db.Timestamptz(6)
-  tr_users       tr_users  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_users       ms_users  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([reference_type, reference_id], map: "idx_notifications_reference")
   @@index([user_id, is_read, created_at], map: "idx_notifications_user_read")
@@ -563,10 +563,10 @@ model tr_overtime_requests {
   rejection_reason                                             String?
   created_at                                                   DateTime?     @default(now()) @db.Timestamptz(6)
   updated_at                                                   DateTime?     @default(now()) @db.Timestamptz(6)
-  tr_employees_tr_overtime_requests_employee_idTotr_employees  tr_employees  @relation("tr_overtime_requests_employee_idTotr_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  tr_employees_tr_overtime_requests_hrd_idTotr_employees       tr_employees? @relation("tr_overtime_requests_hrd_idTotr_employees", fields: [hrd_id], references: [id], onUpdate: NoAction)
-  tr_employees_tr_overtime_requests_manager_idTotr_employees   tr_employees? @relation("tr_overtime_requests_manager_idTotr_employees", fields: [manager_id], references: [id], onUpdate: NoAction)
-  tr_employees_tr_overtime_requests_requested_byTotr_employees tr_employees  @relation("tr_overtime_requests_requested_byTotr_employees", fields: [requested_by], references: [id], onUpdate: NoAction)
+  ms_employees_tr_overtime_requests_employee_idToms_employees  ms_employees  @relation("tr_overtime_requests_employee_idToms_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees_tr_overtime_requests_hrd_idToms_employees       ms_employees? @relation("tr_overtime_requests_hrd_idToms_employees", fields: [hrd_id], references: [id], onUpdate: NoAction)
+  ms_employees_tr_overtime_requests_manager_idToms_employees   ms_employees? @relation("tr_overtime_requests_manager_idToms_employees", fields: [manager_id], references: [id], onUpdate: NoAction)
+  ms_employees_tr_overtime_requests_requested_byToms_employees ms_employees  @relation("tr_overtime_requests_requested_byToms_employees", fields: [requested_by], references: [id], onUpdate: NoAction)
 
   @@index([date], map: "idx_overtime_requests_date")
   @@index([employee_id, status], map: "idx_overtime_requests_employee")
@@ -625,7 +625,7 @@ model tr_payslips {
   published_at            DateTime?          @db.Timestamptz(6)
   created_at              DateTime?          @default(now()) @db.Timestamptz(6)
   updated_at              DateTime?          @default(now()) @db.Timestamptz(6)
-  tr_employees            tr_employees       @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees            ms_employees       @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
   tr_payroll_periods      tr_payroll_periods @relation(fields: [payroll_period_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([employee_id, payroll_period_id], map: "idx_payslips_employee_period")
@@ -645,7 +645,7 @@ model tr_thr_records {
   paid_at       DateTime?    @db.Timestamptz(6)
   created_at    DateTime?    @default(now()) @db.Timestamptz(6)
   updated_at    DateTime?    @default(now()) @db.Timestamptz(6)
-  tr_employees  tr_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees  ms_employees @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([employee_id, period_name], map: "idx_thr_records_employee")
 }
@@ -670,10 +670,10 @@ model tr_time_off_requests {
   rejection_reason                                                String?
   created_at                                                      DateTime?         @default(now()) @db.Timestamptz(6)
   updated_at                                                      DateTime?         @default(now()) @db.Timestamptz(6)
-  tr_employees_tr_time_off_requests_employee_idTotr_employees     tr_employees      @relation("tr_time_off_requests_employee_idTotr_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  tr_employees_tr_time_off_requests_hrga_manager_idTotr_employees tr_employees?     @relation("tr_time_off_requests_hrga_manager_idTotr_employees", fields: [hrga_manager_id], references: [id], onUpdate: NoAction)
-  tr_employees_tr_time_off_requests_supervisor_idTotr_employees   tr_employees?     @relation("tr_time_off_requests_supervisor_idTotr_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
-  tr_employees_tr_time_off_requests_work_handover_toTotr_employees tr_employees?    @relation("tr_time_off_requests_work_handover_toTotr_employees", fields: [work_handover_to], references: [id], onUpdate: NoAction)
+  ms_employees_tr_time_off_requests_employee_idToms_employees     ms_employees      @relation("tr_time_off_requests_employee_idToms_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees_tr_time_off_requests_hrga_manager_idToms_employees ms_employees?     @relation("tr_time_off_requests_hrga_manager_idToms_employees", fields: [hrga_manager_id], references: [id], onUpdate: NoAction)
+  ms_employees_tr_time_off_requests_supervisor_idToms_employees   ms_employees?     @relation("tr_time_off_requests_supervisor_idToms_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
+  ms_employees_tr_time_off_requests_work_handover_toToms_employees ms_employees?    @relation("tr_time_off_requests_work_handover_toToms_employees", fields: [work_handover_to], references: [id], onUpdate: NoAction)
   ms_time_off_types                                               ms_time_off_types @relation(fields: [time_off_type_id], references: [id], onUpdate: NoAction)
 
   @@index([start_date, end_date], map: "idx_time_off_requests_dates")
@@ -699,9 +699,9 @@ model tr_remote_work_requests {
   reason                                                     String?
   created_at                                                 DateTime?    @default(now()) @db.Timestamptz(6)
   updated_at                                                 DateTime?    @default(now()) @db.Timestamptz(6)
-  tr_employees_tr_remote_work_requests_employee_idTotr_employees     tr_employees @relation("tr_remote_work_requests_employee_idTotr_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  tr_employees_tr_remote_work_requests_supervisor_idTotr_employees   tr_employees? @relation("tr_remote_work_requests_supervisor_idTotr_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
-  tr_employees_current_remote_work                                  tr_employees? @relation("tr_employees_current_remote_work")
+  ms_employees_tr_remote_work_requests_employee_idToms_employees     ms_employees @relation("tr_remote_work_requests_employee_idToms_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees_tr_remote_work_requests_supervisor_idToms_employees   ms_employees? @relation("tr_remote_work_requests_supervisor_idToms_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
+  ms_employees_current_remote_work                                  ms_employees? @relation("ms_employees_current_remote_work")
 
   @@index([employee_id], map: "idx_remote_work_employee")
   @@index([status], map: "idx_remote_work_status")
@@ -721,8 +721,8 @@ model tr_overnight_requests {
   rejection_reason                                             String?
   created_at                                                   DateTime?    @default(now()) @db.Timestamptz(6)
   updated_at                                                   DateTime?    @default(now()) @db.Timestamptz(6)
-  tr_employees_tr_overnight_requests_employee_idTotr_employees tr_employees @relation("tr_overnight_requests_employee_idTotr_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  tr_employees_tr_overnight_requests_supervisor_idTotr_employees tr_employees? @relation("tr_overnight_requests_supervisor_idTotr_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
+  ms_employees_tr_overnight_requests_employee_idToms_employees ms_employees @relation("tr_overnight_requests_employee_idToms_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees_tr_overnight_requests_supervisor_idToms_employees ms_employees? @relation("tr_overnight_requests_supervisor_idToms_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
 
   @@index([date], map: "idx_overnight_requests_date")
   @@index([employee_id, status], map: "idx_overnight_requests_employee")
@@ -745,9 +745,9 @@ model tr_reimbursements {
   rejection_reason                                              String?
   created_at                                                    DateTime?    @default(now()) @db.Timestamptz(6)
   updated_at                                                    DateTime?    @default(now()) @db.Timestamptz(6)
-  tr_employees_tr_reimbursements_employee_idTotr_employees      tr_employees @relation("tr_reimbursements_employee_idTotr_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
-  tr_employees_tr_reimbursements_supervisor_idTotr_employees    tr_employees? @relation("tr_reimbursements_supervisor_idTotr_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
-  tr_employees_tr_reimbursements_hr_approved_byTotr_employees   tr_employees? @relation("tr_reimbursements_hr_approved_byTotr_employees", fields: [hr_approved_by], references: [id], onUpdate: NoAction)
+  ms_employees_tr_reimbursements_employee_idToms_employees      ms_employees @relation("tr_reimbursements_employee_idToms_employees", fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_employees_tr_reimbursements_supervisor_idToms_employees    ms_employees? @relation("tr_reimbursements_supervisor_idToms_employees", fields: [supervisor_id], references: [id], onUpdate: NoAction)
+  ms_employees_tr_reimbursements_hr_approved_byToms_employees   ms_employees? @relation("tr_reimbursements_hr_approved_byToms_employees", fields: [hr_approved_by], references: [id], onUpdate: NoAction)
 
   @@index([date], map: "idx_reimbursements_date")
   @@index([employee_id, status], map: "idx_reimbursements_employee")
@@ -755,7 +755,7 @@ model tr_reimbursements {
   @@index([supervisor_id], map: "idx_reimbursements_supervisor")
 }
 
-model tr_users {
+model ms_users {
   id                        String                      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
   role_id                   String                      @db.Uuid
   company_id                String                      @db.Uuid
@@ -773,7 +773,7 @@ model tr_users {
   ms_job_postings           ms_job_postings[]
   tr_attendance_corrections tr_attendance_corrections[]
   tr_audit_logs             tr_audit_logs[]
-  tr_employees              tr_employees?
+  ms_employees              ms_employees?
   tr_notifications          tr_notifications[]
   tr_user_devices           tr_user_devices[]
   ms_companies              ms_companies                @relation(fields: [company_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
@@ -793,7 +793,7 @@ model tr_user_devices {
   is_active  Boolean?  @default(true)
   created_at DateTime? @default(now()) @db.Timestamptz(6)
   updated_at DateTime? @default(now()) @db.Timestamptz(6)
-  tr_users   tr_users  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  ms_users   ms_users  @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@index([user_id], map: "idx_user_devices_user")
   @@index([device_id], map: "idx_user_devices_device")

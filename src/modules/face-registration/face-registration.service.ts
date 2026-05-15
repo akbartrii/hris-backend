@@ -18,21 +18,21 @@ export class FaceRegistrationService {
   ) {}
 
   async getStatus(userId: string) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
 
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
-    const registration = await this.prisma.tr_face_registrations.findUnique({
-      where: { employee_id: user.tr_employees.id },
+    const registration = await this.prisma.ms_face_registrations.findUnique({
+      where: { employee_id: user.ms_employees.id },
     });
 
     return {
-      status: user.tr_employees.face_registration_status || 'not_registered',
+      status: user.ms_employees.face_registration_status || 'not_registered',
       registered_at: registration?.registered_at || null,
       photos: registration
         ? {
@@ -54,16 +54,16 @@ export class FaceRegistrationService {
       left_photo: Express.Multer.File;
     },
   ) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
 
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
-    const employeeId = user.tr_employees.id;
+    const employeeId = user.ms_employees.id;
 
     // Upload 4 photos (parallel)
     this.logger.log(
@@ -93,7 +93,7 @@ export class FaceRegistrationService {
 
     // Save to DB
     this.logger.log(`[FaceReg] Saving to database...`);
-    await this.prisma.tr_face_registrations.upsert({
+    await this.prisma.ms_face_registrations.upsert({
       where: { employee_id: employeeId },
       update: {
         front_photo_url: frontUrl,
@@ -111,7 +111,7 @@ export class FaceRegistrationService {
       },
     });
 
-    await this.prisma.tr_employees.update({
+    await this.prisma.ms_employees.update({
       where: { id: employeeId },
       data: { face_registration_status: 'registered' },
     });

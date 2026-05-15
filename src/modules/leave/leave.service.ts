@@ -22,14 +22,14 @@ export class LeaveService {
   ) {}
 
   private async getEmployeeFromUser(userId: string) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
-    return user.tr_employees;
+    return user.ms_employees;
   }
 
   private isAdminOrHRD(role: string): boolean {
@@ -86,7 +86,7 @@ export class LeaveService {
 
     // If admin/HR provides an employee_id, use that instead
     if (dto.employee_id && this.isAdminOrHRD(userRole)) {
-      const targetEmployee = await this.prisma.tr_employees.findUnique({
+      const targetEmployee = await this.prisma.ms_employees.findUnique({
         where: { id: dto.employee_id },
       });
       if (!targetEmployee) {
@@ -234,11 +234,11 @@ export class LeaveService {
   }
 
   async listLeaves(userId: string, query: ListLeaveDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true, ms_roles: true },
+      include: { ms_employees: true, ms_roles: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -250,7 +250,7 @@ export class LeaveService {
     const userRole = user.ms_roles?.name || 'karyawan';
 
     if (!['admin', 'super_admin'].includes(userRole)) {
-      where.employee_id = user.tr_employees.id;
+      where.employee_id = user.ms_employees.id;
     }
 
     if (query.status) {
@@ -265,7 +265,7 @@ export class LeaveService {
         orderBy: { created_at: 'desc' },
         include: {
           ms_leave_types: true,
-          tr_employees_tr_leave_requests_employee_idTotr_employees: true,
+          ms_employees_tr_leave_requests_employee_idToms_employees: true,
         },
       }),
       this.prisma.tr_leave_requests.count({ where }),
@@ -276,11 +276,11 @@ export class LeaveService {
   }
 
   async listSubordinateLeaves(userId: string, query: ListLeaveDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -288,11 +288,11 @@ export class LeaveService {
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const subordinates = await this.prisma.tr_employees.findMany({
+    const subordinates = await this.prisma.ms_employees.findMany({
       where: {
         OR: [
-          { supervisor_id: user.tr_employees.id },
-          { manager_id: user.tr_employees.id },
+          { supervisor_id: user.ms_employees.id },
+          { manager_id: user.ms_employees.id },
         ],
       },
       select: { id: true },
@@ -319,7 +319,7 @@ export class LeaveService {
         orderBy: { created_at: 'desc' },
         include: {
           ms_leave_types: true,
-          tr_employees_tr_leave_requests_employee_idTotr_employees: true,
+          ms_employees_tr_leave_requests_employee_idToms_employees: true,
         },
       }),
       this.prisma.tr_leave_requests.count({ where }),
@@ -355,7 +355,7 @@ export class LeaveService {
         throw new BadRequestException('Leave request already processed');
       }
 
-      const requester = await this.prisma.tr_employees.findUnique({
+      const requester = await this.prisma.ms_employees.findUnique({
         where: { id: leave.employee_id },
       });
       if (!requester || requester.supervisor_id !== approver.id) {
@@ -514,7 +514,7 @@ export class LeaveService {
       'annual_leave_default_days',
       12,
     );
-    const activeEmployees = await this.prisma.tr_employees.findMany({
+    const activeEmployees = await this.prisma.ms_employees.findMany({
       where: { is_active: true },
     });
 

@@ -22,7 +22,7 @@ ON CONFLICT (id) DO NOTHING;
 -- ============================================
 -- 3. Seed Employees (first pass, no supervisor)
 -- ============================================
-INSERT INTO tr_employees (id, full_name, nik, is_active)
+INSERT INTO ms_employees (id, full_name, nik, is_active)
 VALUES 
   ('33333333-3333-3333-3333-333333333331', 'Budi Santoso', 'EMP001', true),
   ('33333333-3333-3333-3333-333333333332', 'Andi Wijaya', 'SUP001', true),
@@ -30,14 +30,14 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- Update supervisor relationships
-UPDATE tr_employees SET supervisor_id = '33333333-3333-3333-3333-333333333332' WHERE id = '33333333-3333-3333-3333-333333333331';
-UPDATE tr_employees SET supervisor_id = '33333333-3333-3333-3333-333333333333' WHERE id = '33333333-3333-3333-3333-333333333332';
+UPDATE ms_employees SET supervisor_id = '33333333-3333-3333-3333-333333333332' WHERE id = '33333333-3333-3333-3333-333333333331';
+UPDATE ms_employees SET supervisor_id = '33333333-3333-3333-3333-333333333333' WHERE id = '33333333-3333-3333-3333-333333333332';
 
 -- ============================================
 -- 4. Seed Users (password: Password123!)
 -- bcrypt hash below is for "Password123!"
 -- ============================================
-INSERT INTO tr_users (id, role_id, company_id, employee_id, email, password_hash, full_name, is_active)
+INSERT INTO ms_users (id, role_id, company_id, employee_id, email, password_hash, full_name, is_active)
 VALUES 
   ('44444444-4444-4444-4444-444444444441', '22222222-2222-2222-2222-222222222222', '11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333331', 'budi@dummy.com', '$2a$10$VlKJ6vOj7FqJkQJ4vLkX9OeQkQkQkQkQkQkQkQkQkQkQkQkQkQkQkQ', 'Budi Santoso', true),
   ('44444444-4444-4444-4444-444444444442', '22222222-2222-2222-2222-222222222223', '11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333332', 'andi@dummy.com', '$2a$10$VlKJ6vOj7FqJkQJ4vLkX9OeQkQkQkQkQkQkQkQkQkQkQkQkQkQkQkQ', 'Andi Wijaya', true),

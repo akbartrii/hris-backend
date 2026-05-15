@@ -25,9 +25,9 @@ export class AuthService {
     try {
       const { email, password } = loginDto;
 
-      const user = await this.prisma.tr_users.findUnique({
+      const user = await this.prisma.ms_users.findUnique({
         where: { email },
-        include: { ms_roles: true, tr_employees: true },
+        include: { ms_roles: true, ms_employees: true },
       });
 
       if (!user) {
@@ -58,19 +58,19 @@ export class AuthService {
       );
 
       // Update last login
-      await this.prisma.tr_users.update({
+      await this.prisma.ms_users.update({
         where: { id: user.id },
         data: { last_login_at: new Date() },
       });
 
       // Build assigned locations for the employee
       const assignedLocations = await this.buildAssignedLocations(
-        user.tr_employees?.id,
+        user.ms_employees?.id,
       );
 
       return {
         access_token: token,
-        employee_id: user.tr_employees?.id || null,
+        employee_id: user.ms_employees?.id || null,
         user: {
           id: user.id,
           email: user.email,
@@ -98,7 +98,7 @@ export class AuthService {
       return locations;
     }
 
-    const employee = await this.prisma.tr_employees.findUnique({
+    const employee = await this.prisma.ms_employees.findUnique({
       where: { id: employeeId },
       include: { ms_locations: true },
     });
@@ -184,9 +184,9 @@ export class AuthService {
   }
 
   async getProfile(userId: string) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { ms_roles: true, tr_employees: true },
+      include: { ms_roles: true, ms_employees: true },
     });
 
     if (!user) {
@@ -200,7 +200,7 @@ export class AuthService {
       phone: user.phone,
       avatar_url: user.avatar_url,
       role: user.ms_roles?.name || 'karyawan',
-      employee_id: user.tr_employees?.id || null,
+      employee_id: user.ms_employees?.id || null,
       is_active: user.is_active,
       last_login_at: user.last_login_at,
     };
@@ -227,8 +227,8 @@ export class AuthService {
         },
       });
 
-      // Also update legacy fcm_token on tr_users for backward compatibility
-      await this.prisma.tr_users.update({
+      // Also update legacy fcm_token on ms_users for backward compatibility
+      await this.prisma.ms_users.update({
         where: { id: userId },
         data: { fcm_token: dto.fcm_token },
       });

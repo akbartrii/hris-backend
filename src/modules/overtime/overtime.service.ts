@@ -21,14 +21,14 @@ export class OvertimeService {
   ) {}
 
   private async getEmployeeFromUser(userId: string) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
-    return user.tr_employees;
+    return user.ms_employees;
   }
 
   private timeToMinutes(timeStr: string): number {
@@ -197,7 +197,7 @@ export class OvertimeService {
       throw new ForbiddenException('You can only submit overtime for yourself');
     }
 
-    const targetEmployee = await this.prisma.tr_employees.findUnique({
+    const targetEmployee = await this.prisma.ms_employees.findUnique({
       where: { id: dto.employee_id },
     });
 
@@ -238,7 +238,7 @@ export class OvertimeService {
       );
     }
 
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: targetEmployee.user_id },
     });
     const companyId = user?.company_id;
@@ -410,12 +410,12 @@ export class OvertimeService {
 
   async listOvertimes(userId: string, query: ListOvertimeDto) {
     try {
-      const user = await this.prisma.tr_users.findUnique({
+      const user = await this.prisma.ms_users.findUnique({
         where: { id: userId },
-        include: { tr_employees: true, ms_roles: true },
+        include: { ms_employees: true, ms_roles: true },
       });
 
-      if (!user || !user.tr_employees) {
+      if (!user || !user.ms_employees) {
         throw new NotFoundException('Employee not found');
       }
 
@@ -435,7 +435,7 @@ export class OvertimeService {
           where.employee_id = query.employee_id;
         }
       } else {
-        where.employee_id = user.tr_employees.id;
+        where.employee_id = user.ms_employees.id;
       }
 
       if (query.month) {
@@ -452,7 +452,7 @@ export class OvertimeService {
           take: limit,
           orderBy: { created_at: 'desc' },
           include: {
-            tr_employees_tr_overtime_requests_employee_idTotr_employees: {
+            ms_employees_tr_overtime_requests_employee_idToms_employees: {
               select: { id: true, full_name: true, nik: true },
             },
           },
@@ -469,11 +469,11 @@ export class OvertimeService {
   }
 
   async listSubordinateOvertimes(userId: string, query: ListOvertimeDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -481,11 +481,11 @@ export class OvertimeService {
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const subordinates = await this.prisma.tr_employees.findMany({
+    const subordinates = await this.prisma.ms_employees.findMany({
       where: {
         OR: [
-          { supervisor_id: user.tr_employees.id },
-          { manager_id: user.tr_employees.id },
+          { supervisor_id: user.ms_employees.id },
+          { manager_id: user.ms_employees.id },
         ],
       },
       select: { id: true },
@@ -518,7 +518,7 @@ export class OvertimeService {
         take: limit,
         orderBy: { created_at: 'desc' },
         include: {
-          tr_employees_tr_overtime_requests_employee_idTotr_employees: {
+          ms_employees_tr_overtime_requests_employee_idToms_employees: {
             select: { id: true, full_name: true, nik: true },
           },
         },
@@ -531,12 +531,12 @@ export class OvertimeService {
   }
 
   async getOvertimeSummary(userId: string, month?: string) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true, ms_roles: true },
+      include: { ms_employees: true, ms_roles: true },
     });
 
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -561,7 +561,7 @@ export class OvertimeService {
     const requests = await this.prisma.tr_overtime_requests.findMany({
       where: { date: dateFilter },
       include: {
-        tr_employees_tr_overtime_requests_employee_idTotr_employees: {
+        ms_employees_tr_overtime_requests_employee_idToms_employees: {
           select: { id: true, full_name: true, nik: true },
         },
       },
@@ -571,7 +571,7 @@ export class OvertimeService {
 
     for (const req of requests) {
       const emp =
-        req.tr_employees_tr_overtime_requests_employee_idTotr_employees;
+        req.ms_employees_tr_overtime_requests_employee_idToms_employees;
       if (!summaryMap.has(emp.id)) {
         summaryMap.set(emp.id, {
           employee_id: emp.id,
@@ -627,7 +627,7 @@ export class OvertimeService {
 
     // Step 1: Supervisor approval
     if (approverRole === 'atasan' && overtime.status === 'pending') {
-      const targetEmployee = await this.prisma.tr_employees.findUnique({
+      const targetEmployee = await this.prisma.ms_employees.findUnique({
         where: { id: overtime.employee_id },
       });
       if (

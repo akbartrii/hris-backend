@@ -25,8 +25,8 @@ BEGIN
   SELECT id INTO v_super_admin_role_id FROM ms_roles WHERE name = 'super_admin';
 
   -- 1. Karyawan
-  IF NOT EXISTS (SELECT 1 FROM tr_users WHERE email = 'karyawan@samugara.co.id') THEN
-    INSERT INTO tr_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
+  IF NOT EXISTS (SELECT 1 FROM ms_users WHERE email = 'karyawan@samugara.co.id') THEN
+    INSERT INTO ms_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
     VALUES (
       '3b6a63d3-04ee-49cd-bacd-4844d1b03100',
       v_karyawan_role_id,
@@ -39,7 +39,7 @@ BEGIN
       true
     );
     
-    INSERT INTO tr_employees (id, user_id, department_id, position_id, location_id, nik, full_name, gender, employment_status, join_date, is_active)
+    INSERT INTO ms_employees (id, user_id, department_id, position_id, location_id, nik, full_name, gender, employment_status, join_date, is_active)
     VALUES (
       '3b6a63d3-04ee-49cd-bacd-4844d1b03101',
       '3b6a63d3-04ee-49cd-bacd-4844d1b03100',
@@ -56,8 +56,8 @@ BEGIN
   END IF;
 
   -- 2. Supervisor/Atasan
-  IF NOT EXISTS (SELECT 1 FROM tr_users WHERE email = 'spv@samugara.co.id') THEN
-    INSERT INTO tr_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
+  IF NOT EXISTS (SELECT 1 FROM ms_users WHERE email = 'spv@samugara.co.id') THEN
+    INSERT INTO ms_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
     VALUES (
       'b216edb8-15e0-4c87-ac9b-fbb610ad0a48',
       v_atasan_role_id,
@@ -70,7 +70,7 @@ BEGIN
       true
     );
     
-    INSERT INTO tr_employees (id, user_id, department_id, position_id, location_id, nik, full_name, gender, employment_status, join_date, is_active)
+    INSERT INTO ms_employees (id, user_id, department_id, position_id, location_id, nik, full_name, gender, employment_status, join_date, is_active)
     VALUES (
       'b216edb8-15e0-4c87-ac9b-fbb610ad0a49',
       'b216edb8-15e0-4c87-ac9b-fbb610ad0a48',
@@ -87,8 +87,8 @@ BEGIN
   END IF;
 
   -- 3. Manager HRGA (if not exists with this email)
-  IF NOT EXISTS (SELECT 1 FROM tr_users WHERE email = 'hrga@samugara.co.id') THEN
-    INSERT INTO tr_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
+  IF NOT EXISTS (SELECT 1 FROM ms_users WHERE email = 'hrga@samugara.co.id') THEN
+    INSERT INTO ms_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
     VALUES (
       '493421e0-265b-4a28-aa76-d11a684dc14c',
       v_manager_hrga_role_id,
@@ -101,7 +101,7 @@ BEGIN
       true
     );
     
-    INSERT INTO tr_employees (id, user_id, department_id, position_id, location_id, nik, full_name, gender, employment_status, join_date, is_active)
+    INSERT INTO ms_employees (id, user_id, department_id, position_id, location_id, nik, full_name, gender, employment_status, join_date, is_active)
     VALUES (
       '493421e0-265b-4a28-aa76-d11a684dc14d',
       '493421e0-265b-4a28-aa76-d11a684dc14c',
@@ -118,8 +118,8 @@ BEGIN
   END IF;
 
   -- 4. HRD
-  IF NOT EXISTS (SELECT 1 FROM tr_users WHERE email = 'hrd@samugara.co.id') THEN
-    INSERT INTO tr_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
+  IF NOT EXISTS (SELECT 1 FROM ms_users WHERE email = 'hrd@samugara.co.id') THEN
+    INSERT INTO ms_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
     VALUES (
       'b4e31950-9a94-4f9a-baf3-8786602345ce',
       v_hrd_role_id,
@@ -132,7 +132,7 @@ BEGIN
       true
     );
     
-    INSERT INTO tr_employees (id, user_id, department_id, position_id, location_id, nik, full_name, gender, employment_status, join_date, is_active)
+    INSERT INTO ms_employees (id, user_id, department_id, position_id, location_id, nik, full_name, gender, employment_status, join_date, is_active)
     VALUES (
       'b4e31950-9a94-4f9a-baf3-8786602345cf',
       'b4e31950-9a94-4f9a-baf3-8786602345ce',
@@ -151,8 +151,8 @@ BEGIN
   -- 5. Admin (regular admin, not super_admin)
   -- Note: admin@samugara.co.id currently has super_admin role
   -- We will create admin-role@samugara.co.id for admin role to keep both
-  IF NOT EXISTS (SELECT 1 FROM tr_users WHERE email = 'admin-role@samugara.co.id') THEN
-    INSERT INTO tr_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
+  IF NOT EXISTS (SELECT 1 FROM ms_users WHERE email = 'admin-role@samugara.co.id') THEN
+    INSERT INTO ms_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
     VALUES (
       'c175959f-f09f-4a82-bdcd-0bec1b07491f',
       v_admin_role_id,
@@ -165,7 +165,7 @@ BEGIN
       true
     );
     
-    INSERT INTO tr_employees (id, user_id, department_id, position_id, location_id, nik, full_name, gender, employment_status, join_date, is_active)
+    INSERT INTO ms_employees (id, user_id, department_id, position_id, location_id, nik, full_name, gender, employment_status, join_date, is_active)
     VALUES (
       'c175959f-f09f-4a82-bdcd-0bec1b074920',
       'c175959f-f09f-4a82-bdcd-0bec1b07491f',
@@ -182,8 +182,8 @@ BEGIN
   END IF;
 
   -- 6. Super Admin
-  IF NOT EXISTS (SELECT 1 FROM tr_users WHERE email = 'superadmin@samugara.co.id') THEN
-    INSERT INTO tr_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
+  IF NOT EXISTS (SELECT 1 FROM ms_users WHERE email = 'superadmin@samugara.co.id') THEN
+    INSERT INTO ms_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
     VALUES (
       '82c61552-9066-4cf5-98d8-cc67950835fc',
       v_super_admin_role_id,
@@ -196,7 +196,7 @@ BEGIN
       true
     );
     
-    INSERT INTO tr_employees (id, user_id, department_id, position_id, location_id, nik, full_name, gender, employment_status, join_date, is_active)
+    INSERT INTO ms_employees (id, user_id, department_id, position_id, location_id, nik, full_name, gender, employment_status, join_date, is_active)
     VALUES (
       '82c61552-9066-4cf5-98d8-cc67950835fd',
       '82c61552-9066-4cf5-98d8-cc67950835fc',
@@ -228,7 +228,7 @@ DECLARE
   v_company_id UUID := 'e135435b-cac1-4e79-af75-5c0f2bfdb8fd';
 BEGIN
   -- 1. Set supervisor for karyawan
-  UPDATE tr_employees 
+  UPDATE ms_employees 
   SET supervisor_id = v_spv_emp_id 
   WHERE id = v_karyawan_emp_id;
 
@@ -360,12 +360,12 @@ BEGIN
   END IF;
 
   -- Assign existing karyawan and spv to IT Production team
-  UPDATE tr_employees SET team_id = v_team_prod_id WHERE id = v_karyawan_emp_id;
-  UPDATE tr_employees SET team_id = v_team_prod_id WHERE id = v_spv_emp_id;
+  UPDATE ms_employees SET team_id = v_team_prod_id WHERE id = v_karyawan_emp_id;
+  UPDATE ms_employees SET team_id = v_team_prod_id WHERE id = v_spv_emp_id;
 
   -- Create karyawan2 (teammate for work handover option)
-  IF NOT EXISTS (SELECT 1 FROM tr_users WHERE email = 'karyawan2@samugara.co.id') THEN
-    INSERT INTO tr_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
+  IF NOT EXISTS (SELECT 1 FROM ms_users WHERE email = 'karyawan2@samugara.co.id') THEN
+    INSERT INTO ms_users (id, role_id, company_id, employee_id, email, password_hash, full_name, phone, is_active)
     VALUES (
       v_karyawan2_user_id,
       v_karyawan_role_id,
@@ -378,7 +378,7 @@ BEGIN
       true
     );
 
-    INSERT INTO tr_employees (id, user_id, department_id, position_id, location_id, team_id, nik, full_name, gender, employment_status, join_date, is_active)
+    INSERT INTO ms_employees (id, user_id, department_id, position_id, location_id, team_id, nik, full_name, gender, employment_status, join_date, is_active)
     VALUES (
       v_karyawan2_emp_id,
       v_karyawan2_user_id,
@@ -401,7 +401,7 @@ END $$;
 -- Verify created data
 SELECT 
   'Users' as data_type, COUNT(*) as count 
-FROM tr_users 
+FROM ms_users 
 WHERE email LIKE '%@samugara.co.id'
 UNION ALL
 SELECT 'Attendance', COUNT(*) 

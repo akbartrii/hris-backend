@@ -21,11 +21,11 @@ export class RemoteWorkService {
   ) {}
 
   async list(userId: string, userRole: string, query: ListRemoteWorkDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -37,7 +37,7 @@ export class RemoteWorkService {
     if (query.employee_id && isAdmin) {
       where.employee_id = query.employee_id;
     } else {
-      where.employee_id = user.tr_employees.id;
+      where.employee_id = user.ms_employees.id;
     }
 
     if (query.status) {
@@ -67,11 +67,11 @@ export class RemoteWorkService {
     userRole: string,
     query: ListRemoteWorkDto,
   ) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -94,10 +94,10 @@ export class RemoteWorkService {
     // Admin/HR roles can see all requests
     if (userRole === 'atasan') {
       this.logger.log(
-        `[listSubordinates] user_id=${userId}, employee_id=${user.tr_employees.id}, name=${user.tr_employees.full_name}`,
+        `[listSubordinates] user_id=${userId}, employee_id=${user.ms_employees.id}, name=${user.ms_employees.full_name}`,
       );
-      const subordinates = await this.prisma.tr_employees.findMany({
-        where: { supervisor_id: user.tr_employees.id },
+      const subordinates = await this.prisma.ms_employees.findMany({
+        where: { supervisor_id: user.ms_employees.id },
         select: { id: true, full_name: true },
       });
       const subordinateIds = subordinates.map((e) => e.id);
@@ -130,10 +130,10 @@ export class RemoteWorkService {
         skip,
         take: limit,
         include: {
-          tr_employees_tr_remote_work_requests_employee_idTotr_employees: {
+          ms_employees_tr_remote_work_requests_employee_idToms_employees: {
             select: {
               full_name: true,
-              tr_users: {
+              ms_users: {
                 select: { email: true },
               },
             },
@@ -152,11 +152,11 @@ export class RemoteWorkService {
   }
 
   async create(userId: string, dto: CreateRemoteWorkDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -168,7 +168,7 @@ export class RemoteWorkService {
 
     const existing = await this.prisma.tr_remote_work_requests.findFirst({
       where: {
-        employee_id: user.tr_employees.id,
+        employee_id: user.ms_employees.id,
         status: { in: ['pending', 'approved'] },
         OR: [{ start_date: { lte: end }, end_date: { gte: start } }],
       },
@@ -182,7 +182,7 @@ export class RemoteWorkService {
 
     const request = await this.prisma.tr_remote_work_requests.create({
       data: {
-        employee_id: user.tr_employees.id,
+        employee_id: user.ms_employees.id,
         start_date: start,
         end_date: end,
         latitude: dto.latitude,
@@ -191,39 +191,39 @@ export class RemoteWorkService {
         radius_meters: 50,
         reason: dto.reason || null,
         status: 'pending',
-        supervisor_id: user.tr_employees.supervisor_id,
+        supervisor_id: user.ms_employees.supervisor_id,
       },
     });
 
     // Notify supervisor
-    if (user.tr_employees.supervisor_id) {
+    if (user.ms_employees.supervisor_id) {
       this.logger.log(
-        `[Create] Notifying supervisor_id=${user.tr_employees.supervisor_id} about request from employee_id=${user.tr_employees.id}`,
+        `[Create] Notifying supervisor_id=${user.ms_employees.supervisor_id} about request from employee_id=${user.ms_employees.id}`,
       );
-      const supervisor = await this.prisma.tr_employees.findUnique({
-        where: { id: user.tr_employees.supervisor_id },
-        include: { tr_users: true },
+      const supervisor = await this.prisma.ms_employees.findUnique({
+        where: { id: user.ms_employees.supervisor_id },
+        include: { ms_users: true },
       });
-      if (supervisor?.tr_users) {
+      if (supervisor?.ms_users) {
         this.logger.log(
-          `[Create] Sending notif to supervisor user_id=${supervisor.tr_users.id}, name=${supervisor.full_name}`,
+          `[Create] Sending notif to supervisor user_id=${supervisor.ms_users.id}, name=${supervisor.full_name}`,
         );
         await this.notificationService.createNotificationInternal(
-          supervisor.tr_users.id,
+          supervisor.ms_users.id,
           'remote_work_request',
           'Permintaan WFH Baru',
-          `${user.tr_employees.full_name} mengajukan WFH dari ${dto.start_date} s/d ${dto.end_date}`,
+          `${user.ms_employees.full_name} mengajukan WFH dari ${dto.start_date} s/d ${dto.end_date}`,
           'remote_work',
           request.id,
         );
       } else {
         this.logger.warn(
-          `[Create] Supervisor employee_id=${user.tr_employees.supervisor_id} has no linked user`,
+          `[Create] Supervisor employee_id=${user.ms_employees.supervisor_id} has no linked user`,
         );
       }
     } else {
       this.logger.warn(
-        `[Create] Employee ${user.tr_employees.id} has no supervisor_id`,
+        `[Create] Employee ${user.ms_employees.id} has no supervisor_id`,
       );
     }
 
@@ -236,11 +236,11 @@ export class RemoteWorkService {
     requestId: string,
     dto: ApproveRemoteWorkDto,
   ) {
-    const approver = await this.prisma.tr_users.findUnique({
+    const approver = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!approver || !approver.tr_employees) {
+    if (!approver || !approver.ms_employees) {
       throw new NotFoundException('Approver not found');
     }
 
@@ -256,7 +256,7 @@ export class RemoteWorkService {
     }
 
     const isSuperAdmin = userRole === 'super_admin';
-    const isSupervisor = request.supervisor_id === approver.tr_employees.id;
+    const isSupervisor = request.supervisor_id === approver.ms_employees.id;
 
     if (!isSuperAdmin && !isSupervisor) {
       throw new ForbiddenException(
@@ -281,7 +281,7 @@ export class RemoteWorkService {
         this.logger.log(
           `[Approve] Request is currently active. Updating employee ${request.employee_id} current_remote_work_id=${requestId}`,
         );
-        await this.prisma.tr_employees.update({
+        await this.prisma.ms_employees.update({
           where: { id: request.employee_id },
           data: { current_remote_work_id: requestId },
         });
@@ -311,7 +311,7 @@ export class RemoteWorkService {
         requestId,
       );
     } else {
-      await this.prisma.tr_employees.updateMany({
+      await this.prisma.ms_employees.updateMany({
         where: {
           id: request.employee_id,
           current_remote_work_id: requestId,
@@ -343,11 +343,11 @@ export class RemoteWorkService {
   }
 
   async cancel(userId: string, requestId: string, reason?: string) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -358,7 +358,7 @@ export class RemoteWorkService {
       throw new NotFoundException('Remote work request not found');
     }
 
-    if (request.employee_id !== user.tr_employees.id) {
+    if (request.employee_id !== user.ms_employees.id) {
       throw new ForbiddenException('You can only cancel your own request');
     }
 
@@ -377,16 +377,16 @@ export class RemoteWorkService {
 
     // Notify supervisor
     if (request.supervisor_id) {
-      const supervisor = await this.prisma.tr_employees.findUnique({
+      const supervisor = await this.prisma.ms_employees.findUnique({
         where: { id: request.supervisor_id },
-        include: { tr_users: true },
+        include: { ms_users: true },
       });
-      if (supervisor?.tr_users) {
+      if (supervisor?.ms_users) {
         await this.notificationService.createNotificationInternal(
-          supervisor.tr_users.id,
+          supervisor.ms_users.id,
           'remote_work_cancelled',
           'WFH Dibatalkan',
-          `${user.tr_employees.full_name} membatalkan permintaan WFH dari ${request.start_date.toISOString().split('T')[0]} s/d ${request.end_date.toISOString().split('T')[0]}${reason ? `. Alasan: ${reason}` : ''}`,
+          `${user.ms_employees.full_name} membatalkan permintaan WFH dari ${request.start_date.toISOString().split('T')[0]} s/d ${request.end_date.toISOString().split('T')[0]}${reason ? `. Alasan: ${reason}` : ''}`,
           'remote_work',
           requestId,
         );
@@ -402,16 +402,16 @@ export class RemoteWorkService {
     message: string,
     requestId: string,
   ) {
-    const employee = await this.prisma.tr_employees.findUnique({
+    const employee = await this.prisma.ms_employees.findUnique({
       where: { id: employeeId },
-      include: { tr_users: true },
+      include: { ms_users: true },
     });
-    if (employee?.tr_users) {
+    if (employee?.ms_users) {
       this.logger.log(
-        `[Notify] Target: employee_id=${employeeId}, user_id=${employee.tr_users.id}, name=${employee.full_name}, title=${title}`,
+        `[Notify] Target: employee_id=${employeeId}, user_id=${employee.ms_users.id}, name=${employee.full_name}, title=${title}`,
       );
       await this.notificationService.createNotificationInternal(
-        employee.tr_users.id,
+        employee.ms_users.id,
         'remote_work_status',
         title,
         message,

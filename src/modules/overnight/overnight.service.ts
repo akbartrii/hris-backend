@@ -14,11 +14,11 @@ export class OvernightService {
   constructor(private prisma: PrismaService) {}
 
   async list(userId: string, userRole: string, query: ListOvernightDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -30,7 +30,7 @@ export class OvernightService {
     const isAdmin = ['admin', 'super_admin'].includes(userRole);
 
     if (!isAdmin) {
-      where.employee_id = user.tr_employees.id;
+      where.employee_id = user.ms_employees.id;
     }
 
     if (query.status) {
@@ -52,11 +52,11 @@ export class OvernightService {
   }
 
   async listSubordinateOvernights(userId: string, query: ListOvernightDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -64,11 +64,11 @@ export class OvernightService {
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const subordinates = await this.prisma.tr_employees.findMany({
+    const subordinates = await this.prisma.ms_employees.findMany({
       where: {
         OR: [
-          { supervisor_id: user.tr_employees.id },
-          { manager_id: user.tr_employees.id },
+          { supervisor_id: user.ms_employees.id },
+          { manager_id: user.ms_employees.id },
         ],
       },
       select: { id: true },
@@ -102,22 +102,22 @@ export class OvernightService {
   }
 
   async create(userId: string, dto: CreateOvernightDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
     return this.prisma.tr_overnight_requests.create({
       data: {
-        employee_id: user.tr_employees.id,
+        employee_id: user.ms_employees.id,
         date: new Date(dto.date),
         shift_type: dto.shift_type,
         remarks: dto.remarks || null,
         status: 'pending',
-        supervisor_id: user.tr_employees.supervisor_id,
+        supervisor_id: user.ms_employees.supervisor_id,
       },
     });
   }
@@ -128,11 +128,11 @@ export class OvernightService {
     requestId: string,
     dto: ApproveOvernightDto,
   ) {
-    const approver = await this.prisma.tr_users.findUnique({
+    const approver = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!approver || !approver.tr_employees) {
+    if (!approver || !approver.ms_employees) {
       throw new NotFoundException('Approver not found');
     }
 
@@ -160,7 +160,7 @@ export class OvernightService {
     // Step 1: Supervisor approval
     if (
       request.status === 'pending' &&
-      request.supervisor_id === approver.tr_employees.id
+      request.supervisor_id === approver.ms_employees.id
     ) {
       return this.prisma.tr_overnight_requests.update({
         where: { id: requestId },

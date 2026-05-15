@@ -23,7 +23,7 @@ export class ReportService {
   private async getEmployeeIdsByDepartment(
     departmentId: string,
   ): Promise<string[]> {
-    const employees = await this.prisma.tr_employees.findMany({
+    const employees = await this.prisma.ms_employees.findMany({
       where: { department_id: departmentId },
       select: { id: true },
     });
@@ -59,9 +59,9 @@ export class ReportService {
       where,
       orderBy: { attendance_date: 'desc' },
       include: {
-        tr_employees: {
+        ms_employees: {
           include: {
-            ms_departments_tr_employees_department_idToms_departments: {
+            ms_departments_ms_employees_department_idToms_departments: {
               select: { id: true, name: true },
             },
           },
@@ -114,9 +114,9 @@ export class ReportService {
       orderBy: { created_at: 'desc' },
       include: {
         ms_leave_types: true,
-        tr_employees_tr_leave_requests_employee_idTotr_employees: {
+        ms_employees_tr_leave_requests_employee_idToms_employees: {
           include: {
-            ms_departments_tr_employees_department_idToms_departments: {
+            ms_departments_ms_employees_department_idToms_departments: {
               select: { id: true, name: true },
             },
           },
@@ -158,9 +158,9 @@ export class ReportService {
       orderBy: { created_at: 'desc' },
       include: {
         tr_payroll_periods: true,
-        tr_employees: {
+        ms_employees: {
           include: {
-            ms_departments_tr_employees_department_idToms_departments: {
+            ms_departments_ms_employees_department_idToms_departments: {
               select: { id: true, name: true },
             },
           },
@@ -216,9 +216,9 @@ export class ReportService {
       where,
       orderBy: { date: 'desc' },
       include: {
-        tr_employees_tr_overtime_requests_employee_idTotr_employees: {
+        ms_employees_tr_overtime_requests_employee_idToms_employees: {
           include: {
-            ms_departments_tr_employees_department_idToms_departments: {
+            ms_departments_ms_employees_department_idToms_departments: {
               select: { id: true, name: true },
             },
           },
@@ -265,10 +265,10 @@ export class ReportService {
     for (const row of report.data as any[]) {
       worksheet.addRow({
         date: row.attendance_date?.toISOString().split('T')[0] || '',
-        employee: row.tr_employees?.full_name || '',
+        employee: row.ms_employees?.full_name || '',
         department:
-          row.tr_employees
-            ?.ms_departments_tr_employees_department_idToms_departments?.name ||
+          row.ms_employees
+            ?.ms_departments_ms_employees_department_idToms_departments?.name ||
           '',
         status: row.status,
         clock_in: row.clock_in?.toISOString().substr(11, 5) || '',
@@ -305,11 +305,11 @@ export class ReportService {
     for (const row of report.data as any[]) {
       worksheet.addRow({
         employee:
-          row.tr_employees_tr_leave_requests_employee_idTotr_employees
+          row.ms_employees_tr_leave_requests_employee_idToms_employees
             ?.full_name || '',
         department:
-          row.tr_employees_tr_leave_requests_employee_idTotr_employees
-            ?.ms_departments_tr_employees_department_idToms_departments?.name ||
+          row.ms_employees_tr_leave_requests_employee_idToms_employees
+            ?.ms_departments_ms_employees_department_idToms_departments?.name ||
           '',
         leave_type: row.ms_leave_types?.name || '',
         start_date: row.start_date?.toISOString().split('T')[0] || '',
@@ -346,10 +346,10 @@ export class ReportService {
 
     for (const row of report.data as any[]) {
       worksheet.addRow({
-        employee: row.tr_employees?.full_name || '',
+        employee: row.ms_employees?.full_name || '',
         department:
-          row.tr_employees
-            ?.ms_departments_tr_employees_department_idToms_departments?.name ||
+          row.ms_employees
+            ?.ms_departments_ms_employees_department_idToms_departments?.name ||
           '',
         period: row.tr_payroll_periods?.period_name || '',
         base_salary: Number(row.base_salary || 0),
@@ -387,12 +387,12 @@ export class ReportService {
 
     for (const row of report.data as any[]) {
       const emp =
-        row.tr_employees_tr_overtime_requests_employee_idTotr_employees;
+        row.ms_employees_tr_overtime_requests_employee_idToms_employees;
       worksheet.addRow({
         date: row.date?.toISOString().split('T')[0] || '',
         employee: emp?.full_name || '',
         department:
-          emp?.ms_departments_tr_employees_department_idToms_departments
+          emp?.ms_departments_ms_employees_department_idToms_departments
             ?.name || '',
         start_time: row.start_time?.toISOString().substr(11, 5) || '',
         end_time: row.end_time?.toISOString().substr(11, 5) || '',

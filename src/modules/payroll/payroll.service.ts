@@ -194,7 +194,7 @@ export class PayrollService {
     },
     ptkpStatus: string = 'TK/0',
   ) {
-    const employee = await this.prisma.tr_employees.findUnique({
+    const employee = await this.prisma.ms_employees.findUnique({
       where: { id: employeeId },
     });
     if (!employee) {
@@ -377,11 +377,11 @@ export class PayrollService {
   }
 
   async listPayslips(userId: string, query: ListPayslipDto, userRole: string) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -391,7 +391,7 @@ export class PayrollService {
 
     const where: any = {};
     if (!this.isAdminOrHRD(userRole)) {
-      where.employee_id = user.tr_employees.id;
+      where.employee_id = user.ms_employees.id;
     }
     if (query.payroll_period_id) {
       where.payroll_period_id = query.payroll_period_id;
@@ -412,11 +412,11 @@ export class PayrollService {
   }
 
   async getPayslipDetail(userId: string, payslipId: string, userRole: string) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -429,7 +429,7 @@ export class PayrollService {
     }
     if (
       !this.isAdminOrHRD(userRole) &&
-      payslip.employee_id !== user.tr_employees.id
+      payslip.employee_id !== user.ms_employees.id
     ) {
       throw new ForbiddenException('You can only view your own payslip');
     }
@@ -465,7 +465,7 @@ export class PayrollService {
       );
     }
 
-    const employee = await this.prisma.tr_employees.findUnique({
+    const employee = await this.prisma.ms_employees.findUnique({
       where: { id: dto.employee_id },
       select: { ptkp_status: true },
     });
@@ -563,7 +563,7 @@ export class PayrollService {
     });
     const departmentIds = departments.map((d) => d.id);
 
-    const employees = await this.prisma.tr_employees.findMany({
+    const employees = await this.prisma.ms_employees.findMany({
       where: {
         is_active: true,
         department_id: { in: departmentIds },
@@ -664,7 +664,7 @@ export class PayrollService {
     const payslip = await this.prisma.tr_payslips.findUnique({
       where: { id: payslipId },
       include: {
-        tr_employees: { select: { full_name: true, nik: true } },
+        ms_employees: { select: { full_name: true, nik: true } },
         tr_payroll_periods: { select: { period_name: true } },
       },
     });
@@ -676,8 +676,8 @@ export class PayrollService {
     }
 
     const pdfBuffer = await this.pdfService.generatePayslipPdf({
-      employeeName: payslip.tr_employees?.full_name || '-',
-      nik: payslip.tr_employees?.nik || '-',
+      employeeName: payslip.ms_employees?.full_name || '-',
+      nik: payslip.ms_employees?.nik || '-',
       periodName: payslip.tr_payroll_periods?.period_name || '-',
       baseSalary: Number(payslip.base_salary || 0),
       fixedAllowance: Number(payslip.fixed_allowance || 0),
@@ -803,24 +803,24 @@ export class PayrollService {
   }
 
   async listTHR(userId: string, userRole: string) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
     const where: any = {};
     if (!this.isAdminOrHRD(userRole)) {
-      where.employee_id = user.tr_employees.id;
+      where.employee_id = user.ms_employees.id;
     }
 
     return this.prisma.tr_thr_records.findMany({
       where,
       orderBy: { created_at: 'desc' },
       include: {
-        tr_employees: { select: { id: true, full_name: true, nik: true } },
+        ms_employees: { select: { id: true, full_name: true, nik: true } },
       },
     });
   }
@@ -830,7 +830,7 @@ export class PayrollService {
       throw new ForbiddenException('Only HRD or admin can generate THR');
     }
 
-    const employee = await this.prisma.tr_employees.findUnique({
+    const employee = await this.prisma.ms_employees.findUnique({
       where: { id: dto.employee_id },
     });
     if (!employee) {
@@ -893,7 +893,7 @@ export class PayrollService {
     const payslips = await this.prisma.tr_payslips.findMany({
       where: { payroll_period_id: payrollPeriodId },
       include: {
-        tr_employees: {
+        ms_employees: {
           select: {
             full_name: true,
             nik: true,
@@ -938,10 +938,10 @@ export class PayrollService {
     payslips.forEach((p, index) => {
       worksheet.addRow({
         no: index + 1,
-        nik: p.tr_employees?.nik || '-',
-        name: p.tr_employees?.full_name || '-',
-        bank: p.tr_employees?.bank_name || '-',
-        account: p.tr_employees?.bank_account_number || '-',
+        nik: p.ms_employees?.nik || '-',
+        name: p.ms_employees?.full_name || '-',
+        bank: p.ms_employees?.bank_name || '-',
+        account: p.ms_employees?.bank_account_number || '-',
         base: Number(p.base_salary),
         fixed: Number(p.fixed_allowance),
         phone: Number(p.phone_allowance),

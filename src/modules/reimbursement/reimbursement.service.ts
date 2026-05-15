@@ -14,11 +14,11 @@ export class ReimbursementService {
   constructor(private prisma: PrismaService) {}
 
   async list(userId: string, userRole: string, query: ListReimbursementDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -30,7 +30,7 @@ export class ReimbursementService {
     const isAdmin = ['admin', 'super_admin'].includes(userRole);
 
     if (!isAdmin) {
-      where.employee_id = user.tr_employees.id;
+      where.employee_id = user.ms_employees.id;
     }
 
     if (query.status) {
@@ -58,11 +58,11 @@ export class ReimbursementService {
     userId: string,
     query: ListReimbursementDto,
   ) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -70,11 +70,11 @@ export class ReimbursementService {
     const limit = query.limit ?? 10;
     const skip = (page - 1) * limit;
 
-    const subordinates = await this.prisma.tr_employees.findMany({
+    const subordinates = await this.prisma.ms_employees.findMany({
       where: {
         OR: [
-          { supervisor_id: user.tr_employees.id },
-          { manager_id: user.tr_employees.id },
+          { supervisor_id: user.ms_employees.id },
+          { manager_id: user.ms_employees.id },
         ],
       },
       select: { id: true },
@@ -111,18 +111,18 @@ export class ReimbursementService {
   }
 
   async create(userId: string, dto: CreateReimbursementDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
     return this.prisma.tr_reimbursements.create({
       data: {
-        employee_id: user.tr_employees.id,
-        supervisor_id: user.tr_employees.supervisor_id,
+        employee_id: user.ms_employees.id,
+        supervisor_id: user.ms_employees.supervisor_id,
         date: new Date(dto.date),
         category: dto.category,
         amount: dto.amount,
@@ -139,11 +139,11 @@ export class ReimbursementService {
     reimbursementId: string,
     dto: ApproveReimbursementDto,
   ) {
-    const approver = await this.prisma.tr_users.findUnique({
+    const approver = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!approver || !approver.tr_employees) {
+    if (!approver || !approver.ms_employees) {
       throw new NotFoundException('Approver not found');
     }
 
@@ -171,7 +171,7 @@ export class ReimbursementService {
     // Step 1: Supervisor approval
     if (
       reimbursement.status === 'pending' &&
-      reimbursement.supervisor_id === approver.tr_employees.id
+      reimbursement.supervisor_id === approver.ms_employees.id
     ) {
       return this.prisma.tr_reimbursements.update({
         where: { id: reimbursementId },
@@ -191,7 +191,7 @@ export class ReimbursementService {
         where: { id: reimbursementId },
         data: {
           status: 'approved',
-          hr_approved_by: approver.tr_employees.id,
+          hr_approved_by: approver.ms_employees.id,
           approved_at: new Date(),
         },
       });

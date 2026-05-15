@@ -51,14 +51,14 @@ export class AttendanceService {
   }
 
   private async getEmployeeFromUser(userId: string) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
-    return user.tr_employees;
+    return user.ms_employees;
   }
 
   private async getEmployeeSchedule(employeeId: string, date: Date) {
@@ -99,7 +99,7 @@ export class AttendanceService {
     radius: number;
     error?: string;
   }> {
-    const employee = await this.prisma.tr_employees.findUnique({
+    const employee = await this.prisma.ms_employees.findUnique({
       where: { id: employeeId },
       include: { ms_locations: true },
     });
@@ -145,7 +145,7 @@ export class AttendanceService {
       }
 
       // Expired or invalid, clear current_remote_work_id
-      await this.prisma.tr_employees.update({
+      await this.prisma.ms_employees.update({
         where: { id: employeeId },
         data: { current_remote_work_id: null },
       });
@@ -308,7 +308,7 @@ export class AttendanceService {
   }
 
   private async verifyFace(employeeId: string, photo: Buffer) {
-    const registration = await this.prisma.tr_face_registrations.findUnique({
+    const registration = await this.prisma.ms_face_registrations.findUnique({
       where: { employee_id: employeeId },
     });
 
@@ -349,7 +349,7 @@ export class AttendanceService {
   }
 
   private async checkFaceRegistration(employeeId: string) {
-    const employee = await this.prisma.tr_employees.findUnique({
+    const employee = await this.prisma.ms_employees.findUnique({
       where: { id: employeeId },
       select: { face_registration_status: true },
     });
@@ -658,7 +658,7 @@ export class AttendanceService {
         orderBy: { attendance_date: 'desc' },
         include: {
           ms_locations: true,
-          tr_employees: { select: { id: true, full_name: true, nik: true } },
+          ms_employees: { select: { id: true, full_name: true, nik: true } },
         },
       }),
       this.prisma.tr_attendances.count({ where }),
@@ -668,11 +668,11 @@ export class AttendanceService {
   }
 
   async listSubordinateAttendance(userId: string, query: ListAttendanceDto) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true },
+      include: { ms_employees: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -680,11 +680,11 @@ export class AttendanceService {
     const limit = Number(query.limit) || 10;
     const skip = (page - 1) * limit;
 
-    const subordinates = await this.prisma.tr_employees.findMany({
+    const subordinates = await this.prisma.ms_employees.findMany({
       where: {
         OR: [
-          { supervisor_id: user.tr_employees.id },
-          { manager_id: user.tr_employees.id },
+          { supervisor_id: user.ms_employees.id },
+          { manager_id: user.ms_employees.id },
         ],
       },
       select: { id: true },
@@ -722,7 +722,7 @@ export class AttendanceService {
         orderBy: { attendance_date: 'desc' },
         include: {
           ms_locations: true,
-          tr_employees: { select: { id: true, full_name: true, nik: true } },
+          ms_employees: { select: { id: true, full_name: true, nik: true } },
         },
       }),
       this.prisma.tr_attendances.count({ where }),
@@ -806,11 +806,11 @@ export class AttendanceService {
   }
 
   async listCorrections(userId: string, query: any) {
-    const user = await this.prisma.tr_users.findUnique({
+    const user = await this.prisma.ms_users.findUnique({
       where: { id: userId },
-      include: { tr_employees: true, ms_roles: true },
+      include: { ms_employees: true, ms_roles: true },
     });
-    if (!user || !user.tr_employees) {
+    if (!user || !user.ms_employees) {
       throw new NotFoundException('Employee not found');
     }
 
@@ -822,7 +822,7 @@ export class AttendanceService {
     const userRole = user.ms_roles?.name || 'karyawan';
 
     if (!['admin', 'hrd', 'manager_hrga', 'super_admin'].includes(userRole)) {
-      where.employee_id = user.tr_employees.id;
+      where.employee_id = user.ms_employees.id;
     }
 
     if (query.status) where.status = query.status;
@@ -835,7 +835,7 @@ export class AttendanceService {
         orderBy: { created_at: 'desc' },
         include: {
           tr_attendances: true,
-          tr_employees_tr_attendance_corrections_employee_idTotr_employees: true,
+          ms_employees_tr_attendance_corrections_employee_idToms_employees: true,
         },
       }),
       this.prisma.tr_attendance_corrections.count({ where }),
@@ -872,7 +872,7 @@ export class AttendanceService {
         throw new BadRequestException('Correction request already processed');
       }
 
-      const employee = await this.prisma.tr_employees.findUnique({
+      const employee = await this.prisma.ms_employees.findUnique({
         where: { id: correction.employee_id },
       });
       if (employee?.supervisor_id !== approver.id) {
@@ -971,7 +971,7 @@ export class AttendanceService {
     const isTodayHoliday = await this.isHoliday(today);
     const dayOfWeek = today.getDay();
 
-    const activeEmployees = await this.prisma.tr_employees.findMany({
+    const activeEmployees = await this.prisma.ms_employees.findMany({
       where: { is_active: true },
       include: {
         tr_employee_schedules: { include: { ms_work_schedules: true } },
