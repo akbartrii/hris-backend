@@ -27,7 +27,15 @@ export class AuthService {
 
       const user = await this.prisma.ms_users.findUnique({
         where: { email },
-        include: { ms_roles: true, ms_employees: true },
+        include: {
+          ms_roles: true,
+          ms_employees: {
+            include: {
+              ms_locations: true,
+              tr_remote_work_requests_current_remote_work: true,
+            },
+          },
+        },
       });
 
       if (!user) {
@@ -66,6 +74,7 @@ export class AuthService {
       // Build assigned locations for the employee
       const assignedLocations = await this.buildAssignedLocations(
         user.ms_employees?.id,
+        user.ms_employees,
       );
 
       return {
@@ -90,18 +99,28 @@ export class AuthService {
     }
   }
 
-  private async buildAssignedLocations(employeeId: string | undefined) {
-    const locations: any[] = [];
-
+  private async buildAssignedLocations(
+    employeeId: string | undefined,
+    employeeData?: any,
+  ) {
+    const locations = [];
     if (!employeeId) {
       this.logger.log(`[buildAssignedLocations] No employeeId provided`);
       return locations;
     }
 
-    const employee = await this.prisma.ms_employees.findUnique({
-      where: { id: employeeId },
-      include: { ms_locations: true },
-    });
+    let employee = employeeData;
+
+    // Only query if employeeData was not provided or doesn't have the required includes
+    if (!employee || !employee.ms_locations) {
+      employee = await this.prisma.ms_employees.findUnique({
+        where: { id: employeeId },
+        include: {
+          ms_locations: true,
+          tr_remote_work_requests_current_remote_work: true,
+        },
+      });
+    }
 
     if (!employee) {
       this.logger.log(
@@ -114,7 +133,6 @@ export class AuthService {
       `[buildAssignedLocations] Employee ${employeeId}, current_remote_work_id=${employee.current_remote_work_id}, location_id=${employee.location_id}`,
     );
 
-    // Office location
     if (employee.ms_locations) {
       locations.push({
         id: employee.ms_locations.id,
@@ -128,13 +146,15 @@ export class AuthService {
       });
     }
 
-    // Active WFH location
     if (employee.current_remote_work_id) {
       const todayStr = new Date().toISOString().split('T')[0];
 
-      const wfh = await this.prisma.tr_remote_work_requests.findUnique({
-        where: { id: employee.current_remote_work_id },
-      });
+      // Use pre-fetched data if available, otherwise query
+      const wfh =
+        employee.tr_remote_work_requests_current_remote_work ||
+        (await this.prisma.tr_remote_work_requests.findUnique({
+          where: { id: employee.current_remote_work_id },
+        }));
 
       this.logger.log(
         `[buildAssignedLocations] WFH request found: status=${wfh?.status}, start=${wfh?.start_date}, end=${wfh?.end_date}, today=${todayStr}`,
