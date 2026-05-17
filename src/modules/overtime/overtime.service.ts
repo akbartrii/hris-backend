@@ -797,4 +797,86 @@ export class OvertimeService {
 
     return { message: `Overtime request ${dto.action}d by HRD` };
   }
+
+  async getOvertimeDetail(userId: string, overtimeId: string) {
+    const requester = await this.getEmployeeFromUser(userId);
+    const user = await this.prisma.ms_users.findUnique({
+      where: { id: userId },
+      include: { ms_roles: true },
+    });
+    const roleName = user?.ms_roles?.name || '';
+
+    const overtime = await this.prisma.tr_overtime_requests.findUnique({
+      where: { id: overtimeId },
+      include: {
+        ms_employees_tr_overtime_requests_employee_idToms_employees: true,
+      },
+    });
+
+    if (!overtime) {
+      throw new NotFoundException('Overtime request not found');
+    }
+
+    // Check permissions
+    const isOwner = overtime.employee_id === requester.id || overtime.requested_by === requester.id;
+    const isHrOrAdmin = ['hrd', 'admin', 'super_admin', 'manager_hrga'].includes(roleName);
+    
+    // Check if requester is the supervisor or manager of the target employee
+    const targetEmployee = overtime.ms_employees_tr_overtime_requests_employee_idToms_employees;
+    const isAtasan = targetEmployee && (targetEmployee.supervisor_id === requester.id || targetEmployee.manager_id === requester.id);
+
+    if (!isOwner && !isHrOrAdmin && !isAtasan) {
+      throw new ForbiddenException('You do not have permission to view this overtime request');
+    }
+
+    const formula = {
+      hourly_rate_formula: '(gaji pokok + tunjangan tetap) / 173',
+      rounding_rules: {
+        '1_to_30_minutes': '0.5 jam',
+        '31_to_60_minutes': '1.0 jam',
+        '1_hour_15_minutes': '1.0 jam',
+        '1_hour_30_minutes': '1.5 jam',
+        '1_hour_45_minutes': '1.5 jam',
+        '1_hour_46_minutes_and_above': 'Pembulatan ke atas (2.0 jam)'
+      },
+      meal_allowance_rules: {
+        workdays: {
+          before_office_hours: 'Rp 10.000',
+          '16:00_to_20:00': 'Rp 20.000',
+          '20:00_to_24:00': 'Rp 10.000',
+          '24:00_to_end': 'Rp 20.000'
+        },
+        saturdays: {
+          before_office_hours: 'Rp 10.000',
+          '14:00_to_22:00': 'Rp 6.000',
+          '18:00_to_22:00': 'Rp 20.000',
+          '22:00_to_end': 'Rp 10.000'
+        },
+        sundays_and_holidays: {
+          before_office_hours: 'Rp 10.000',
+          '08:00_to_12:00': 'Rp 10.000',
+          '13:00_to_17:00': 'Rp 15.000',
+          '17:00_to_21:00': 'Rp 20.000',
+          '24:00_to_end': 'Rp 20.000'
+        }
+      },
+      multiplier_rules: {
+        '6_days_workweek': {
+          workday: '1st hour x 1.5, subsequent hours x 2',
+          holiday: 'first 7 hours x 2, 8th hour x 3, subsequent hours x 4'
+        },
+        '5_days_workweek': {
+          workday: '1st hour x 1.5, subsequent hours x 2',
+          holiday: 'first 8 hours x 2, 9th hour x 3, subsequent hours x 4'
+        }
+      },
+      workflow: 'Atasan/SPV/Manager melakukan pengajuan lembur -> Manager ACC -> HRD rekap'
+    };
+
+    return {
+      ...overtime,
+      formula,
+    };
+  }
 }
+

@@ -3196,6 +3196,30 @@
           "response": []
         },
         {
+          "name": "Get Overtime Detail (Employee)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{samuraga_token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/overtime/detail/{{overtimeId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "overtime",
+                "detail",
+                "{{overtimeId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
           "name": "Delete Overtime (Admin+)",
           "request": {
             "method": "DELETE",

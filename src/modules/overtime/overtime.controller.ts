@@ -97,6 +97,14 @@ export class OvertimeController {
     return this.overtimeService.processOvertime(userId, id, dto, role, keycode);
   }
 
+  @Get('detail/:overtimeid')
+  async getOvertimeDetail(
+    @CurrentUser('userId') userId: string,
+    @Param('overtimeid', ParseUUIDPipe) overtimeid: string,
+  ) {
+    return this.overtimeService.getOvertimeDetail(userId, overtimeid);
+  }
+
   @Delete(':id')
   @Roles('admin', 'super_admin')
   async deleteOvertime(
