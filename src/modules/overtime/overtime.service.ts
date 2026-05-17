@@ -873,8 +873,11 @@ export class OvertimeService {
       workflow: 'Atasan/SPV/Manager melakukan pengajuan lembur -> Manager ACC -> HRD rekap'
     };
 
+    const { ms_employees_tr_overtime_requests_employee_idToms_employees, ...restOvertime } = overtime;
+
     return {
-      ...overtime,
+      ...restOvertime,
+      employee: ms_employees_tr_overtime_requests_employee_idToms_employees,
       formula,
     };
   }
