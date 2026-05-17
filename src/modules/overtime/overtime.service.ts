@@ -875,9 +875,21 @@ export class OvertimeService {
 
     const { ms_employees_tr_overtime_requests_employee_idToms_employees, ...restOvertime } = overtime;
 
+    let cleanEmployee = null;
+    if (ms_employees_tr_overtime_requests_employee_idToms_employees) {
+      const {
+        base_salary,
+        fixed_allowance,
+        phone_allowance,
+        dinas_allowance,
+        ...publicEmployeeInfo
+      } = ms_employees_tr_overtime_requests_employee_idToms_employees;
+      cleanEmployee = publicEmployeeInfo;
+    }
+
     return {
       ...restOvertime,
-      employee: ms_employees_tr_overtime_requests_employee_idToms_employees,
+      employee: cleanEmployee,
       formula,
     };
   }
