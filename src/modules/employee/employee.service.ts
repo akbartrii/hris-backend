@@ -196,10 +196,10 @@ export class EmployeeService {
     const decryptedData = data.map((emp) => {
       return {
         ...emp,
-        base_salary: isValidKey && emp.base_salary ? this.encryptionService.decrypt(emp.base_salary, keycode!) : emp.base_salary,
-        fixed_allowance: isValidKey && emp.fixed_allowance ? this.encryptionService.decrypt(emp.fixed_allowance, keycode!) : emp.fixed_allowance,
-        phone_allowance: isValidKey && emp.phone_allowance ? this.encryptionService.decrypt(emp.phone_allowance, keycode!) : emp.phone_allowance,
-        dinas_allowance: isValidKey && emp.dinas_allowance ? this.encryptionService.decrypt(emp.dinas_allowance, keycode!) : emp.dinas_allowance,
+        base_salary: isValidKey && emp.base_salary ? this.encryptionService.decrypt(emp.base_salary, keycode!) : null,
+        fixed_allowance: isValidKey && emp.fixed_allowance ? this.encryptionService.decrypt(emp.fixed_allowance, keycode!) : null,
+        phone_allowance: isValidKey && emp.phone_allowance ? this.encryptionService.decrypt(emp.phone_allowance, keycode!) : null,
+        dinas_allowance: isValidKey && emp.dinas_allowance ? this.encryptionService.decrypt(emp.dinas_allowance, keycode!) : null,
       };
     });
 
@@ -240,10 +240,10 @@ export class EmployeeService {
     const isValidKey = keycode ? await this.encryptionService.validateKeycode(keycode) : false;
     return {
       ...employee,
-      base_salary: isValidKey && employee.base_salary ? this.encryptionService.decrypt(employee.base_salary, keycode!) : employee.base_salary,
-      fixed_allowance: isValidKey && employee.fixed_allowance ? this.encryptionService.decrypt(employee.fixed_allowance, keycode!) : employee.fixed_allowance,
-      phone_allowance: isValidKey && employee.phone_allowance ? this.encryptionService.decrypt(employee.phone_allowance, keycode!) : employee.phone_allowance,
-      dinas_allowance: isValidKey && employee.dinas_allowance ? this.encryptionService.decrypt(employee.dinas_allowance, keycode!) : employee.dinas_allowance,
+      base_salary: isValidKey && employee.base_salary ? this.encryptionService.decrypt(employee.base_salary, keycode!) : null,
+      fixed_allowance: isValidKey && employee.fixed_allowance ? this.encryptionService.decrypt(employee.fixed_allowance, keycode!) : null,
+      phone_allowance: isValidKey && employee.phone_allowance ? this.encryptionService.decrypt(employee.phone_allowance, keycode!) : null,
+      dinas_allowance: isValidKey && employee.dinas_allowance ? this.encryptionService.decrypt(employee.dinas_allowance, keycode!) : null,
     };
   }
 
