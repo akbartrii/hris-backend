@@ -9,6 +9,7 @@ import {
   UseGuards,
   ParseUUIDPipe,
   Res,
+  Headers,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { PayrollService } from './payroll.service';
@@ -58,9 +59,10 @@ export class PayrollController {
   async generatePayslip(
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,
+    @Headers('x-salary-keycode') keycode: string | undefined,
     @Body() dto: GeneratePayslipDto,
   ) {
-    return this.payrollService.generatePayslip(userId, dto, role);
+    return this.payrollService.generatePayslip(userId, dto, role, keycode);
   }
 
   @Post('generate-batch')
@@ -68,9 +70,10 @@ export class PayrollController {
   async generateBatchPayslip(
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,
+    @Headers('x-salary-keycode') keycode: string | undefined,
     @Body() dto: GenerateBatchPayslipDto,
   ) {
-    return this.payrollService.generateBatchPayslip(userId, dto, role);
+    return this.payrollService.generateBatchPayslip(userId, dto, role, keycode);
   }
 
   @Post('publish')
@@ -120,9 +123,10 @@ export class PayrollController {
   async generateTHR(
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,
+    @Headers('x-salary-keycode') keycode: string | undefined,
     @Body() dto: GenerateTHRDto,
   ) {
-    return this.payrollService.generateTHR(userId, dto, role);
+    return this.payrollService.generateTHR(userId, dto, role, keycode);
   }
 
   @Post('export')

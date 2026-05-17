@@ -6,6 +6,7 @@ import { APP_GUARD } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { PrismaModule } from './prisma/prisma.module';
+import { EncryptionModule } from './modules/encryption/encryption.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { AttendanceModule } from './modules/attendance/attendance.module';
 import { LeaveModule } from './modules/leave/leave.module';
@@ -44,6 +45,7 @@ import { KeepAliveService } from './common/services/keep-alive.service';
       },
     ]),
     PrismaModule,
+    EncryptionModule,
     AuthModule,
     AttendanceModule,
     LeaveModule,

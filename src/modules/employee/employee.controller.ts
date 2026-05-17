@@ -8,6 +8,7 @@ import {
   Param,
   UseGuards,
   ParseUUIDPipe,
+  Headers,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { EmployeeService } from './employee.service';
@@ -31,9 +32,10 @@ export class EmployeeController {
   async createEmployee(
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,
+    @Headers('x-salary-keycode') keycode: string | undefined,
     @Body() dto: CreateEmployeeDto,
   ) {
-    return this.employeeService.createEmployee(userId, role, dto);
+    return this.employeeService.createEmployee(userId, role, dto, keycode);
   }
 
   @Get()
@@ -41,9 +43,10 @@ export class EmployeeController {
   async listEmployees(
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,
+    @Headers('x-salary-keycode') keycode: string | undefined,
     @Query() query: ListEmployeeDto,
   ) {
-    return this.employeeService.listEmployees(userId, role, query);
+    return this.employeeService.listEmployees(userId, role, query, keycode);
   }
 
   @Get('team-mates')
@@ -60,9 +63,10 @@ export class EmployeeController {
   async getEmployeeDetail(
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,
+    @Headers('x-salary-keycode') keycode: string | undefined,
     @Param('id', ParseUUIDPipe) id: string,
   ) {
-    return this.employeeService.getEmployeeDetail(userId, role, id);
+    return this.employeeService.getEmployeeDetail(userId, role, id, keycode);
   }
 
   @Patch(':id')
@@ -71,9 +75,10 @@ export class EmployeeController {
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,
     @Param('id', ParseUUIDPipe) id: string,
+    @Headers('x-salary-keycode') keycode: string | undefined,
     @Body() dto: UpdateEmployeeDto,
   ) {
-    return this.employeeService.updateEmployee(userId, role, id, dto);
+    return this.employeeService.updateEmployee(userId, role, id, dto, keycode);
   }
 
   @Get(':id/schedules')

@@ -371,10 +371,10 @@ model ms_employees {
   join_date                                                                         DateTime?                   @db.Date
   contract_end_date                                                                 DateTime?                   @db.Date
   resignation_date                                                                  DateTime?                   @db.Date
-  base_salary                                                                       Decimal?                    @db.Decimal(15, 2)
-  fixed_allowance                                                                   Decimal?                    @default(0) @db.Decimal(15, 2)
-  phone_allowance                                                                   Decimal?                    @default(0) @db.Decimal(15, 2)
-  dinas_allowance                                                                   Decimal?                    @default(0) @db.Decimal(15, 2)
+  base_salary                                                                       String?                     @db.VarChar(255)
+  fixed_allowance                                                                   String?                     @db.VarChar(255)
+  phone_allowance                                                                   String?                     @db.VarChar(255)
+  dinas_allowance                                                                   String?                     @db.VarChar(255)
   bpjs_payment_type                                                                 String?                     @default("company") @db.VarChar(50)
   ptkp_status                                                                       String?                     @default("TK/0") @db.VarChar(50)
   npwp                                                                              String?                     @db.VarChar(50)
@@ -797,4 +797,16 @@ model tr_user_devices {
 
   @@index([user_id], map: "idx_user_devices_user")
   @@index([device_id], map: "idx_user_devices_device")
+}
+
+model ms_salary_keys {
+  id           String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  keycode_hash String   @db.VarChar(255)
+  month        Int
+  year         Int
+  created_at   DateTime @default(now()) @db.Timestamptz(6)
+  updated_at   DateTime @default(now()) @db.Timestamptz(6)
+
+  @@unique([month, year])
+  @@index([month, year], map: "idx_salary_keys_month_year")
 }

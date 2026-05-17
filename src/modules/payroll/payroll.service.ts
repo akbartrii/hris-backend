@@ -15,6 +15,7 @@ import {
   GenerateBatchPayslipDto,
   GenerateTHRDto,
 } from './dto/generate-payslip.dto';
+import { EncryptionService } from '../encryption/encryption.service';
 
 @Injectable()
 export class PayrollService {
@@ -22,6 +23,7 @@ export class PayrollService {
     private prisma: PrismaService,
     private pdfService: PdfService,
     private parameterService: ParameterService,
+    private encryptionService: EncryptionService,
   ) {}
 
   private isAdminOrHRD(role: string): boolean {
@@ -193,6 +195,7 @@ export class PayrollService {
       attendance_cutoff_end: Date | null;
     },
     ptkpStatus: string = 'TK/0',
+    keycode?: string,
   ) {
     const employee = await this.prisma.ms_employees.findUnique({
       where: { id: employeeId },
@@ -254,10 +257,21 @@ export class PayrollService {
       }),
     ]);
 
-    const baseSalary = Number(employee.base_salary || 0);
-    const fixedAllowance = Number(employee.fixed_allowance || 0);
-    const phoneAllowance = Number(employee.phone_allowance || 0);
-    const dinasAllowance = Number(employee.dinas_allowance || 0);
+    const decryptVal = (val: string | null) => {
+      if (!val || !keycode) return 0;
+      try {
+        const decrypted = this.encryptionService.decrypt(val, keycode);
+        const num = Number(decrypted);
+        return isNaN(num) ? 0 : num;
+      } catch {
+        return 0;
+      }
+    };
+
+    const baseSalary = decryptVal(employee.base_salary);
+    const fixedAllowance = decryptVal(employee.fixed_allowance);
+    const phoneAllowance = decryptVal(employee.phone_allowance);
+    const dinasAllowance = decryptVal(employee.dinas_allowance);
 
     const attendanceAllowance = attendances.reduce(
       (sum, a) => sum + Number(a.attendance_allowance || 0),
@@ -441,9 +455,18 @@ export class PayrollService {
     userId: string,
     dto: GeneratePayslipDto,
     userRole: string,
+    keycode?: string,
   ) {
     if (!this.isAdminOrHRD(userRole)) {
       throw new ForbiddenException('Only HRD or admin can generate payslips');
+    }
+
+    if (!keycode) {
+      throw new BadRequestException('x-salary-keycode header is required to generate payslips.');
+    }
+    const isValid = await this.encryptionService.validateKeycode(keycode);
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired salary keycode.');
     }
 
     const period = await this.prisma.tr_payroll_periods.findUnique({
@@ -474,6 +497,7 @@ export class PayrollService {
       dto.employee_id,
       period,
       ptkpStatus,
+      keycode,
     );
 
     const [payslip] = await this.prisma.$transaction([
@@ -545,9 +569,18 @@ export class PayrollService {
     userId: string,
     dto: GenerateBatchPayslipDto,
     userRole: string,
+    keycode?: string,
   ) {
     if (!this.isAdminOrHRD(userRole)) {
       throw new ForbiddenException('Only HRD or admin can generate payslips');
+    }
+
+    if (!keycode) {
+      throw new BadRequestException('x-salary-keycode header is required to generate payslips.');
+    }
+    const isValid = await this.encryptionService.validateKeycode(keycode);
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired salary keycode.');
     }
 
     const period = await this.prisma.tr_payroll_periods.findUnique({
@@ -600,6 +633,7 @@ export class PayrollService {
           emp.id,
           period,
           emp.ptkp_status || 'TK/0',
+          keycode,
         );
 
         await this.prisma.$transaction([
@@ -664,7 +698,7 @@ export class PayrollService {
     const payslip = await this.prisma.tr_payslips.findUnique({
       where: { id: payslipId },
       include: {
-        ms_employees: { select: { full_name: true, nik: true } },
+        ms_employees: { select: { full_name: true, nik: true, birth_date: true } },
         tr_payroll_periods: { select: { period_name: true } },
       },
     });
@@ -673,6 +707,15 @@ export class PayrollService {
     }
     if (payslip.status === 'published') {
       throw new BadRequestException('Payslip already published');
+    }
+
+    let pdfPassword = undefined;
+    if (payslip.ms_employees?.birth_date) {
+      const birthDate = new Date(payslip.ms_employees.birth_date);
+      const day = String(birthDate.getDate()).padStart(2, '0');
+      const month = String(birthDate.getMonth() + 1).padStart(2, '0');
+      const year = String(birthDate.getFullYear());
+      pdfPassword = `${day}${month}${year}`;
     }
 
     const pdfBuffer = await this.pdfService.generatePayslipPdf({
@@ -694,7 +737,7 @@ export class PayrollService {
       pph21: Number(payslip.pph21 || 0),
       totalDeductions: Number(payslip.total_deductions || 0),
       netIncome: Number(payslip.net_income || 0),
-    });
+    }, pdfPassword);
 
     // TODO: Upload pdfBuffer to cloud storage and get real URL
     const pdfUrl = `https://storage.supabase.co/payslips/${payslipId}.pdf`;
@@ -825,9 +868,22 @@ export class PayrollService {
     });
   }
 
-  async generateTHR(userId: string, dto: GenerateTHRDto, userRole: string) {
+  async generateTHR(
+    userId: string,
+    dto: GenerateTHRDto,
+    userRole: string,
+    keycode?: string,
+  ) {
     if (!this.isAdminOrHRD(userRole)) {
       throw new ForbiddenException('Only HRD or admin can generate THR');
+    }
+
+    if (!keycode) {
+      throw new BadRequestException('x-salary-keycode header is required to generate THR.');
+    }
+    const isValid = await this.encryptionService.validateKeycode(keycode);
+    if (!isValid) {
+      throw new BadRequestException('Invalid or expired salary keycode.');
     }
 
     const employee = await this.prisma.ms_employees.findUnique({
@@ -852,7 +908,17 @@ export class PayrollService {
       );
     }
 
-    const baseSalary = Number(employee.base_salary || 0);
+    let baseSalary = 0;
+    if (employee.base_salary) {
+      try {
+        const decrypted = this.encryptionService.decrypt(employee.base_salary, keycode);
+        const num = Number(decrypted);
+        baseSalary = isNaN(num) ? 0 : num;
+      } catch {
+        baseSalary = 0;
+      }
+    }
+
     const monthsWorked = await this.computeMonthsWorked(
       new Date(employee.join_date),
       new Date(),

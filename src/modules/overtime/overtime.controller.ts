@@ -9,6 +9,7 @@ import {
   Param,
   UseGuards,
   ParseUUIDPipe,
+  Headers,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { OvertimeService } from './overtime.service';
@@ -32,9 +33,10 @@ export class OvertimeController {
   async createOvertime(
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,
+    @Headers('x-salary-keycode') keycode: string | undefined,
     @Body() dto: CreateOvertimeDto,
   ) {
-    return this.overtimeService.createOvertime(userId, dto, role);
+    return this.overtimeService.createOvertime(userId, dto, role, keycode);
   }
 
   @Patch(':id/cancel')
@@ -88,10 +90,11 @@ export class OvertimeController {
   async processOvertime(
     @CurrentUser('userId') userId: string,
     @CurrentUser('role') role: string,
+    @Headers('x-salary-keycode') keycode: string | undefined,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ApproveOvertimeDto,
   ) {
-    return this.overtimeService.processOvertime(userId, id, dto, role);
+    return this.overtimeService.processOvertime(userId, id, dto, role, keycode);
   }
 
   @Delete(':id')

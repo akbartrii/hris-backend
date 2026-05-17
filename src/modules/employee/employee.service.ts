@@ -9,10 +9,14 @@ import { ListEmployeeDto } from './dto/list-employee.dto';
 import { UpdateEmployeeDto } from './dto/update-employee.dto';
 import { CreateEmployeeDto } from './dto/create-employee.dto';
 import * as bcrypt from 'bcryptjs';
+import { EncryptionService } from '../encryption/encryption.service';
 
 @Injectable()
 export class EmployeeService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private encryptionService: EncryptionService,
+  ) {}
 
   private isAdminOrHRD(role: string): boolean {
     return ['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(role);
@@ -22,9 +26,26 @@ export class EmployeeService {
     userId: string,
     userRole: string,
     dto: CreateEmployeeDto,
+    keycode?: string,
   ) {
     if (!this.isAdminOrHRD(userRole)) {
       throw new ForbiddenException('Only HR/Admin can create employees');
+    }
+
+    const hasSalaryInfo =
+      (dto.base_salary !== undefined && dto.base_salary !== null) ||
+      (dto.fixed_allowance !== undefined && dto.fixed_allowance !== null) ||
+      (dto.phone_allowance !== undefined && dto.phone_allowance !== null) ||
+      (dto.dinas_allowance !== undefined && dto.dinas_allowance !== null);
+
+    if (hasSalaryInfo) {
+      if (!keycode) {
+        throw new BadRequestException('x-salary-keycode header is required to encrypt and save salary data.');
+      }
+      const isValid = await this.encryptionService.validateKeycode(keycode);
+      if (!isValid) {
+        throw new BadRequestException('Invalid or expired salary keycode.');
+      }
     }
 
     let user_id: string | null = null;
@@ -103,13 +124,13 @@ export class EmployeeService {
     if (dto.contract_end_date !== undefined)
       employeeData.contract_end_date = new Date(dto.contract_end_date);
     if (dto.base_salary !== undefined)
-      employeeData.base_salary = dto.base_salary;
+      employeeData.base_salary = dto.base_salary !== null ? this.encryptionService.encrypt(dto.base_salary, keycode!) : null;
     if (dto.fixed_allowance !== undefined)
-      employeeData.fixed_allowance = dto.fixed_allowance;
+      employeeData.fixed_allowance = dto.fixed_allowance !== null ? this.encryptionService.encrypt(dto.fixed_allowance, keycode!) : null;
     if (dto.phone_allowance !== undefined)
-      employeeData.phone_allowance = dto.phone_allowance;
+      employeeData.phone_allowance = dto.phone_allowance !== null ? this.encryptionService.encrypt(dto.phone_allowance, keycode!) : null;
     if (dto.dinas_allowance !== undefined)
-      employeeData.dinas_allowance = dto.dinas_allowance;
+      employeeData.dinas_allowance = dto.dinas_allowance !== null ? this.encryptionService.encrypt(dto.dinas_allowance, keycode!) : null;
     if (dto.shift_type !== undefined) employeeData.shift_type = dto.shift_type;
     if (dto.is_security !== undefined)
       employeeData.is_security = dto.is_security;
@@ -127,6 +148,7 @@ export class EmployeeService {
     userId: string,
     userRole: string,
     query: ListEmployeeDto,
+    keycode?: string,
   ) {
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 10;
@@ -170,13 +192,25 @@ export class EmployeeService {
       this.prisma.ms_employees.count({ where }),
     ]);
 
-    return { data, meta: { page, limit, total } };
+    const isValidKey = keycode ? await this.encryptionService.validateKeycode(keycode) : false;
+    const decryptedData = data.map((emp) => {
+      return {
+        ...emp,
+        base_salary: isValidKey && emp.base_salary ? this.encryptionService.decrypt(emp.base_salary, keycode!) : emp.base_salary,
+        fixed_allowance: isValidKey && emp.fixed_allowance ? this.encryptionService.decrypt(emp.fixed_allowance, keycode!) : emp.fixed_allowance,
+        phone_allowance: isValidKey && emp.phone_allowance ? this.encryptionService.decrypt(emp.phone_allowance, keycode!) : emp.phone_allowance,
+        dinas_allowance: isValidKey && emp.dinas_allowance ? this.encryptionService.decrypt(emp.dinas_allowance, keycode!) : emp.dinas_allowance,
+      };
+    });
+
+    return { data: decryptedData, meta: { page, limit, total } };
   }
 
   async getEmployeeDetail(
     userId: string,
     userRole: string,
     employeeId: string,
+    keycode?: string,
   ) {
     const employee = await this.prisma.ms_employees.findUnique({
       where: { id: employeeId },
@@ -203,7 +237,14 @@ export class EmployeeService {
       }
     }
 
-    return employee;
+    const isValidKey = keycode ? await this.encryptionService.validateKeycode(keycode) : false;
+    return {
+      ...employee,
+      base_salary: isValidKey && employee.base_salary ? this.encryptionService.decrypt(employee.base_salary, keycode!) : employee.base_salary,
+      fixed_allowance: isValidKey && employee.fixed_allowance ? this.encryptionService.decrypt(employee.fixed_allowance, keycode!) : employee.fixed_allowance,
+      phone_allowance: isValidKey && employee.phone_allowance ? this.encryptionService.decrypt(employee.phone_allowance, keycode!) : employee.phone_allowance,
+      dinas_allowance: isValidKey && employee.dinas_allowance ? this.encryptionService.decrypt(employee.dinas_allowance, keycode!) : employee.dinas_allowance,
+    };
   }
 
   async updateEmployee(
@@ -211,9 +252,26 @@ export class EmployeeService {
     userRole: string,
     employeeId: string,
     dto: UpdateEmployeeDto,
+    keycode?: string,
   ) {
     if (!this.isAdminOrHRD(userRole)) {
       throw new ForbiddenException('Only HR/Admin can update employee data');
+    }
+
+    const hasSalaryInfo =
+      (dto.base_salary !== undefined && dto.base_salary !== null) ||
+      (dto.fixed_allowance !== undefined && dto.fixed_allowance !== null) ||
+      (dto.phone_allowance !== undefined && dto.phone_allowance !== null) ||
+      (dto.dinas_allowance !== undefined && dto.dinas_allowance !== null);
+
+    if (hasSalaryInfo) {
+      if (!keycode) {
+        throw new BadRequestException('x-salary-keycode header is required to encrypt and save salary data.');
+      }
+      const isValid = await this.encryptionService.validateKeycode(keycode);
+      if (!isValid) {
+        throw new BadRequestException('Invalid or expired salary keycode.');
+      }
     }
 
     const employee = await this.prisma.ms_employees.findUnique({
@@ -246,13 +304,13 @@ export class EmployeeService {
       updateData.join_date = new Date(dto.join_date);
     if (dto.contract_end_date !== undefined)
       updateData.contract_end_date = new Date(dto.contract_end_date);
-    if (dto.base_salary !== undefined) updateData.base_salary = dto.base_salary;
+    if (dto.base_salary !== undefined) updateData.base_salary = dto.base_salary !== null ? this.encryptionService.encrypt(dto.base_salary, keycode!) : null;
     if (dto.fixed_allowance !== undefined)
-      updateData.fixed_allowance = dto.fixed_allowance;
+      updateData.fixed_allowance = dto.fixed_allowance !== null ? this.encryptionService.encrypt(dto.fixed_allowance, keycode!) : null;
     if (dto.phone_allowance !== undefined)
-      updateData.phone_allowance = dto.phone_allowance;
+      updateData.phone_allowance = dto.phone_allowance !== null ? this.encryptionService.encrypt(dto.phone_allowance, keycode!) : null;
     if (dto.dinas_allowance !== undefined)
-      updateData.dinas_allowance = dto.dinas_allowance;
+      updateData.dinas_allowance = dto.dinas_allowance !== null ? this.encryptionService.encrypt(dto.dinas_allowance, keycode!) : null;
     if (dto.shift_type !== undefined) updateData.shift_type = dto.shift_type;
     if (dto.is_security !== undefined) updateData.is_security = dto.is_security;
     if (dto.is_active !== undefined) updateData.is_active = dto.is_active;

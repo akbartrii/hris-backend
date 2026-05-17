@@ -10,6 +10,7 @@ import { ParameterService } from '../parameter/parameter.service';
 import { CreateOvertimeDto } from './dto/create-overtime.dto';
 import { ApproveOvertimeDto } from './dto/approve-overtime.dto';
 import { ListOvertimeDto } from './dto/list-overtime.dto';
+import { EncryptionService } from '../encryption/encryption.service';
 
 @Injectable()
 export class OvertimeService {
@@ -18,6 +19,7 @@ export class OvertimeService {
   constructor(
     private prisma: PrismaService,
     private parameterService: ParameterService,
+    private encryptionService: EncryptionService,
   ) {}
 
   private async getEmployeeFromUser(userId: string) {
@@ -184,6 +186,7 @@ export class OvertimeService {
     userId: string,
     dto: CreateOvertimeDto,
     requesterRole: string,
+    keycode?: string,
   ) {
     if (!this.canSubmitOvertime(requesterRole)) {
       throw new ForbiddenException(
@@ -262,8 +265,35 @@ export class OvertimeService {
     );
     const totalHours = this.roundUpHours(rawMinutes);
 
-    const baseSalary = Number(targetEmployee.base_salary || 0);
-    const fixedAllowance = Number(targetEmployee.fixed_allowance || 0);
+    let baseSalary = 0;
+    let fixedAllowance = 0;
+    let isCalculated = false;
+
+    if (keycode) {
+      const isValid = await this.encryptionService.validateKeycode(keycode);
+      if (isValid) {
+        const decryptVal = (val: string | null) => {
+          if (!val) return 0;
+          try {
+            const decrypted = this.encryptionService.decrypt(val, keycode);
+            const num = Number(decrypted);
+            return isNaN(num) ? 0 : num;
+          } catch {
+            return 0;
+          }
+        };
+        baseSalary = decryptVal(targetEmployee.base_salary);
+        fixedAllowance = decryptVal(targetEmployee.fixed_allowance);
+        isCalculated = true;
+      }
+    } else {
+      if (!this.encryptionService.isEncrypted(targetEmployee.base_salary)) {
+        baseSalary = Number(targetEmployee.base_salary || 0);
+        fixedAllowance = Number(targetEmployee.fixed_allowance || 0);
+        isCalculated = true;
+      }
+    }
+
     const divisor = await this.parameterService.getNumber(
       'overtime_divisor',
       173,
@@ -272,16 +302,16 @@ export class OvertimeService {
       throw new BadRequestException('Invalid overtime_divisor parameter');
     }
 
-    const ratePerHour = (baseSalary + fixedAllowance) / divisor;
+    const ratePerHour = isCalculated ? ((baseSalary + fixedAllowance) / divisor) : 0;
     if (!Number.isFinite(ratePerHour)) {
       throw new BadRequestException('Invalid overtime rate calculation');
     }
 
-    const totalOvertimePay = await this.calculateOvertimePay(
+    const totalOvertimePay = isCalculated ? await this.calculateOvertimePay(
       rawMinutes,
       dayType,
       ratePerHour,
-    );
+    ) : 0;
     if (!Number.isFinite(totalOvertimePay)) {
       throw new BadRequestException('Invalid overtime pay calculation');
     }
@@ -675,6 +705,7 @@ export class OvertimeService {
     overtimeId: string,
     dto: ApproveOvertimeDto,
     processorRole: string,
+    keycode?: string,
   ) {
     if (
       !['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(processorRole)
@@ -699,12 +730,58 @@ export class OvertimeService {
     }
 
     if (dto.action === 'approve') {
+      if (!keycode) {
+        throw new BadRequestException('x-salary-keycode header is required to process and approve overtime.');
+      }
+      const isValid = await this.encryptionService.validateKeycode(keycode);
+      if (!isValid) {
+        throw new BadRequestException('Invalid or expired salary keycode.');
+      }
+
+      const targetEmployee = await this.prisma.ms_employees.findUnique({
+        where: { id: overtime.employee_id },
+      });
+      if (!targetEmployee) {
+        throw new NotFoundException('Target employee not found');
+      }
+
+      const decryptVal = (val: string | null) => {
+        if (!val) return 0;
+        try {
+          const decrypted = this.encryptionService.decrypt(val, keycode);
+          const num = Number(decrypted);
+          return isNaN(num) ? 0 : num;
+        } catch {
+          return 0;
+        }
+      };
+
+      const baseSalary = decryptVal(targetEmployee.base_salary);
+      const fixedAllowance = decryptVal(targetEmployee.fixed_allowance);
+
+      const divisor = await this.parameterService.getNumber(
+        'overtime_divisor',
+        173,
+      );
+      if (divisor <= 0) {
+        throw new BadRequestException('Invalid overtime_divisor parameter');
+      }
+
+      const ratePerHour = (baseSalary + fixedAllowance) / divisor;
+      const totalOvertimePay = await this.calculateOvertimePay(
+        overtime.raw_minutes || 0,
+        overtime.day_type,
+        ratePerHour,
+      );
+
       await this.prisma.tr_overtime_requests.update({
         where: { id: overtimeId },
         data: {
           hrd_processed_at: new Date(),
           hrd_id: processor.id,
           status: 'processed',
+          rate_per_hour: ratePerHour,
+          total_overtime_pay: totalOvertimePay,
         },
       });
     } else {

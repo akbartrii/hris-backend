@@ -1,30 +1,34 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as puppeteer from 'puppeteer';
+import { encryptPDF } from '@pdfsmaller/pdf-encrypt-lite';
 
 @Injectable()
 export class PdfService {
   private readonly logger = new Logger(PdfService.name);
 
-  async generatePayslipPdf(content: {
-    employeeName: string;
-    nik: string;
-    periodName: string;
-    baseSalary: number;
-    fixedAllowance: number;
-    phoneAllowance: number;
-    dinasAllowance: number;
-    attendanceAllowance: number;
-    overtimePay: number;
-    overtimeMealAllowance: number;
-    grossIncome: number;
-    lateDeduction: number;
-    loanDeduction: number;
-    bpjsKesehatan: number;
-    bpjsKetenagakerjaan: number;
-    pph21: number;
-    totalDeductions: number;
-    netIncome: number;
-  }): Promise<Buffer> {
+  async generatePayslipPdf(
+    content: {
+      employeeName: string;
+      nik: string;
+      periodName: string;
+      baseSalary: number;
+      fixedAllowance: number;
+      phoneAllowance: number;
+      dinasAllowance: number;
+      attendanceAllowance: number;
+      overtimePay: number;
+      overtimeMealAllowance: number;
+      grossIncome: number;
+      lateDeduction: number;
+      loanDeduction: number;
+      bpjsKesehatan: number;
+      bpjsKetenagakerjaan: number;
+      pph21: number;
+      totalDeductions: number;
+      netIncome: number;
+    },
+    password?: string,
+  ): Promise<Buffer> {
     const html = `
     <!DOCTYPE html>
     <html>
@@ -99,7 +103,18 @@ export class PdfService {
     const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true });
     await browser.close();
 
-    return Buffer.from(pdfBuffer);
+    const buffer = Buffer.from(pdfBuffer);
+    if (password) {
+      try {
+        const encryptedBytes = await encryptPDF(buffer, password, password);
+        return Buffer.from(encryptedBytes);
+      } catch (err) {
+        this.logger.error(`Error encrypting PDF: ${err.message}`);
+        return buffer;
+      }
+    }
+
+    return buffer;
   }
 
   private formatNumber(n: number): string {
