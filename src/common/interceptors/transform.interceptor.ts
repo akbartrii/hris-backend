@@ -60,6 +60,29 @@ export class TransformInterceptor<T> implements NestInterceptor<
       return obj;
     }
 
+    // Convert Prisma Decimal objects to standard JavaScript numbers
+    if (
+      obj.constructor?.name === 'Decimal' ||
+      (typeof obj === 'object' && typeof obj.s === 'number' && typeof obj.e === 'number' && Array.isArray(obj.d))
+    ) {
+      if (typeof obj.toNumber === 'function') {
+        return obj.toNumber();
+      }
+      try {
+        if (obj.d.length === 1) {
+          return obj.s * obj.d[0];
+        }
+        const str = obj.d.map((val: any, idx: number) => {
+          if (idx === 0) return val.toString();
+          return val.toString().padStart(7, '0');
+        }).join('');
+        const numStr = obj.s * Number(str) * Math.pow(10, obj.e - (str.length - 1));
+        return Number(numStr.toFixed(2));
+      } catch {
+        return obj;
+      }
+    }
+
     if (typeof obj !== 'object') {
       return obj;
     }
