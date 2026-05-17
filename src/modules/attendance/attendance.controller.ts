@@ -133,10 +133,17 @@ export class AttendanceController {
   @Roles('atasan', 'manager_hrga', 'admin', 'super_admin')
   async approveCorrection(
     @CurrentUser('userId') userId: string,
+    @CurrentUser('employeeId') employeeId: string,
     @CurrentUser('role') role: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() dto: ApproveCorrectionDto,
   ) {
-    return this.attendanceService.approveCorrection(userId, id, dto, role);
+    return this.attendanceService.approveCorrection(
+      userId,
+      employeeId,
+      id,
+      dto,
+      role,
+    );
   }
 }
