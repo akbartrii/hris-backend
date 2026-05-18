@@ -4,14 +4,19 @@ import {
   NotFoundException,
   BadRequestException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
+import { HrisRequestEvent } from '../notification/events/hris-request.event';
 import { CreateReimbursementDto } from './dto/create-reimbursement.dto';
 import { ListReimbursementDto } from './dto/list-reimbursement.dto';
 import { ApproveReimbursementDto } from './dto/approve-reimbursement.dto';
 
 @Injectable()
 export class ReimbursementService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
   async list(userId: string, userRole: string, query: ListReimbursementDto) {
     const user = await this.prisma.ms_users.findUnique({
@@ -119,7 +124,7 @@ export class ReimbursementService {
       throw new NotFoundException('Employee not found');
     }
 
-    return this.prisma.tr_reimbursements.create({
+    const reimbursement = await this.prisma.tr_reimbursements.create({
       data: {
         employee_id: user.ms_employees.id,
         supervisor_id: user.ms_employees.supervisor_id,
@@ -131,6 +136,21 @@ export class ReimbursementService {
         status: 'pending',
       },
     });
+
+    await this.eventEmitter.emitAsync(
+      'hris.request',
+      new HrisRequestEvent(
+        reimbursement.id,
+        user.ms_employees.id,
+        'reimbursement',
+        'submitted',
+        {
+          details: `mengajukan reimbursement kategori ${dto.category} sebesar Rp ${dto.amount.toLocaleString('id-ID')}`,
+        },
+      ),
+    );
+
+    return reimbursement;
   }
 
   async approve(
@@ -155,13 +175,28 @@ export class ReimbursementService {
     }
 
     if (dto.action === 'reject') {
-      return this.prisma.tr_reimbursements.update({
+      const updated = await this.prisma.tr_reimbursements.update({
         where: { id: reimbursementId },
         data: {
           status: 'rejected',
           rejection_reason: dto.rejection_reason || 'Rejected',
         },
       });
+
+      await this.eventEmitter.emitAsync(
+        'hris.request',
+        new HrisRequestEvent(
+          reimbursementId,
+          reimbursement.employee_id,
+          'reimbursement',
+          'rejected',
+          {
+            rejectionReason: dto.rejection_reason || 'Rejected',
+          },
+        ),
+      );
+
+      return updated;
     }
 
     if (dto.action !== 'approve') {
@@ -173,13 +208,25 @@ export class ReimbursementService {
       reimbursement.status === 'pending' &&
       reimbursement.supervisor_id === approver.ms_employees.id
     ) {
-      return this.prisma.tr_reimbursements.update({
+      const updated = await this.prisma.tr_reimbursements.update({
         where: { id: reimbursementId },
         data: {
           status: 'supervisor_approved',
           supervisor_approved_at: new Date(),
         },
       });
+
+      await this.eventEmitter.emitAsync(
+        'hris.request',
+        new HrisRequestEvent(
+          reimbursementId,
+          reimbursement.employee_id,
+          'reimbursement',
+          'supervisor_approved',
+        ),
+      );
+
+      return updated;
     }
 
     // Step 2: HR final approval
@@ -187,7 +234,7 @@ export class ReimbursementService {
       userRole,
     );
     if (reimbursement.status === 'supervisor_approved' && isHR) {
-      return this.prisma.tr_reimbursements.update({
+      const updated = await this.prisma.tr_reimbursements.update({
         where: { id: reimbursementId },
         data: {
           status: 'approved',
@@ -195,6 +242,21 @@ export class ReimbursementService {
           approved_at: new Date(),
         },
       });
+
+      await this.eventEmitter.emitAsync(
+        'hris.request',
+        new HrisRequestEvent(
+          reimbursementId,
+          reimbursement.employee_id,
+          'reimbursement',
+          'approved',
+          {
+            details: `sebesar Rp ${Number(reimbursement.amount).toLocaleString('id-ID')} telah disetujui HR`,
+          },
+        ),
+      );
+
+      return updated;
     }
 
     throw new ForbiddenException(

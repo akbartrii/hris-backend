@@ -5,8 +5,9 @@ import {
   BadRequestException,
   Logger,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
-import { NotificationService } from '../notification/notification.service';
+import { HrisRequestEvent } from '../notification/events/hris-request.event';
 import { CreateRemoteWorkDto } from './dto/create-remote-work.dto';
 import { ListRemoteWorkDto } from './dto/list-remote-work.dto';
 import { ApproveRemoteWorkDto } from './dto/approve-remote-work.dto';
@@ -17,7 +18,7 @@ export class RemoteWorkService {
 
   constructor(
     private prisma: PrismaService,
-    private notificationService: NotificationService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   async list(userId: string, userRole: string, query: ListRemoteWorkDto) {
@@ -195,37 +196,13 @@ export class RemoteWorkService {
       },
     });
 
-    // Notify supervisor
-    if (user.ms_employees.supervisor_id) {
-      this.logger.log(
-        `[Create] Notifying supervisor_id=${user.ms_employees.supervisor_id} about request from employee_id=${user.ms_employees.id}`,
-      );
-      const supervisor = await this.prisma.ms_employees.findUnique({
-        where: { id: user.ms_employees.supervisor_id },
-        include: { ms_users: true },
-      });
-      if (supervisor?.ms_users) {
-        this.logger.log(
-          `[Create] Sending notif to supervisor user_id=${supervisor.ms_users.id}, name=${supervisor.full_name}`,
-        );
-        await this.notificationService.createNotificationInternal(
-          supervisor.ms_users.id,
-          'remote_work_request',
-          'Permintaan WFH Baru',
-          `${user.ms_employees.full_name} mengajukan WFH dari ${dto.start_date} s/d ${dto.end_date}`,
-          'remote_work',
-          request.id,
-        );
-      } else {
-        this.logger.warn(
-          `[Create] Supervisor employee_id=${user.ms_employees.supervisor_id} has no linked user`,
-        );
-      }
-    } else {
-      this.logger.warn(
-        `[Create] Employee ${user.ms_employees.id} has no supervisor_id`,
-      );
-    }
+    // Emit submit event
+    await this.eventEmitter.emitAsync(
+      'hris.request',
+      new HrisRequestEvent(request.id, user.ms_employees.id, 'remote_work', 'submitted', {
+        details: `mengajukan WFH dari ${dto.start_date} s/d ${dto.end_date}`,
+      }),
+    );
 
     return request;
   }
@@ -300,15 +277,12 @@ export class RemoteWorkService {
         },
       });
 
-      // Notify employee
-      this.logger.log(
-        `[Approve] Sending approval notif to requester employee_id=${request.employee_id}`,
-      );
-      await this.notifyEmployee(
-        request.employee_id,
-        'WFH Disetujui',
-        `Permintaan WFH kamu dari ${request.start_date.toISOString().split('T')[0]} s/d ${request.end_date.toISOString().split('T')[0]} telah disetujui`,
-        requestId,
+      // Emit approved event
+      await this.eventEmitter.emitAsync(
+        'hris.request',
+        new HrisRequestEvent(requestId, request.employee_id, 'remote_work', 'approved', {
+          details: `dari ${request.start_date.toISOString().split('T')[0]} s/d ${request.end_date.toISOString().split('T')[0]}`,
+        }),
       );
     } else {
       await this.prisma.ms_employees.updateMany({
@@ -327,15 +301,12 @@ export class RemoteWorkService {
         },
       });
 
-      // Notify employee
-      this.logger.log(
-        `[Reject] Sending rejection notif to requester employee_id=${request.employee_id}`,
-      );
-      await this.notifyEmployee(
-        request.employee_id,
-        'WFH Ditolak',
-        `Permintaan WFH kamu ditolak. Alasan: ${dto.rejection_reason || 'Rejected by supervisor'}`,
-        requestId,
+      // Emit rejected event
+      await this.eventEmitter.emitAsync(
+        'hris.request',
+        new HrisRequestEvent(requestId, request.employee_id, 'remote_work', 'rejected', {
+          rejectionReason: dto.rejection_reason || 'Rejected by supervisor',
+        }),
       );
     }
 
@@ -375,53 +346,14 @@ export class RemoteWorkService {
       },
     });
 
-    // Notify supervisor
-    if (request.supervisor_id) {
-      const supervisor = await this.prisma.ms_employees.findUnique({
-        where: { id: request.supervisor_id },
-        include: { ms_users: true },
-      });
-      if (supervisor?.ms_users) {
-        await this.notificationService.createNotificationInternal(
-          supervisor.ms_users.id,
-          'remote_work_cancelled',
-          'WFH Dibatalkan',
-          `${user.ms_employees.full_name} membatalkan permintaan WFH dari ${request.start_date.toISOString().split('T')[0]} s/d ${request.end_date.toISOString().split('T')[0]}${reason ? `. Alasan: ${reason}` : ''}`,
-          'remote_work',
-          requestId,
-        );
-      }
-    }
+    // Emit cancelled event
+    await this.eventEmitter.emitAsync(
+      'hris.request',
+      new HrisRequestEvent(requestId, user.ms_employees.id, 'remote_work', 'cancelled', {
+        rejectionReason: reason || undefined,
+      }),
+    );
 
     return updatedRequest;
-  }
-
-  private async notifyEmployee(
-    employeeId: string,
-    title: string,
-    message: string,
-    requestId: string,
-  ) {
-    const employee = await this.prisma.ms_employees.findUnique({
-      where: { id: employeeId },
-      include: { ms_users: true },
-    });
-    if (employee?.ms_users) {
-      this.logger.log(
-        `[Notify] Target: employee_id=${employeeId}, user_id=${employee.ms_users.id}, name=${employee.full_name}, title=${title}`,
-      );
-      await this.notificationService.createNotificationInternal(
-        employee.ms_users.id,
-        'remote_work_status',
-        title,
-        message,
-        'remote_work',
-        requestId,
-      );
-    } else {
-      this.logger.warn(
-        `[Notify] Cannot notify employee_id=${employeeId}: no user linked`,
-      );
-    }
   }
 }

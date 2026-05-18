@@ -5,9 +5,11 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { Cron } from '@nestjs/schedule';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ParameterService } from '../parameter/parameter.service';
+import { HrisRequestEvent } from '../notification/events/hris-request.event';
 import { CreateLeaveDto } from './dto/create-leave.dto';
 import { ApproveLeaveDto } from './dto/approve-leave.dto';
 import { ListLeaveDto } from './dto/list-leave.dto';
@@ -19,6 +21,7 @@ export class LeaveService {
   constructor(
     private prisma: PrismaService,
     private parameterService: ParameterService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   private async getEmployeeFromUser(userId: string) {
@@ -163,7 +166,7 @@ export class LeaveService {
 
     const year = startDate.getFullYear();
 
-    return this.prisma.$transaction(async (tx) => {
+    const leave = await this.prisma.$transaction(async (tx) => {
       let balance = await tx.tr_leave_balances.findUnique({
         where: {
           employee_id_leave_type_id_year: {
@@ -208,6 +211,15 @@ export class LeaveService {
 
       return leave;
     });
+
+    await this.eventEmitter.emitAsync(
+      'hris.request',
+      new HrisRequestEvent(leave.id, employee.id, 'leave', 'submitted', {
+        details: `mengajukan cuti selama ${dto.total_days} hari mulai dari ${dto.start_date} s/d ${dto.end_date}`,
+      }),
+    );
+
+    return leave;
   }
 
   async getLeaveBalance(userId: string) {
@@ -389,6 +401,16 @@ export class LeaveService {
         this.logger.log(
           `Leave approve transaction took ${Date.now() - txStart}ms`,
         );
+
+        await this.eventEmitter.emitAsync(
+          'hris.request',
+          new HrisRequestEvent(
+            leaveId,
+            leave.employee_id,
+            'leave',
+            'supervisor_approved',
+          ),
+        );
       } else {
         await this.prisma.tr_leave_requests.update({
           where: { id: leaveId },
@@ -398,6 +420,19 @@ export class LeaveService {
             rejection_reason: dto.rejection_reason || 'Rejected by supervisor',
           },
         });
+
+        await this.eventEmitter.emitAsync(
+          'hris.request',
+          new HrisRequestEvent(
+            leaveId,
+            leave.employee_id,
+            'leave',
+            'rejected',
+            {
+              rejectionReason: dto.rejection_reason || 'Rejected by supervisor',
+            },
+          ),
+        );
       }
       this.logger.log(`Leave approve total took ${Date.now() - startTime}ms`);
       return { message: `Leave request ${dto.action}d by supervisor` };
@@ -421,6 +456,19 @@ export class LeaveService {
             status: 'approved',
           },
         });
+
+        await this.eventEmitter.emitAsync(
+          'hris.request',
+          new HrisRequestEvent(
+            leaveId,
+            leave.employee_id,
+            'leave',
+            'approved',
+            {
+              details: `selama ${leave.total_days} hari telah disetujui HR`,
+            },
+          ),
+        );
       } else {
         const txStart = Date.now();
         await this.prisma.$transaction([
@@ -445,6 +493,19 @@ export class LeaveService {
         ]);
         this.logger.log(
           `Leave reject transaction took ${Date.now() - txStart}ms`,
+        );
+
+        await this.eventEmitter.emitAsync(
+          'hris.request',
+          new HrisRequestEvent(
+            leaveId,
+            leave.employee_id,
+            'leave',
+            'rejected',
+            {
+              rejectionReason: dto.rejection_reason || 'Rejected by HRGA',
+            },
+          ),
         );
       }
       this.logger.log(`Leave approve total took ${Date.now() - startTime}ms`);
@@ -501,6 +562,16 @@ export class LeaveService {
         data: { status: 'cancelled' },
       });
     }
+
+    await this.eventEmitter.emitAsync(
+      'hris.request',
+      new HrisRequestEvent(
+        leaveId,
+        employee.id,
+        'leave',
+        'cancelled',
+      ),
+    );
 
     return { message: 'Leave request cancelled' };
   }

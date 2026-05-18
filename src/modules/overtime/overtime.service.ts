@@ -5,12 +5,14 @@ import {
   ForbiddenException,
   Logger,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
 import { ParameterService } from '../parameter/parameter.service';
 import { CreateOvertimeDto } from './dto/create-overtime.dto';
 import { ApproveOvertimeDto } from './dto/approve-overtime.dto';
 import { ListOvertimeDto } from './dto/list-overtime.dto';
 import { EncryptionService } from '../encryption/encryption.service';
+import { HrisRequestEvent } from '../notification/events/hris-request.event';
 
 @Injectable()
 export class OvertimeService {
@@ -20,6 +22,7 @@ export class OvertimeService {
     private prisma: PrismaService,
     private parameterService: ParameterService,
     private encryptionService: EncryptionService,
+    private eventEmitter: EventEmitter2,
   ) {}
 
   private async getEmployeeFromUser(userId: string) {
@@ -346,6 +349,13 @@ export class OvertimeService {
         },
       });
 
+      await this.eventEmitter.emitAsync(
+        'hris.request',
+        new HrisRequestEvent(overtime.id, dto.employee_id, 'overtime', 'submitted', {
+          details: `mengajukan lembur selama ${totalHours} jam pada tanggal ${dto.date}`,
+        }),
+      );
+
       return overtime;
     } catch (error) {
       this.logger.error('Failed to create overtime request', {
@@ -404,6 +414,16 @@ export class OvertimeService {
         rejection_reason: 'Cancelled by requester',
       },
     });
+
+    await this.eventEmitter.emitAsync(
+      'hris.request',
+      new HrisRequestEvent(
+        overtimeId,
+        overtime.employee_id,
+        'overtime',
+        'cancelled',
+      ),
+    );
 
     return { message: 'Overtime request cancelled' };
   }
@@ -648,6 +668,20 @@ export class OvertimeService {
           rejection_reason: dto.rejection_reason || 'Rejected',
         },
       });
+
+      await this.eventEmitter.emitAsync(
+        'hris.request',
+        new HrisRequestEvent(
+          overtimeId,
+          overtime.employee_id,
+          'overtime',
+          'rejected',
+          {
+            rejectionReason: dto.rejection_reason || 'Rejected',
+          },
+        ),
+      );
+
       return { message: 'Overtime request rejected' };
     }
 
@@ -676,6 +710,17 @@ export class OvertimeService {
           status: 'supervisor_approved',
         },
       });
+
+      await this.eventEmitter.emitAsync(
+        'hris.request',
+        new HrisRequestEvent(
+          overtimeId,
+          overtime.employee_id,
+          'overtime',
+          'supervisor_approved',
+        ),
+      );
+
       return { message: 'Overtime request approved by supervisor' };
     }
 
@@ -692,6 +737,20 @@ export class OvertimeService {
           status: 'approved',
         },
       });
+
+      await this.eventEmitter.emitAsync(
+        'hris.request',
+        new HrisRequestEvent(
+          overtimeId,
+          overtime.employee_id,
+          'overtime',
+          'approved',
+          {
+            details: `telah disetujui oleh atasan/manager dan menunggu pemrosesan HRD`,
+          },
+        ),
+      );
+
       return { message: 'Overtime request approved by manager' };
     }
 
@@ -784,6 +843,19 @@ export class OvertimeService {
           total_overtime_pay: totalOvertimePay,
         },
       });
+
+      await this.eventEmitter.emitAsync(
+        'hris.request',
+        new HrisRequestEvent(
+          overtimeId,
+          overtime.employee_id,
+          'overtime',
+          'approved',
+          {
+            details: `telah selesai diproses oleh HRD`,
+          },
+        ),
+      );
     } else {
       await this.prisma.tr_overtime_requests.update({
         where: { id: overtimeId },
@@ -793,6 +865,19 @@ export class OvertimeService {
           rejection_reason: dto.rejection_reason || 'Rejected by HRD',
         },
       });
+
+      await this.eventEmitter.emitAsync(
+        'hris.request',
+        new HrisRequestEvent(
+          overtimeId,
+          overtime.employee_id,
+          'overtime',
+          'rejected',
+          {
+            rejectionReason: dto.rejection_reason || 'Rejected by HRD',
+          },
+        ),
+      );
     }
 
     return { message: `Overtime request ${dto.action}d by HRD` };

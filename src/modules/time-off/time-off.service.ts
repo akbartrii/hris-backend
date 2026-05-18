@@ -4,14 +4,19 @@ import {
   NotFoundException,
   ForbiddenException,
 } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import { PrismaService } from '../../prisma/prisma.service';
+import { HrisRequestEvent } from '../notification/events/hris-request.event';
 import { CreateTimeOffDto } from './dto/create-time-off.dto';
 import { ApproveTimeOffDto } from './dto/approve-time-off.dto';
 import { ListTimeOffDto } from './dto/list-time-off.dto';
 
 @Injectable()
 export class TimeOffService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private eventEmitter: EventEmitter2,
+  ) {}
 
   private async getEmployeeFromUser(userId: string) {
     const user = await this.prisma.ms_users.findUnique({
@@ -76,6 +81,13 @@ export class TimeOffService {
         status: 'pending',
       },
     });
+
+    await this.eventEmitter.emitAsync(
+      'hris.request',
+      new HrisRequestEvent(timeOff.id, employee.id, 'time_off', 'submitted', {
+        details: `mengajukan izin dari ${dto.start_date} s/d ${dto.end_date}`,
+      }),
+    );
 
     return timeOff;
   }
@@ -166,6 +178,16 @@ export class TimeOffService {
             status: 'supervisor_approved',
           },
         });
+
+        await this.eventEmitter.emitAsync(
+          'hris.request',
+          new HrisRequestEvent(
+            timeOffId,
+            timeOff.employee_id,
+            'time_off',
+            'supervisor_approved',
+          ),
+        );
       } else {
         await this.prisma.tr_time_off_requests.update({
           where: { id: timeOffId },
@@ -175,6 +197,19 @@ export class TimeOffService {
             rejection_reason: dto.rejection_reason || 'Rejected by supervisor',
           },
         });
+
+        await this.eventEmitter.emitAsync(
+          'hris.request',
+          new HrisRequestEvent(
+            timeOffId,
+            timeOff.employee_id,
+            'time_off',
+            'rejected',
+            {
+              rejectionReason: dto.rejection_reason || 'Rejected by supervisor',
+            },
+          ),
+        );
       }
       return { message: `Time off request ${dto.action}d by supervisor` };
     }
@@ -197,6 +232,16 @@ export class TimeOffService {
             status: 'approved',
           },
         });
+
+        await this.eventEmitter.emitAsync(
+          'hris.request',
+          new HrisRequestEvent(
+            timeOffId,
+            timeOff.employee_id,
+            'time_off',
+            'approved',
+          ),
+        );
       } else {
         await this.prisma.tr_time_off_requests.update({
           where: { id: timeOffId },
@@ -206,6 +251,19 @@ export class TimeOffService {
             rejection_reason: dto.rejection_reason || 'Rejected by HRGA',
           },
         });
+
+        await this.eventEmitter.emitAsync(
+          'hris.request',
+          new HrisRequestEvent(
+            timeOffId,
+            timeOff.employee_id,
+            'time_off',
+            'rejected',
+            {
+              rejectionReason: dto.rejection_reason || 'Rejected by HRGA',
+            },
+          ),
+        );
       }
       return { message: `Time off request ${dto.action}d by HRGA` };
     }
@@ -243,6 +301,16 @@ export class TimeOffService {
       where: { id: timeOffId },
       data: { status: 'cancelled' },
     });
+
+    await this.eventEmitter.emitAsync(
+      'hris.request',
+      new HrisRequestEvent(
+        timeOffId,
+        employee.id,
+        'time_off',
+        'cancelled',
+      ),
+    );
 
     return { message: 'Time off request cancelled successfully' };
   }
