@@ -466,7 +466,7 @@ model tr_leave_balances {
   year           Int
   total_days     Int
   used_days      Int?           @default(0)
-  remaining_days Int?           @default(dbgenerated("(total_days - used_days)"))
+  remaining_days Int?           @default(0)
   created_at     DateTime?      @default(now()) @db.Timestamptz(6)
   updated_at     DateTime?      @default(now()) @db.Timestamptz(6)
   ms_employees   ms_employees   @relation(fields: [employee_id], references: [id], onDelete: Cascade, onUpdate: NoAction)
