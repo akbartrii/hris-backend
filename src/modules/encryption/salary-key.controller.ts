@@ -1,4 +1,10 @@
-import { Controller, Post, Body, UseGuards, BadRequestException } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Body,
+  UseGuards,
+  BadRequestException,
+} from '@nestjs/common';
 import { ApiBearerAuth, ApiTags, ApiOperation } from '@nestjs/swagger';
 import { EncryptionService } from './encryption.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -61,29 +67,48 @@ export class SalaryKeyController {
   constructor(private readonly encryptionService: EncryptionService) {}
 
   @Post('generate')
-  @ApiOperation({ summary: 'Generate a new salary encryption keycode for the month' })
+  @ApiOperation({
+    summary: 'Generate a new salary encryption keycode for the month',
+  })
   async generateKeycode(@Body() dto: GenerateKeycodeDto) {
     if (!dto.keycode || dto.keycode.trim().length < 4) {
-      throw new BadRequestException('Keycode must be at least 4 characters long.');
+      throw new BadRequestException(
+        'Keycode must be at least 4 characters long.',
+      );
     }
-    await this.encryptionService.generateKeycode(dto.keycode, dto.month, dto.year);
+    await this.encryptionService.generateKeycode(
+      dto.keycode,
+      dto.month,
+      dto.year,
+    );
     return {
-      message: 'Keycode generated successfully and legacy salary data initialized.',
+      message:
+        'Keycode generated successfully and legacy salary data initialized.',
     };
   }
 
   @Post('rotate')
-  @ApiOperation({ summary: 'Rotate the monthly keycode and re-encrypt all salaries' })
+  @ApiOperation({
+    summary: 'Rotate the monthly keycode and re-encrypt all salaries',
+  })
   async rotateKeycode(@Body() dto: RotateKeycodeDto) {
     if (!dto.oldKeycode || !dto.newKeycode) {
       throw new BadRequestException('Both old and new keycodes are required.');
     }
     if (dto.newKeycode.trim().length < 4) {
-      throw new BadRequestException('New keycode must be at least 4 characters long.');
+      throw new BadRequestException(
+        'New keycode must be at least 4 characters long.',
+      );
     }
-    await this.encryptionService.rotateKeycode(dto.oldKeycode, dto.newKeycode, dto.month, dto.year);
+    await this.encryptionService.rotateKeycode(
+      dto.oldKeycode,
+      dto.newKeycode,
+      dto.month,
+      dto.year,
+    );
     return {
-      message: 'Keycode rotated successfully and all employee salaries re-encrypted.',
+      message:
+        'Keycode rotated successfully and all employee salaries re-encrypted.',
     };
   }
 
@@ -93,7 +118,11 @@ export class SalaryKeyController {
     if (!dto.keycode) {
       throw new BadRequestException('Keycode is required for validation.');
     }
-    const isValid = await this.encryptionService.validateKeycode(dto.keycode, dto.month, dto.year);
+    const isValid = await this.encryptionService.validateKeycode(
+      dto.keycode,
+      dto.month,
+      dto.year,
+    );
     return {
       valid: isValid,
     };

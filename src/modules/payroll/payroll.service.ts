@@ -462,7 +462,9 @@ export class PayrollService {
     }
 
     if (!keycode) {
-      throw new BadRequestException('x-salary-keycode header is required to generate payslips.');
+      throw new BadRequestException(
+        'x-salary-keycode header is required to generate payslips.',
+      );
     }
     const isValid = await this.encryptionService.validateKeycode(keycode);
     if (!isValid) {
@@ -576,7 +578,9 @@ export class PayrollService {
     }
 
     if (!keycode) {
-      throw new BadRequestException('x-salary-keycode header is required to generate payslips.');
+      throw new BadRequestException(
+        'x-salary-keycode header is required to generate payslips.',
+      );
     }
     const isValid = await this.encryptionService.validateKeycode(keycode);
     if (!isValid) {
@@ -698,7 +702,9 @@ export class PayrollService {
     const payslip = await this.prisma.tr_payslips.findUnique({
       where: { id: payslipId },
       include: {
-        ms_employees: { select: { full_name: true, nik: true, birth_date: true } },
+        ms_employees: {
+          select: { full_name: true, nik: true, birth_date: true },
+        },
         tr_payroll_periods: { select: { period_name: true } },
       },
     });
@@ -718,26 +724,29 @@ export class PayrollService {
       pdfPassword = `${day}${month}${year}`;
     }
 
-    const pdfBuffer = await this.pdfService.generatePayslipPdf({
-      employeeName: payslip.ms_employees?.full_name || '-',
-      nik: payslip.ms_employees?.nik || '-',
-      periodName: payslip.tr_payroll_periods?.period_name || '-',
-      baseSalary: Number(payslip.base_salary || 0),
-      fixedAllowance: Number(payslip.fixed_allowance || 0),
-      phoneAllowance: Number(payslip.phone_allowance || 0),
-      dinasAllowance: Number(payslip.dinas_allowance || 0),
-      attendanceAllowance: Number(payslip.attendance_allowance || 0),
-      overtimePay: Number(payslip.overtime_pay || 0),
-      overtimeMealAllowance: Number(payslip.overtime_meal_allowance || 0),
-      grossIncome: Number(payslip.gross_income || 0),
-      lateDeduction: Number(payslip.late_deduction || 0),
-      loanDeduction: Number(payslip.loan_deduction || 0),
-      bpjsKesehatan: Number(payslip.bpjs_kesehatan || 0),
-      bpjsKetenagakerjaan: Number(payslip.bpjs_ketenagakerjaan || 0),
-      pph21: Number(payslip.pph21 || 0),
-      totalDeductions: Number(payslip.total_deductions || 0),
-      netIncome: Number(payslip.net_income || 0),
-    }, pdfPassword);
+    const pdfBuffer = await this.pdfService.generatePayslipPdf(
+      {
+        employeeName: payslip.ms_employees?.full_name || '-',
+        nik: payslip.ms_employees?.nik || '-',
+        periodName: payslip.tr_payroll_periods?.period_name || '-',
+        baseSalary: Number(payslip.base_salary || 0),
+        fixedAllowance: Number(payslip.fixed_allowance || 0),
+        phoneAllowance: Number(payslip.phone_allowance || 0),
+        dinasAllowance: Number(payslip.dinas_allowance || 0),
+        attendanceAllowance: Number(payslip.attendance_allowance || 0),
+        overtimePay: Number(payslip.overtime_pay || 0),
+        overtimeMealAllowance: Number(payslip.overtime_meal_allowance || 0),
+        grossIncome: Number(payslip.gross_income || 0),
+        lateDeduction: Number(payslip.late_deduction || 0),
+        loanDeduction: Number(payslip.loan_deduction || 0),
+        bpjsKesehatan: Number(payslip.bpjs_kesehatan || 0),
+        bpjsKetenagakerjaan: Number(payslip.bpjs_ketenagakerjaan || 0),
+        pph21: Number(payslip.pph21 || 0),
+        totalDeductions: Number(payslip.total_deductions || 0),
+        netIncome: Number(payslip.net_income || 0),
+      },
+      pdfPassword,
+    );
 
     // TODO: Upload pdfBuffer to cloud storage and get real URL
     const pdfUrl = `https://storage.supabase.co/payslips/${payslipId}.pdf`;
@@ -879,7 +888,9 @@ export class PayrollService {
     }
 
     if (!keycode) {
-      throw new BadRequestException('x-salary-keycode header is required to generate THR.');
+      throw new BadRequestException(
+        'x-salary-keycode header is required to generate THR.',
+      );
     }
     const isValid = await this.encryptionService.validateKeycode(keycode);
     if (!isValid) {
@@ -911,7 +922,10 @@ export class PayrollService {
     let baseSalary = 0;
     if (employee.base_salary) {
       try {
-        const decrypted = this.encryptionService.decrypt(employee.base_salary, keycode);
+        const decrypted = this.encryptionService.decrypt(
+          employee.base_salary,
+          keycode,
+        );
         const num = Number(decrypted);
         baseSalary = isNaN(num) ? 0 : num;
       } catch {

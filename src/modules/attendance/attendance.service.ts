@@ -810,7 +810,7 @@ export class AttendanceService {
 
     const where: any = {};
     // If it's a specific employee list, we filter by employee_id.
-    // The role filtering should happen in the controller if needed, 
+    // The role filtering should happen in the controller if needed,
     // but here we just ensure we only show current employee data if requested.
     where.employee_id = employeeId;
 

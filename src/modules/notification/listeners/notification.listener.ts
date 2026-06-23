@@ -2,7 +2,11 @@ import { Injectable, Logger } from '@nestjs/common';
 import { OnEvent } from '@nestjs/event-emitter';
 import { PrismaService } from '../../../prisma/prisma.service';
 import { NotificationService } from '../notification.service';
-import { HrisRequestEvent, HrisModuleType, HrisActionType } from '../events/hris-request.event';
+import {
+  HrisRequestEvent,
+  HrisModuleType,
+  HrisActionType,
+} from '../events/hris-request.event';
 
 @Injectable()
 export class NotificationListener {
@@ -43,7 +47,9 @@ export class NotificationListener {
       });
 
       if (!requester) {
-        this.logger.error(`Requester employee with ID ${event.requesterId} not found`);
+        this.logger.error(
+          `Requester employee with ID ${event.requesterId} not found`,
+        );
         return;
       }
 
@@ -62,13 +68,15 @@ export class NotificationListener {
             });
 
             if (supervisor?.ms_users) {
-              const title = event.action === 'submitted'
-                ? `Permintaan ${moduleLabel} Baru`
-                : `${moduleLabel} Dibatalkan`;
+              const title =
+                event.action === 'submitted'
+                  ? `Permintaan ${moduleLabel} Baru`
+                  : `${moduleLabel} Dibatalkan`;
 
-              const message = event.action === 'submitted'
-                ? `${requesterName} mengajukan ${moduleLabel} baru.${event.metadata?.details ? ' ' + event.metadata.details : ''}`
-                : `${requesterName} membatalkan permintaan ${moduleLabel}.${event.metadata?.rejectionReason ? ' Alasan: ' + event.metadata.rejectionReason : ''}`;
+              const message =
+                event.action === 'submitted'
+                  ? `${requesterName} mengajukan ${moduleLabel} baru.${event.metadata?.details ? ' ' + event.metadata.details : ''}`
+                  : `${requesterName} membatalkan permintaan ${moduleLabel}.${event.metadata?.rejectionReason ? ' Alasan: ' + event.metadata.rejectionReason : ''}`;
 
               this.logger.log(
                 `Notifying supervisor ${supervisor.full_name} for ${event.action} ${event.module}`,
@@ -87,7 +95,9 @@ export class NotificationListener {
               );
             }
           } else {
-            this.logger.warn(`Requester employee ${requesterName} has no supervisor_id set`);
+            this.logger.warn(
+              `Requester employee ${requesterName} has no supervisor_id set`,
+            );
           }
           break;
 
@@ -107,7 +117,9 @@ export class NotificationListener {
             const title = `${moduleLabel} Disetujui Atasan`;
             const message = `Permintaan ${moduleLabel} dari ${requesterName} telah disetujui oleh atasan dan memerlukan persetujuan akhir HR.`;
 
-            this.logger.log(`Notifying ${hrUsers.length} HR users for supervisor approved leave`);
+            this.logger.log(
+              `Notifying ${hrUsers.length} HR users for supervisor approved leave`,
+            );
             for (const hr of hrUsers) {
               await this.notificationService.createNotificationInternal(
                 hr.id,
@@ -119,7 +131,9 @@ export class NotificationListener {
               );
             }
           } else {
-            this.logger.warn('No active HR/Admin users found to notify for second-layer approval');
+            this.logger.warn(
+              'No active HR/Admin users found to notify for second-layer approval',
+            );
           }
           break;
 
@@ -127,13 +141,15 @@ export class NotificationListener {
         case 'rejected':
           // Notify the requester employee of the final outcome
           if (requester.ms_users) {
-            const title = event.action === 'approved'
-              ? `${moduleLabel} Disetujui`
-              : `${moduleLabel} Ditolak`;
+            const title =
+              event.action === 'approved'
+                ? `${moduleLabel} Disetujui`
+                : `${moduleLabel} Ditolak`;
 
-            const message = event.action === 'approved'
-              ? `Permintaan ${moduleLabel} kamu telah disetujui.${event.metadata?.details ? ' ' + event.metadata.details : ''}`
-              : `Permintaan ${moduleLabel} kamu ditolak.${event.metadata?.rejectionReason ? ' Alasan: ' + event.metadata.rejectionReason : ' Rejected by supervisor/HR'}`;
+            const message =
+              event.action === 'approved'
+                ? `Permintaan ${moduleLabel} kamu telah disetujui.${event.metadata?.details ? ' ' + event.metadata.details : ''}`
+                : `Permintaan ${moduleLabel} kamu ditolak.${event.metadata?.rejectionReason ? ' Alasan: ' + event.metadata.rejectionReason : ' Rejected by supervisor/HR'}`;
 
             this.logger.log(
               `Notifying requester ${requesterName} that request was ${event.action}`,

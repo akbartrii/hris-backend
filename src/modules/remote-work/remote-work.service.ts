@@ -199,9 +199,15 @@ export class RemoteWorkService {
     // Emit submit event
     await this.eventEmitter.emitAsync(
       'hris.request',
-      new HrisRequestEvent(request.id, user.ms_employees.id, 'remote_work', 'submitted', {
-        details: `mengajukan WFH dari ${dto.start_date} s/d ${dto.end_date}`,
-      }),
+      new HrisRequestEvent(
+        request.id,
+        user.ms_employees.id,
+        'remote_work',
+        'submitted',
+        {
+          details: `mengajukan WFH dari ${dto.start_date} s/d ${dto.end_date}`,
+        },
+      ),
     );
 
     return request;
@@ -280,9 +286,15 @@ export class RemoteWorkService {
       // Emit approved event
       await this.eventEmitter.emitAsync(
         'hris.request',
-        new HrisRequestEvent(requestId, request.employee_id, 'remote_work', 'approved', {
-          details: `dari ${request.start_date.toISOString().split('T')[0]} s/d ${request.end_date.toISOString().split('T')[0]}`,
-        }),
+        new HrisRequestEvent(
+          requestId,
+          request.employee_id,
+          'remote_work',
+          'approved',
+          {
+            details: `dari ${request.start_date.toISOString().split('T')[0]} s/d ${request.end_date.toISOString().split('T')[0]}`,
+          },
+        ),
       );
     } else {
       await this.prisma.ms_employees.updateMany({
@@ -304,9 +316,15 @@ export class RemoteWorkService {
       // Emit rejected event
       await this.eventEmitter.emitAsync(
         'hris.request',
-        new HrisRequestEvent(requestId, request.employee_id, 'remote_work', 'rejected', {
-          rejectionReason: dto.rejection_reason || 'Rejected by supervisor',
-        }),
+        new HrisRequestEvent(
+          requestId,
+          request.employee_id,
+          'remote_work',
+          'rejected',
+          {
+            rejectionReason: dto.rejection_reason || 'Rejected by supervisor',
+          },
+        ),
       );
     }
 
@@ -349,9 +367,15 @@ export class RemoteWorkService {
     // Emit cancelled event
     await this.eventEmitter.emitAsync(
       'hris.request',
-      new HrisRequestEvent(requestId, user.ms_employees.id, 'remote_work', 'cancelled', {
-        rejectionReason: reason || undefined,
-      }),
+      new HrisRequestEvent(
+        requestId,
+        user.ms_employees.id,
+        'remote_work',
+        'cancelled',
+        {
+          rejectionReason: reason || undefined,
+        },
+      ),
     );
 
     return updatedRequest;

@@ -22,6 +22,25 @@ export class EmployeeService {
     return ['manager_hrga', 'hrd', 'admin', 'super_admin'].includes(role);
   }
 
+  private async validateSupervisorRole(supervisorId: string) {
+    const supervisor = await this.prisma.ms_employees.findUnique({
+      where: { id: supervisorId },
+      include: { ms_users: { include: { ms_roles: true } } },
+    });
+
+    if (!supervisor) {
+      throw new BadRequestException('Supervisor not found');
+    }
+
+    if (!supervisor.ms_users) {
+      throw new BadRequestException('Supervisor does not have a user account');
+    }
+
+    if (supervisor.ms_users.ms_roles.name !== 'atasan') {
+      throw new BadRequestException('Supervisor must have role atasan (SPV)');
+    }
+  }
+
   async createEmployee(
     userId: string,
     userRole: string,
@@ -40,7 +59,9 @@ export class EmployeeService {
 
     if (hasSalaryInfo) {
       if (!keycode) {
-        throw new BadRequestException('x-salary-keycode header is required to encrypt and save salary data.');
+        throw new BadRequestException(
+          'x-salary-keycode header is required to encrypt and save salary data.',
+        );
       }
       const isValid = await this.encryptionService.validateKeycode(keycode);
       if (!isValid) {
@@ -113,8 +134,10 @@ export class EmployeeService {
       employeeData.position_id = dto.position_id;
     if (dto.location_id !== undefined)
       employeeData.location_id = dto.location_id;
-    if (dto.supervisor_id !== undefined)
+    if (dto.supervisor_id !== undefined) {
+      await this.validateSupervisorRole(dto.supervisor_id);
       employeeData.supervisor_id = dto.supervisor_id;
+    }
     if (dto.manager_id !== undefined) employeeData.manager_id = dto.manager_id;
     if (dto.team_id !== undefined) employeeData.team_id = dto.team_id;
     if (dto.employment_status !== undefined)
@@ -124,13 +147,25 @@ export class EmployeeService {
     if (dto.contract_end_date !== undefined)
       employeeData.contract_end_date = new Date(dto.contract_end_date);
     if (dto.base_salary !== undefined)
-      employeeData.base_salary = dto.base_salary !== null ? this.encryptionService.encrypt(dto.base_salary, keycode!) : null;
+      employeeData.base_salary =
+        dto.base_salary !== null
+          ? this.encryptionService.encrypt(dto.base_salary, keycode!)
+          : null;
     if (dto.fixed_allowance !== undefined)
-      employeeData.fixed_allowance = dto.fixed_allowance !== null ? this.encryptionService.encrypt(dto.fixed_allowance, keycode!) : null;
+      employeeData.fixed_allowance =
+        dto.fixed_allowance !== null
+          ? this.encryptionService.encrypt(dto.fixed_allowance, keycode!)
+          : null;
     if (dto.phone_allowance !== undefined)
-      employeeData.phone_allowance = dto.phone_allowance !== null ? this.encryptionService.encrypt(dto.phone_allowance, keycode!) : null;
+      employeeData.phone_allowance =
+        dto.phone_allowance !== null
+          ? this.encryptionService.encrypt(dto.phone_allowance, keycode!)
+          : null;
     if (dto.dinas_allowance !== undefined)
-      employeeData.dinas_allowance = dto.dinas_allowance !== null ? this.encryptionService.encrypt(dto.dinas_allowance, keycode!) : null;
+      employeeData.dinas_allowance =
+        dto.dinas_allowance !== null
+          ? this.encryptionService.encrypt(dto.dinas_allowance, keycode!)
+          : null;
     if (dto.shift_type !== undefined) employeeData.shift_type = dto.shift_type;
     if (dto.is_security !== undefined)
       employeeData.is_security = dto.is_security;
@@ -192,14 +227,28 @@ export class EmployeeService {
       this.prisma.ms_employees.count({ where }),
     ]);
 
-    const isValidKey = keycode ? await this.encryptionService.validateKeycode(keycode) : false;
+    const isValidKey = keycode
+      ? await this.encryptionService.validateKeycode(keycode)
+      : false;
     const decryptedData = data.map((emp) => {
       return {
         ...emp,
-        base_salary: isValidKey && emp.base_salary ? this.encryptionService.decrypt(emp.base_salary, keycode!) : null,
-        fixed_allowance: isValidKey && emp.fixed_allowance ? this.encryptionService.decrypt(emp.fixed_allowance, keycode!) : null,
-        phone_allowance: isValidKey && emp.phone_allowance ? this.encryptionService.decrypt(emp.phone_allowance, keycode!) : null,
-        dinas_allowance: isValidKey && emp.dinas_allowance ? this.encryptionService.decrypt(emp.dinas_allowance, keycode!) : null,
+        base_salary:
+          isValidKey && emp.base_salary
+            ? this.encryptionService.decrypt(emp.base_salary, keycode!)
+            : null,
+        fixed_allowance:
+          isValidKey && emp.fixed_allowance
+            ? this.encryptionService.decrypt(emp.fixed_allowance, keycode!)
+            : null,
+        phone_allowance:
+          isValidKey && emp.phone_allowance
+            ? this.encryptionService.decrypt(emp.phone_allowance, keycode!)
+            : null,
+        dinas_allowance:
+          isValidKey && emp.dinas_allowance
+            ? this.encryptionService.decrypt(emp.dinas_allowance, keycode!)
+            : null,
       };
     });
 
@@ -237,13 +286,27 @@ export class EmployeeService {
       }
     }
 
-    const isValidKey = keycode ? await this.encryptionService.validateKeycode(keycode) : false;
+    const isValidKey = keycode
+      ? await this.encryptionService.validateKeycode(keycode)
+      : false;
     return {
       ...employee,
-      base_salary: isValidKey && employee.base_salary ? this.encryptionService.decrypt(employee.base_salary, keycode!) : null,
-      fixed_allowance: isValidKey && employee.fixed_allowance ? this.encryptionService.decrypt(employee.fixed_allowance, keycode!) : null,
-      phone_allowance: isValidKey && employee.phone_allowance ? this.encryptionService.decrypt(employee.phone_allowance, keycode!) : null,
-      dinas_allowance: isValidKey && employee.dinas_allowance ? this.encryptionService.decrypt(employee.dinas_allowance, keycode!) : null,
+      base_salary:
+        isValidKey && employee.base_salary
+          ? this.encryptionService.decrypt(employee.base_salary, keycode!)
+          : null,
+      fixed_allowance:
+        isValidKey && employee.fixed_allowance
+          ? this.encryptionService.decrypt(employee.fixed_allowance, keycode!)
+          : null,
+      phone_allowance:
+        isValidKey && employee.phone_allowance
+          ? this.encryptionService.decrypt(employee.phone_allowance, keycode!)
+          : null,
+      dinas_allowance:
+        isValidKey && employee.dinas_allowance
+          ? this.encryptionService.decrypt(employee.dinas_allowance, keycode!)
+          : null,
     };
   }
 
@@ -266,7 +329,9 @@ export class EmployeeService {
 
     if (hasSalaryInfo) {
       if (!keycode) {
-        throw new BadRequestException('x-salary-keycode header is required to encrypt and save salary data.');
+        throw new BadRequestException(
+          'x-salary-keycode header is required to encrypt and save salary data.',
+        );
       }
       const isValid = await this.encryptionService.validateKeycode(keycode);
       if (!isValid) {
@@ -294,8 +359,10 @@ export class EmployeeService {
       updateData.department_id = dto.department_id;
     if (dto.position_id !== undefined) updateData.position_id = dto.position_id;
     if (dto.location_id !== undefined) updateData.location_id = dto.location_id;
-    if (dto.supervisor_id !== undefined)
+    if (dto.supervisor_id !== undefined) {
+      await this.validateSupervisorRole(dto.supervisor_id);
       updateData.supervisor_id = dto.supervisor_id;
+    }
     if (dto.manager_id !== undefined) updateData.manager_id = dto.manager_id;
     if (dto.team_id !== undefined) updateData.team_id = dto.team_id;
     if (dto.employment_status !== undefined)
@@ -304,13 +371,26 @@ export class EmployeeService {
       updateData.join_date = new Date(dto.join_date);
     if (dto.contract_end_date !== undefined)
       updateData.contract_end_date = new Date(dto.contract_end_date);
-    if (dto.base_salary !== undefined) updateData.base_salary = dto.base_salary !== null ? this.encryptionService.encrypt(dto.base_salary, keycode!) : null;
+    if (dto.base_salary !== undefined)
+      updateData.base_salary =
+        dto.base_salary !== null
+          ? this.encryptionService.encrypt(dto.base_salary, keycode!)
+          : null;
     if (dto.fixed_allowance !== undefined)
-      updateData.fixed_allowance = dto.fixed_allowance !== null ? this.encryptionService.encrypt(dto.fixed_allowance, keycode!) : null;
+      updateData.fixed_allowance =
+        dto.fixed_allowance !== null
+          ? this.encryptionService.encrypt(dto.fixed_allowance, keycode!)
+          : null;
     if (dto.phone_allowance !== undefined)
-      updateData.phone_allowance = dto.phone_allowance !== null ? this.encryptionService.encrypt(dto.phone_allowance, keycode!) : null;
+      updateData.phone_allowance =
+        dto.phone_allowance !== null
+          ? this.encryptionService.encrypt(dto.phone_allowance, keycode!)
+          : null;
     if (dto.dinas_allowance !== undefined)
-      updateData.dinas_allowance = dto.dinas_allowance !== null ? this.encryptionService.encrypt(dto.dinas_allowance, keycode!) : null;
+      updateData.dinas_allowance =
+        dto.dinas_allowance !== null
+          ? this.encryptionService.encrypt(dto.dinas_allowance, keycode!)
+          : null;
     if (dto.shift_type !== undefined) updateData.shift_type = dto.shift_type;
     if (dto.is_security !== undefined) updateData.is_security = dto.is_security;
     if (dto.is_active !== undefined) updateData.is_active = dto.is_active;

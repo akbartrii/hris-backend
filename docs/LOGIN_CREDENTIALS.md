@@ -9,6 +9,8 @@
 | ----------------------- | --------------------------- | ------------- |
 | **Karyawan**            | `karyawan@samugara.co.id`   | `password123` |
 | **Supervisor (Atasan)** | `spv@samugara.co.id`        | `password123` |
+| **Supervisor 2 (Atasan)** | `spv2@samugara.co.id`    | `password123` |
+| **Supervisor 3 (Atasan)** | `spv3@samugara.co.id`    | `password123` |
 | **Manager HRGA**        | `hrga@samugara.co.id`       | `password123` |
 | **HRD**                 | `hrd@samugara.co.id`        | `password123` |
 | **Admin**               | `admin-role@samugara.co.id` | `password123` |
@@ -49,6 +51,18 @@ User `karyawan@samugara.co.id` sudah dilengkapi dengan data test:
 | **Correction**    | 1 request | Pending, clock_in 29 Apr                             |
 | **Leave Balance** | 1 record  | Cuti Tahunan 2026: 12 hari, belum dipakai            |
 | **Supervisor**    | Assigned  | spv@samugara.co.id                                   |
+
+## Supervisor Mapping
+
+| Karyawan              | Supervisor            |
+| --------------------- | --------------------- |
+| karyawan@samugara.co.id | spv@samugara.co.id  |
+| karyawan2@samugara.co.id | spv@samugara.co.id |
+| karyawan3@samugara.co.id | spv@samugara.co.id |
+| karyawan4@samugara.co.id | spv@samugara.co.id |
+| karyawan5@samugara.co.id | spv2@samugara.co.id |
+| karyawan6@samugara.co.id | spv3@samugara.co.id |
+| karyawan7@samugara.co.id | spv@samugara.co.id  |
 
 ## Notes
 

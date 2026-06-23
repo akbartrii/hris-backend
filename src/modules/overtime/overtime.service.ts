@@ -305,16 +305,16 @@ export class OvertimeService {
       throw new BadRequestException('Invalid overtime_divisor parameter');
     }
 
-    const ratePerHour = isCalculated ? ((baseSalary + fixedAllowance) / divisor) : 0;
+    const ratePerHour = isCalculated
+      ? (baseSalary + fixedAllowance) / divisor
+      : 0;
     if (!Number.isFinite(ratePerHour)) {
       throw new BadRequestException('Invalid overtime rate calculation');
     }
 
-    const totalOvertimePay = isCalculated ? await this.calculateOvertimePay(
-      rawMinutes,
-      dayType,
-      ratePerHour,
-    ) : 0;
+    const totalOvertimePay = isCalculated
+      ? await this.calculateOvertimePay(rawMinutes, dayType, ratePerHour)
+      : 0;
     if (!Number.isFinite(totalOvertimePay)) {
       throw new BadRequestException('Invalid overtime pay calculation');
     }
@@ -351,9 +351,15 @@ export class OvertimeService {
 
       await this.eventEmitter.emitAsync(
         'hris.request',
-        new HrisRequestEvent(overtime.id, dto.employee_id, 'overtime', 'submitted', {
-          details: `mengajukan lembur selama ${totalHours} jam pada tanggal ${dto.date}`,
-        }),
+        new HrisRequestEvent(
+          overtime.id,
+          dto.employee_id,
+          'overtime',
+          'submitted',
+          {
+            details: `mengajukan lembur selama ${totalHours} jam pada tanggal ${dto.date}`,
+          },
+        ),
       );
 
       return overtime;
@@ -790,7 +796,9 @@ export class OvertimeService {
 
     if (dto.action === 'approve') {
       if (!keycode) {
-        throw new BadRequestException('x-salary-keycode header is required to process and approve overtime.');
+        throw new BadRequestException(
+          'x-salary-keycode header is required to process and approve overtime.',
+        );
       }
       const isValid = await this.encryptionService.validateKeycode(keycode);
       if (!isValid) {
@@ -903,15 +911,28 @@ export class OvertimeService {
     }
 
     // Check permissions
-    const isOwner = overtime.employee_id === requester.id || overtime.requested_by === requester.id;
-    const isHrOrAdmin = ['hrd', 'admin', 'super_admin', 'manager_hrga'].includes(roleName);
-    
+    const isOwner =
+      overtime.employee_id === requester.id ||
+      overtime.requested_by === requester.id;
+    const isHrOrAdmin = [
+      'hrd',
+      'admin',
+      'super_admin',
+      'manager_hrga',
+    ].includes(roleName);
+
     // Check if requester is the supervisor or manager of the target employee
-    const targetEmployee = overtime.ms_employees_tr_overtime_requests_employee_idToms_employees;
-    const isAtasan = targetEmployee && (targetEmployee.supervisor_id === requester.id || targetEmployee.manager_id === requester.id);
+    const targetEmployee =
+      overtime.ms_employees_tr_overtime_requests_employee_idToms_employees;
+    const isAtasan =
+      targetEmployee &&
+      (targetEmployee.supervisor_id === requester.id ||
+        targetEmployee.manager_id === requester.id);
 
     if (!isOwner && !isHrOrAdmin && !isAtasan) {
-      throw new ForbiddenException('You do not have permission to view this overtime request');
+      throw new ForbiddenException(
+        'You do not have permission to view this overtime request',
+      );
     }
 
     const formula = {
@@ -922,43 +943,47 @@ export class OvertimeService {
         '1_hour_15_minutes': '1.0 jam',
         '1_hour_30_minutes': '1.5 jam',
         '1_hour_45_minutes': '1.5 jam',
-        '1_hour_46_minutes_and_above': 'Pembulatan ke atas (2.0 jam)'
+        '1_hour_46_minutes_and_above': 'Pembulatan ke atas (2.0 jam)',
       },
       meal_allowance_rules: {
         workdays: {
           before_office_hours: 'Rp 10.000',
           '16:00_to_20:00': 'Rp 20.000',
           '20:00_to_24:00': 'Rp 10.000',
-          '24:00_to_end': 'Rp 20.000'
+          '24:00_to_end': 'Rp 20.000',
         },
         saturdays: {
           before_office_hours: 'Rp 10.000',
           '14:00_to_22:00': 'Rp 6.000',
           '18:00_to_22:00': 'Rp 20.000',
-          '22:00_to_end': 'Rp 10.000'
+          '22:00_to_end': 'Rp 10.000',
         },
         sundays_and_holidays: {
           before_office_hours: 'Rp 10.000',
           '08:00_to_12:00': 'Rp 10.000',
           '13:00_to_17:00': 'Rp 15.000',
           '17:00_to_21:00': 'Rp 20.000',
-          '24:00_to_end': 'Rp 20.000'
-        }
+          '24:00_to_end': 'Rp 20.000',
+        },
       },
       multiplier_rules: {
         '6_days_workweek': {
           workday: '1st hour x 1.5, subsequent hours x 2',
-          holiday: 'first 7 hours x 2, 8th hour x 3, subsequent hours x 4'
+          holiday: 'first 7 hours x 2, 8th hour x 3, subsequent hours x 4',
         },
         '5_days_workweek': {
           workday: '1st hour x 1.5, subsequent hours x 2',
-          holiday: 'first 8 hours x 2, 9th hour x 3, subsequent hours x 4'
-        }
+          holiday: 'first 8 hours x 2, 9th hour x 3, subsequent hours x 4',
+        },
       },
-      workflow: 'Atasan/SPV/Manager melakukan pengajuan lembur -> Manager ACC -> HRD rekap'
+      workflow:
+        'Atasan/SPV/Manager melakukan pengajuan lembur -> Manager ACC -> HRD rekap',
     };
 
-    const { ms_employees_tr_overtime_requests_employee_idToms_employees, ...restOvertime } = overtime;
+    const {
+      ms_employees_tr_overtime_requests_employee_idToms_employees,
+      ...restOvertime
+    } = overtime;
 
     let cleanEmployee = null;
     if (ms_employees_tr_overtime_requests_employee_idToms_employees) {
@@ -979,4 +1004,3 @@ export class OvertimeService {
     };
   }
 }
-

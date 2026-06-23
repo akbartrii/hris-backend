@@ -304,12 +304,7 @@ export class TimeOffService {
 
     await this.eventEmitter.emitAsync(
       'hris.request',
-      new HrisRequestEvent(
-        timeOffId,
-        employee.id,
-        'time_off',
-        'cancelled',
-      ),
+      new HrisRequestEvent(timeOffId, employee.id, 'time_off', 'cancelled'),
     );
 
     return { message: 'Time off request cancelled successfully' };

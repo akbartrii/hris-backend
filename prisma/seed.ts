@@ -83,14 +83,16 @@ async function main() {
     { email: 'hrd@samugara.co.id', full_name: 'HRD Test', phone: '081234567004', role_name: 'hrd', nik: 'EMP_HRD', gender: 'male', join_date: new Date('2022-01-01') },
     { email: 'hrga@samugara.co.id', full_name: 'Manager HRGA Test', phone: '081234567003', role_name: 'manager_hrga', nik: 'EMP_HRGA', gender: 'male', join_date: new Date('2022-01-01') },
     { email: 'spv@samugara.co.id', full_name: 'Supervisor Test', phone: '081234567002', role_name: 'atasan', nik: 'EMP_SPV', gender: 'male', join_date: new Date('2023-01-01') },
+    { email: 'spv2@samugara.co.id', full_name: 'Supervisor 2 Test', phone: '081234567013', role_name: 'atasan', nik: 'EMP_SPV2', gender: 'male', join_date: new Date('2023-06-01') },
+    { email: 'spv3@samugara.co.id', full_name: 'Supervisor 3 Test', phone: '081234567014', role_name: 'atasan', nik: 'EMP_SPV3', gender: 'female', join_date: new Date('2023-06-01') },
     { email: 'karyawan@samugara.co.id', full_name: 'Karyawan Test', phone: '081234567001', role_name: 'karyawan', nik: 'EMP_KAR', gender: 'male', join_date: new Date('2024-01-01'), supervisor_nik: 'EMP_SPV' },
     { email: 'karyawan2@samugara.co.id', full_name: 'Karyawan 2 Test', phone: '081234567007', role_name: 'karyawan', nik: 'EMP_KAR2', gender: 'female', join_date: new Date('2024-06-01'), supervisor_nik: 'EMP_SPV' },
     // Additional karyawan users
     { email: 'karyawan3@samugara.co.id', full_name: 'Budi Santoso', phone: '081234567008', role_name: 'karyawan', nik: 'EMP_KAR3', gender: 'male', join_date: new Date('2024-03-01'), supervisor_nik: 'EMP_SPV' },
     { email: 'karyawan4@samugara.co.id', full_name: 'Siti Rahmawati', phone: '081234567009', role_name: 'karyawan', nik: 'EMP_KAR4', gender: 'female', join_date: new Date('2024-07-01'), supervisor_nik: 'EMP_SPV' },
-    { email: 'karyawan5@samugara.co.id', full_name: 'Ahmad Hidayat', phone: '081234567010', role_name: 'karyawan', nik: 'EMP_KAR5', gender: 'male', join_date: new Date('2025-01-01'), supervisor_nik: 'EMP_KAR' },
-    { email: 'karyawan6@samugara.co.id', full_name: 'Dewi Lestari', phone: '081234567011', role_name: 'karyawan', nik: 'EMP_KAR6', gender: 'female', join_date: new Date('2024-11-01'), supervisor_nik: 'EMP_HRGA' },
-    { email: 'karyawan7@samugara.co.id', full_name: 'Rudi Hermawan', phone: '081234567012', role_name: 'karyawan', nik: 'EMP_KAR7', gender: 'male', join_date: new Date('2025-02-01'), supervisor_nik: 'EMP_HRD' },
+    { email: 'karyawan5@samugara.co.id', full_name: 'Ahmad Hidayat', phone: '081234567010', role_name: 'karyawan', nik: 'EMP_KAR5', gender: 'male', join_date: new Date('2025-01-01'), supervisor_nik: 'EMP_SPV2' },
+    { email: 'karyawan6@samugara.co.id', full_name: 'Dewi Lestari', phone: '081234567011', role_name: 'karyawan', nik: 'EMP_KAR6', gender: 'female', join_date: new Date('2024-11-01'), supervisor_nik: 'EMP_SPV3' },
+    { email: 'karyawan7@samugara.co.id', full_name: 'Rudi Hermawan', phone: '081234567012', role_name: 'karyawan', nik: 'EMP_KAR7', gender: 'male', join_date: new Date('2025-02-01'), supervisor_nik: 'EMP_SPV' },
   ];
 
   const userRecords: Record<string, { id: string; employeeId: string }> = {};

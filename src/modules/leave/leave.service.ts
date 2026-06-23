@@ -565,12 +565,7 @@ export class LeaveService {
 
     await this.eventEmitter.emitAsync(
       'hris.request',
-      new HrisRequestEvent(
-        leaveId,
-        employee.id,
-        'leave',
-        'cancelled',
-      ),
+      new HrisRequestEvent(leaveId, employee.id, 'leave', 'cancelled'),
     );
 
     return { message: 'Leave request cancelled' };
