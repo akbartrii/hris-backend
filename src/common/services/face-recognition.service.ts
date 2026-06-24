@@ -17,9 +17,20 @@ export class FaceRecognitionService implements OnModuleInit {
     try {
       this.logger.log('Loading face recognition models...');
 
-      // Initialize WASM backend
-      await tf.setBackend('wasm');
-      await tf.ready();
+      // Try WASM backend first, fall back to CPU if WASM files unavailable
+      const backends = tf.engine().registryFactory['wasm']
+        ? ['wasm', 'cpu']
+        : ['cpu'];
+      for (const backend of backends) {
+        try {
+          await tf.setBackend(backend);
+          await tf.ready();
+          this.logger.log(`TensorFlow backend: ${backend}`);
+          break;
+        } catch (e) {
+          this.logger.warn(`TensorFlow backend "${backend}" failed: ${e.message}`);
+        }
+      }
 
       // Patch environment for Node.js
       // @ts-ignore
